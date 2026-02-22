@@ -34,9 +34,17 @@ Always state the Compass as a single sentence:
 | "Is this code ready to extract as a library?" | Ascension / reuse review |
 | "Can someone use this in 5 minutes?" | Actionability review |
 | "Would a senior engineer trust this?" | Credibility review |
-| "Would someone choose this over the alternative?" | Value / differentiation review |
 | "Is this safe to publish?" | Open-source / compliance review |
-| "Can someone find this and understand it in 10 seconds?" | Discoverability review |
+| "Could a junior developer onboard from this in one day?" | Readability review |
+| "If the author left tomorrow, could someone else maintain this?" | Bus factor review |
+| "If this were accidentally open-sourced, would we be embarrassed?" | Quality / secrets review |
+| "Does this code respect the user's time, data, and attention?" | Ethics / UX review |
+| "Would this survive a 10x traffic spike at 3am?" | Resilience review |
+| "If we rewrote this from scratch, would we write the same thing?" | Essence review |
+| "Does this code tell a story a future archaeologist could follow?" | Documentation review |
+| "Can any LLM follow this prompt equally well?" | Portability review |
+| "Would a newcomer feel welcomed or intimidated?" | Approachability review |
+| "Are all ideas properly attributed to their sources?" | Intellectual honesty review |
 
 ### Bounded Rationality
 
@@ -107,7 +115,8 @@ introduces new vulnerabilities.
 Before every review, state all three:
 
 ```
-🧭 Compass: [one sentence goal] + [what context do I have/lack?]
+Diffract: v0.1.0
+🧭 Compass: [one sentence goal]
 🐍 Cobra:   [prototype = aggressive | production = cautious]
 ⚖️ Integrity: [evidence rules]
 ```

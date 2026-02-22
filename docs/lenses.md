@@ -34,7 +34,7 @@ Checked: all modules, all exported types, all configuration fields
 | S1 | user_service.py | `OtherDetails` field is never read or written | 34 |
 ```
 
-**Maps to:** YAGNI
+**Maps to:** YAGNI (Kent Beck, Extreme Programming)
 
 ---
 
@@ -99,7 +99,7 @@ Checked: configuration files, constants, entity definitions
 | T1 | config.yaml + constants.ts | Default timeout defined in both places | 12, 45 |
 ```
 
-**Maps to:** DRY (Don't Repeat Yourself)
+**Maps to:** DRY — Don't Repeat Yourself (Andy Hunt & Dave Thomas, *The Pragmatic Programmer*)
 
 ---
 
@@ -122,7 +122,7 @@ Checked: import/dependency graph across all modules
 | B1 | email_sender.py | Imports user_config for tenant resolution — should accept resolved data | 14 |
 ```
 
-**Maps to:** Clean Architecture, Dependency Inversion
+**Maps to:** Clean Architecture, Dependency Inversion (Robert C. Martin)
 
 ---
 
@@ -242,3 +242,26 @@ No findings matching this pattern.
 | Over-engineering | 🐍 Cobra |
 | Scope creep | 🧭 Compass |
 | Bikeshedding | ⚖️ Integrity |
+
+---
+
+## Automation: Tools First
+
+Use deterministic tools before applying judgment. A tool finding is more
+reliable than an AI finding — and more reproducible.
+
+| Lens | Deterministic Tools | AI Adds |
+|------|--------------------:|---------|
+| 🗑️ Subtract | Dead code analyzers, `grep` for unreferenced exports | Unused abstractions, vestigial features |
+| ✂️ Simplify | Complexity linters (cyclomatic, cognitive) | Over-abstraction, unnecessary indirection |
+| 🏷️ Name | — (judgment required) | Semantic accuracy, misleading comments |
+| 📌 Truth | Duplicate detectors, `grep` for duplicate constants | Conceptual duplication, diverging configs |
+| 🧱 Boundary | Import/dependency analysis | Misplaced responsibilities, coupling |
+| 🛡️ Shield | SAST scanners (semgrep, language-specific security linters) | Missing validation logic, insecure defaults |
+| 🎯 Variety | Exhaustiveness checkers, compiler warnings | Unhandled business states, partial functions |
+| 🔍 Observability | Error-handling linters, `grep` for swallowed errors | Missing context, missing correlation IDs |
+| ⚡ Efficiency | Benchmarks, profilers, query analyzers | Algorithmic inefficiency, unbounded reads |
+
+**If a tool can check it, run the tool.** Reserve AI for the judgment calls
+that tools cannot make.
+

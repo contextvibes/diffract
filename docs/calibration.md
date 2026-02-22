@@ -16,6 +16,10 @@ claim must be testable.
    - **B found, A missed:** A's process failed → review is incomplete, cycle again
    - **Disagreement:** Same issue, different verdict → governor calibration differs
 
+**Important:** Calibration tests stop at CHECK. Do not proceed to LEARN (fix).
+Fixing changes the artifact, which invalidates the comparison. Both reviewers
+must see the exact same artifact in the exact same state.
+
 ## When to Run
 
 - Before publishing a review as final
@@ -60,7 +64,7 @@ Read the review framework below and follow it exactly.
 
 This is a calibration test: a previous reviewer has already completed a full
 review using the same framework. Your findings will be compared to theirs.
-Do NOT ask what the previous reviewer found. Independence is required.
+Keep reviews independent — don't share findings beforehand.
 
 [PASTE PROMPT.md HERE]
 

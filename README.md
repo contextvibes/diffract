@@ -4,6 +4,7 @@
 [![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](CHANGELOG.md)
 
 > **AI is not a tool. It is an agent.**
+> — [Yuval Noah Harari](https://en.wikipedia.org/wiki/Yuval_Noah_Harari)
 >
 > A linter runs the same way every time. An AI agent reasons, interprets,
 > and makes judgment calls — just like a human. And like any agent, it can
@@ -18,19 +19,25 @@ who reviews it.
 
 **Goal:** Same artifact + same lenses + different reviewer = same findings.
 
-Diffract emerged from code review, but the lenses are grounded in first
-principles — physics, biology, cybernetics, philosophy — not in software
-conventions. They apply to any artifact that can be reviewed: code,
-documentation, architecture, API designs, processes, or this README.
+Diffract emerged from code review, but the lenses apply to anything that
+can be reviewed: code, documentation, architecture, API designs, or processes.
+
+**Honest value proposition:** A good senior reviewer does 80% of what
+Diffract does intuitively. The value is in the other 20% — the lenses
+you'd skip, the proof you actually looked, and the calibration test that
+catches what you missed. [No single component is original.](#references)
+The value is in the combination.
 
 ## Table of Contents
 
 - [Why Diffract?](#why-diffract)
+- [How to Use](#how-to-use)
 - [Quick Start](#quick-start)
 - [Documentation](#documentation)
 - [How It Emerged](#how-it-emerged)
 - [Acknowledgments](#acknowledgments)
 - [Contributing](#contributing)
+- [References](#references)
 - [License](#license)
 
 ## Why Diffract?
@@ -41,14 +48,27 @@ their human inspectors:
 
 - Evidence for every claim (not just "looks good")
 - Separation of finding from vetting (the agent who finds doesn't decide)
-- Falsifiable findings (objective, not opinion)
-- [Proven anti-manipulation mechanisms](docs/anti-dishonesty.md) borrowed
-  from industries where inspection failures kill people
+- Testable findings (objective, not opinion)
+- [Anti-manipulation mechanisms](docs/anti-dishonesty.md) borrowed from
+  aviation, medicine, and other high-stakes industries
 
 **Your most important role:** Don't just approve the PLAN and wait. Challenge
 the agent during every phase. The most valuable findings in Diffract's own
 development came from human interruptions, not from the lenses. The lenses
 find what's wrong. You find what's missing.
+
+## How to Use
+
+1. Open your preferred AI assistant (Claude, Gemini, ChatGPT, or any LLM)
+2. Paste the contents of [`PROMPT.md`](PROMPT.md) into the chat
+3. Paste the artifact you want to review (code, documentation, design)
+4. The AI will propose governors (PLAN) and wait for your confirmation
+5. Once confirmed, the AI runs all 9 lenses and produces findings
+
+You can also use `PROMPT.md` as a checklist for human-only reviews.
+
+**Start simple:** You don't need to master all 9 lenses on day one. Try
+🗑️ Subtract and 🛡️ Shield on your next PR. Add lenses as you get comfortable.
 
 ## Quick Start
 
@@ -64,6 +84,19 @@ Before any analysis, agree on scope, calibration, and evidence rules:
 
 **PLAN is a checkpoint.** Propose governors, get agreement, then proceed.
 No agreement = no analysis.
+
+**Pick a Compass that fits your situation:**
+
+| Compass | Best For |
+|---------|----------|
+| "Is this code ready for production?" | Pre-release |
+| "Could a junior dev onboard from this in one day?" | Readability |
+| "If the author left, could someone else maintain this?" | Bus factor |
+| "Does this code respect the user's time and data?" | Ethics / UX |
+| "Would this survive a 10x traffic spike at 3am?" | Resilience |
+| "Are all ideas properly attributed?" | Intellectual honesty |
+
+[More examples →](docs/governors.md)
 
 ### 2. DO — Apply 9 lenses + W5H1
 
@@ -141,7 +174,25 @@ both human and AI reviewers honest was not theoretical but experienced
 firsthand.
 
 The name comes from optics: diffraction splits a wave into its component
-parts. Diffract splits code into its component concerns.
+parts. Diffract splits an artifact into its component concerns.
+
+### The Compass in Practice
+
+During development, 8 different compasses were applied to this repo — the
+same artifact, same lenses, different intent — each producing unique findings:
+
+| Compass | What It Found |
+|---------|--------------|
+| "Can someone use this from the repo alone?" | Missing "How to Use" section |
+| "Can any LLM follow this equally well?" | Missing one-shot mode, no-tool fallback |
+| "Would a newcomer feel welcomed?" | Academic jargon in README, no "Start simple" |
+| "Is this original? Did we attribute sources?" | Harari unattributed, no bibliography |
+| "Are all links and spelling correct?" | Terminology drift (falsifiable vs testable) |
+| "Does it guide AI to use tools first?" | No per-lens tooling table |
+| "Is it language-neutral?" | Go-specific tools in automation table |
+| "Is every sentence clear and kind?" | "Refuse" → "Pause", added kindness rule |
+
+The Compass is the most powerful lever in the framework.
 
 ## Acknowledgments
 
@@ -174,6 +225,27 @@ This framework contains AI-generated content. While the human author reviewed
 and approved all material, the documentation, examples, and structural design
 were produced through human-AI collaboration. We believe in full transparency
 about AI involvement in intellectual and creative work.
+
+## References
+
+No single component of Diffract is original. The value is in the combination.
+
+| Component | Source |
+|-----------|--------|
+| "AI is not a tool, it is an agent" | Yuval Noah Harari |
+| PDCA cycle | W. Edwards Deming, Toyota Production System |
+| Shisa Kanko (cognitive anchoring) | Japanese National Railways |
+| Falsifiability | Karl Popper, *The Logic of Scientific Discovery* |
+| Via Negativa | Nassim Nicholas Taleb, *Antifragile* |
+| Requisite Variety | W. Ross Ashby, *An Introduction to Cybernetics* |
+| Ubiquitous Language | Eric Evans, *Domain-Driven Design* |
+| DRY | Andy Hunt & Dave Thomas, *The Pragmatic Programmer* |
+| YAGNI | Kent Beck, Extreme Programming |
+| Clean Architecture | Robert C. Martin |
+| CRM / Challenge-Response | Aviation industry |
+| Dual-reading / Calibration | Radiology |
+| Blind seeding | UXO clearance, Radiology, Legal e-discovery |
+| "First, do no harm" | Hippocratic tradition |
 
 ## License
 
