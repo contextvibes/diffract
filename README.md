@@ -59,6 +59,8 @@ find what's wrong. You find what's missing.
 
 ## How to Use
 
+### Manual (any LLM)
+
 1. Open your preferred AI assistant (Claude, Gemini, ChatGPT, or any LLM)
 2. Paste the contents of [`PROMPT.md`](PROMPT.md) into the chat
 3. Paste the artifact you want to review (code, documentation, design)
@@ -66,6 +68,47 @@ find what's wrong. You find what's missing.
 5. Once confirmed, the AI runs all 9 lenses and produces findings
 
 You can also use `PROMPT.md` as a checklist for human-only reviews.
+
+### Agentic (Antigravity)
+
+Diffract ships as an [Antigravity](https://antigravity.google) skill. When
+loaded, it transforms Antigravity into a structured Diffract review agent
+with parallel lens execution and deterministic tool integration.
+
+1. Clone: `git clone https://github.com/contextvibes/diffract.git`
+2. Register the skill globally in `~/.gemini/config/skills.json`:
+   ```json
+   { "entries": [{ "path": "/path/to/diffract/.agents/skills" }] }
+   ```
+3. In any project (CLI, IDE, or Antigravity 2.0): *"Run a diffract review"*
+
+### Programmatic (Python SDK)
+
+```python
+from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig
+
+config = LocalAgentConfig(capabilities=CapabilitiesConfig())
+async with Agent(config) as agent:
+    response = await agent.chat("Run a diffract review on ./src")
+    async for token in response:
+        print(token, end="")
+```
+
+### Deterministic Scripts
+
+The `scripts/` directory contains tool wrappers for deterministic lenses.
+These work standalone — no AI required:
+
+```bash
+# Discover available linters on your system
+bash scripts/discover.sh
+
+# Run dead code detection
+bash scripts/subtract.sh ./src
+
+# Run security scanning
+bash scripts/shield.sh ./src
+```
 
 **Start simple:** You don't need to master all 9 lenses on day one. Try
 🗑️ Subtract and 🛡️ Shield on your next PR. Add lenses as you get comfortable.
