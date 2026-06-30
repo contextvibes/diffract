@@ -67,12 +67,15 @@ understanding the real-world tradeoffs.
 **Prevents:** Overreaction, over-engineering, cascading breakage
 
 **Calibration:** Context-dependent.
-- **Prototype:** Aggressive — skip marginal findings
-- **Production:** Cautious — fix more, skip less
-- **Library/Framework:** Very cautious — downstream users depend on stability
 
 ```
-🐍 Cobra: Production — cautious. Fix more, skip less.
+🐍 Cobra levels:
+- Prototype: Skip findings that require >30 minutes to fix OR introduce new abstractions.
+  Ask: "Will fixing this slow down learning what works?"
+- Production: Skip findings only if fixing requires architectural changes AND current code
+  passes all tests. Ask: "Is the cure worse than the disease?"
+- Library/Framework: Skip findings only if fixing would break the published API contract.
+  Ask: "Will downstream consumers need to change their code?"
 ```
 
 ### The Cobra Effect
@@ -117,6 +120,6 @@ Before every review, state all three:
 ```
 Diffract: v0.1.0
 🧭 Compass: [one sentence goal]
-🐍 Cobra:   [prototype = aggressive | production = cautious]
+🐍 Cobra:   [prototype | production | library/framework] (see Cobra levels above)
 ⚖️ Integrity: [evidence rules]
 ```

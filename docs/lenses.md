@@ -1,4 +1,4 @@
-# The 9 Lenses
+# The 10 Lenses
 
 Each lens is grounded in a first principle from a domain **outside** software
 engineering. This grounding ensures the lenses are universal — they apply to
@@ -10,9 +10,9 @@ The lenses are ordered from most destructive to most constructive:
 
 1-2: **Remove/reduce** before examining what remains
 3-4: **Clarity** — is what remains well-named and non-duplicated?
-5-6: **Structure** — are the walls right and defended?
-7-8: **Completeness** — does it handle all states and report them?
-9: **Performance** — is it proportional?
+5-7: **Structure** — walls (Boundary) → membrane (Shield) → lineage (Provenance)
+8-9: **Completeness** — does it handle all states and report them?
+10: **Performance** — is it proportional?
 
 ---
 
@@ -150,7 +150,35 @@ Checked: all external inputs (HTTP, file I/O, env vars), all auth boundaries
 
 ---
 
-## 7. 🎯 Variety
+## 7. 🔗 Provenance
+
+**Root domain:** Epidemiology — Contact Tracing
+**The question:** *Can I verify the origin and integrity of every dependency?*
+
+Supply chain attacks exploit trust. This lens catches unvetted dependencies,
+missing lockfiles, AI-generated code pasted without review, and phantom or
+typosquat packages.
+
+| What it catches | What it doesn't |
+|---|---|
+| Unvetted dependencies, missing lockfiles | Whether deps are well-written |
+| Dependencies with known CVEs | Performance of dependencies |
+| AI-generated code pasted without review | Whether AI code is correct |
+| Phantom/typosquat packages | Licensing issues |
+
+**Evidence format:**
+```
+🔗 P1 (Provenance · go.mod:L12)
+   Before: require github.com/unknown/jwt v0.0.1
+   Finding: Dependency has 0 stars, created 2 days ago, name similar to dgrijalva/jwt-go
+   Risk: Potential dependency confusion / typosquat attack
+```
+
+**Maps to:** Supply Chain Security, SBOM, SLSA
+
+---
+
+## 8. 🎯 Variety
 
 **Root domain:** Cybernetics — Ashby's Law of Requisite Variety
 **The question:** *Does every possible input state map to a defined,
@@ -177,7 +205,7 @@ Checked: all switch/match statements on external status codes
 
 ---
 
-## 8. 🔍 Observability
+## 9. 🔍 Observability
 
 **Root domain:** Control Theory — Kálmán Observability (1960)
 **The question:** *Can I determine the internal state of the system from its
@@ -200,7 +228,7 @@ Checked: all error handling paths, all log statements, recovery/exception handle
 
 ---
 
-## 9. ⚡ Efficiency
+## 10. ⚡ Efficiency
 
 **Root domain:** Physics — Thermodynamic Efficiency
 **The question:** *Is the consumption of resources proportional to the
@@ -236,6 +264,7 @@ No findings matching this pattern.
 | Ubiquitous Language | 🏷️ Name |
 | Clean Architecture | 🧱 Boundary |
 | Input Validation | 🛡️ Shield |
+| Supply Chain Security | 🔗 Provenance |
 | Error Handling | 🎯 Variety |
 | Logging / Metrics | 🔍 Observability |
 | Performance | ⚡ Efficiency |
@@ -258,6 +287,7 @@ reliable than an AI finding — and more reproducible.
 | 📌 Truth | Duplicate detectors, `grep` for duplicate constants | Conceptual duplication, diverging configs |
 | 🧱 Boundary | Import/dependency analysis | Misplaced responsibilities, coupling |
 | 🛡️ Shield | SAST scanners (semgrep, language-specific security linters) | Missing validation logic, insecure defaults |
+| 🔗 Provenance | `npm audit`, `gh advisory`, lockfile diff, SBOM generators | Typosquats, unvetted AI-pasted code |
 | 🎯 Variety | Exhaustiveness checkers, compiler warnings | Unhandled business states, partial functions |
 | 🔍 Observability | Error-handling linters, `grep` for swallowed errors | Missing context, missing correlation IDs |
 | ⚡ Efficiency | Benchmarks, profilers, query analyzers | Algorithmic inefficiency, unbounded reads |
