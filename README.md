@@ -96,19 +96,23 @@ async with Agent(config) as agent:
 
 ### Deterministic Scripts
 
-The `scripts/` directory contains tool wrappers for deterministic lenses.
-These work standalone — no AI required:
+The `scripts/` directory contains Python tool wrappers for deterministic
+lenses. These work standalone — no AI required, no pip dependencies
+(Python 3.8+ stdlib only):
 
 ```bash
 # Discover available linters on your system
-bash scripts/discover.sh
+python3 scripts/discover.py              # JSON manifest
+python3 scripts/discover.py --pretty     # human-readable
+python3 scripts/discover.py --detail     # includes paths and versions
 
-# Run dead code detection
-bash scripts/subtract.sh ./src
-
-# Run security scanning
-bash scripts/shield.sh ./src
+# Normalize tool output to the unified finding schema
+deadcode ./... 2>&1 | python3 scripts/normalize.py --tool deadcode
+semgrep scan --json . | python3 scripts/normalize.py --tool semgrep
+bandit -r src/ 2>&1  | python3 scripts/normalize.py --tool bandit
 ```
+
+The finding output format is defined in `scripts/schema.json`.
 
 **Start simple:** You don't need to master all 9 lenses on day one. Try
 🗑️ Subtract and 🛡️ Shield on your next PR. Add lenses as you get comfortable.

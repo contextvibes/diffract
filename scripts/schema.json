@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/contextvibes/diffract/blob/main/scripts/schema.json",
+  "title": "Diffract Finding",
+  "description": "Unified output format for Diffract lens findings. All deterministic tool output is normalized to this schema before being consumed by the review protocol.",
+  "type": "object",
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "description": "List of findings produced by one or more tools.",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["lens", "id", "file", "line", "description", "severity", "tool"],
+      "properties": {
+        "lens": {
+          "type": "string",
+          "description": "The Diffract lens that produced this finding.",
+          "enum": [
+            "subtract",
+            "simplify",
+            "name",
+            "truth",
+            "boundary",
+            "shield",
+            "variety",
+            "observability",
+            "efficiency"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "description": "A short, unique-within-run identifier for this finding (e.g., 'S1', 'SH3').",
+          "pattern": "^[A-Z]+[0-9]+$"
+        },
+        "file": {
+          "type": "string",
+          "description": "Path to the file containing the finding, relative to the project root."
+        },
+        "line": {
+          "type": "integer",
+          "description": "Line number of the finding. 0 if not applicable.",
+          "minimum": 0
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the finding."
+        },
+        "severity": {
+          "type": "string",
+          "description": "Severity level of the finding.",
+          "enum": ["info", "warning", "error"]
+        },
+        "tool": {
+          "type": "string",
+          "description": "The tool that produced this finding (e.g., 'deadcode', 'semgrep'), or 'agent' for LLM judgment calls."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
