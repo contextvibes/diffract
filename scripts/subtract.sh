@@ -8,7 +8,6 @@
 set -euo pipefail
 
 TARGET="${1:-.}"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 COUNTER=0
 
 # Helper: emit a finding
@@ -26,18 +25,20 @@ resolve_bin() {
     command -v "$bin"
     return 0
   fi
-  local nix_bin
-  nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
-  if [[ -n "${nix_bin:-}" ]]; then
-    echo "$nix_bin"
-    return 0
+  if [[ -d /nix/store ]]; then
+    local nix_bin
+    nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
+    if [[ -n "${nix_bin:-}" ]]; then
+      echo "$nix_bin"
+      return 0
+    fi
   fi
   return 1
 }
 
 # Detect project language
 detect_language() {
-  if [[ -f "$TARGET/go.mod" ]] || ls "$TARGET"/*.go &>/dev/null 2>&1; then
+  if [[ -f "$TARGET/go.mod" ]] || find "$TARGET" -maxdepth 2 -name "*.go" -print -quit 2>/dev/null | grep -q .; then
     echo "go"
   elif [[ -f "$TARGET/requirements.txt" ]] || [[ -f "$TARGET/pyproject.toml" ]] || [[ -f "$TARGET/setup.py" ]]; then
     echo "python"
@@ -48,11 +49,11 @@ detect_language() {
   fi
 }
 
-LANG=$(detect_language)
+PROJECT_LANG=$(detect_language)
 FOUND_TOOL=false
 
 # Go: deadcode
-if [[ "$LANG" == "go" ]]; then
+if [[ "$PROJECT_LANG" == "go" ]]; then
   DEADCODE=$(resolve_bin deadcode 2>/dev/null || true)
   if [[ -n "$DEADCODE" ]]; then
     FOUND_TOOL=true
@@ -69,7 +70,7 @@ if [[ "$LANG" == "go" ]]; then
 fi
 
 # Python: vulture
-if [[ "$LANG" == "python" ]]; then
+if [[ "$PROJECT_LANG" == "python" ]]; then
   VULTURE=$(resolve_bin vulture 2>/dev/null || true)
   if [[ -n "$VULTURE" ]]; then
     FOUND_TOOL=true
@@ -83,7 +84,7 @@ if [[ "$LANG" == "python" ]]; then
 fi
 
 # TypeScript/JavaScript: ts-prune
-if [[ "$LANG" == "typescript" ]]; then
+if [[ "$PROJECT_LANG" == "typescript" ]]; then
   TS_PRUNE=$(resolve_bin ts-prune 2>/dev/null || true)
   if [[ -n "$TS_PRUNE" ]]; then
     FOUND_TOOL=true
@@ -97,7 +98,7 @@ if [[ "$LANG" == "typescript" ]]; then
 fi
 
 if ! $FOUND_TOOL; then
-  echo "NO_TOOLS	subtract	No dead code detector found for language: $LANG" >&2
+  echo "NO_TOOLS	subtract	No dead code detector found for language: $PROJECT_LANG" >&2
   exit 0
 fi
 

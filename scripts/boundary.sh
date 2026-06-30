@@ -25,11 +25,13 @@ resolve_bin() {
     command -v "$bin"
     return 0
   fi
-  local nix_bin
-  nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
-  if [[ -n "${nix_bin:-}" ]]; then
-    echo "$nix_bin"
-    return 0
+  if [[ -d /nix/store ]]; then
+    local nix_bin
+    nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
+    if [[ -n "${nix_bin:-}" ]]; then
+      echo "$nix_bin"
+      return 0
+    fi
   fi
   return 1
 }

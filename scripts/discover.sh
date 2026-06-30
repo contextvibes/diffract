@@ -15,11 +15,13 @@ nix_find() {
     echo "$bin"
     return 0
   fi
-  local nix_bin
-  nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
-  if [[ -n "${nix_bin:-}" ]]; then
-    echo "$nix_bin"
-    return 0
+  if [[ -d /nix/store ]]; then
+    local nix_bin
+    nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
+    if [[ -n "${nix_bin:-}" ]]; then
+      echo "$nix_bin"
+      return 0
+    fi
   fi
   return 1
 }
@@ -60,13 +62,19 @@ nix_find errcheck &>/dev/null && observability_tools+=("errcheck")
 # ⚡ Efficiency — profilers, benchmarks
 has "go" && efficiency_tools+=("go test -bench")
 
-# Output JSON
+# Output JSON — uses python3 for proper escaping if available, falls back to manual
 to_json_array() {
   local arr=("$@")
   if [[ ${#arr[@]} -eq 0 ]]; then
     echo "[]"
     return
   fi
+  # Use python3 for proper JSON escaping if available
+  if command -v python3 &>/dev/null; then
+    printf '%s\n' "${arr[@]}" | python3 -c "import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))"
+    return
+  fi
+  # Fallback: manual (safe for simple tool names without special chars)
   local json="["
   local first=true
   for item in "${arr[@]}"; do

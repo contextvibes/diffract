@@ -25,11 +25,13 @@ resolve_bin() {
     command -v "$bin"
     return 0
   fi
-  local nix_bin
-  nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
-  if [[ -n "${nix_bin:-}" ]]; then
-    echo "$nix_bin"
-    return 0
+  if [[ -d /nix/store ]]; then
+    local nix_bin
+    nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
+    if [[ -n "${nix_bin:-}" ]]; then
+      echo "$nix_bin"
+      return 0
+    fi
   fi
   return 1
 }
@@ -41,16 +43,16 @@ JSCPD=$(resolve_bin jscpd 2>/dev/null || true)
 if [[ -n "$JSCPD" ]]; then
   FOUND_TOOL=true
   # Run jscpd with JSON reporter, parse output
-  TMPDIR=$(mktemp -d)
-  trap 'rm -rf "$TMPDIR"' EXIT
-  "$JSCPD" "$TARGET" --reporters json --output "$TMPDIR" --min-lines 5 --min-tokens 50 \
+  JSCPD_TMPDIR=$(mktemp -d)
+  trap 'rm -rf "$JSCPD_TMPDIR"' EXIT
+  "$JSCPD" "$TARGET" --reporters json --output "$JSCPD_TMPDIR" --min-lines 5 --min-tokens 50 \
     --ignore "**/vendor/**,**/node_modules/**,**/.git/**" 2>/dev/null || true
 
-  if [[ -f "$TMPDIR/jscpd-report.json" ]]; then
+  if [[ -f "$JSCPD_TMPDIR/jscpd-report.json" ]]; then
     python3 -c "
 import json, sys
 try:
-    with open('$TMPDIR/jscpd-report.json') as f:
+    with open('$JSCPD_TMPDIR/jscpd-report.json') as f:
         data = json.load(f)
     for dup in data.get('duplicates', []):
         first = dup.get('firstFile', {})
@@ -77,10 +79,10 @@ if ! $FOUND_TOOL; then
   # Look for repeated const/define patterns
   if [[ -f "$TARGET/go.mod" ]]; then
     # Go: find constants defined in multiple packages
-    grep -rn 'const\s\+\w\+\s*=' "$TARGET" --include="*.go" 2>/dev/null | \
-      awk -F'=' '{gsub(/.*const\s+/, "", $1); split($1, a, " "); print a[1]}' | \
+    grep -rn 'const[[:space:]]\{1,\}[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*=' "$TARGET" --include="*.go" 2>/dev/null | \
+      awk -F'=' '{gsub(/.*const[[:space:]]+/, "", $1); split($1, a, " "); print a[1]}' | \
       sort | uniq -d | while read -r name; do
-        locations=$(grep -rn "const\s\+${name}\s*=" "$TARGET" --include="*.go" 2>/dev/null | head -5)
+        locations=$(grep -rn "const[[:space:]]\{1,\}${name}[[:space:]]*=" "$TARGET" --include="*.go" 2>/dev/null | head -5)
         if [[ $(echo "$locations" | wc -l) -ge 2 ]]; then
           first_file=$(echo "$locations" | head -1 | cut -d: -f1)
           first_line=$(echo "$locations" | head -1 | cut -d: -f2)

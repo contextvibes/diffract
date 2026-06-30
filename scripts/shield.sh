@@ -14,7 +14,7 @@ COUNTER=0
 finding() {
   COUNTER=$((COUNTER + 1))
   local id
-  id=$(printf "H%d" "$COUNTER")
+  id=$(printf "SH%d" "$COUNTER")
   printf "FINDING\tshield\t%s\t%s\t%s\t%s\n" "$id" "$1" "$2" "$3"
 }
 
@@ -25,11 +25,13 @@ resolve_bin() {
     command -v "$bin"
     return 0
   fi
-  local nix_bin
-  nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
-  if [[ -n "${nix_bin:-}" ]]; then
-    echo "$nix_bin"
-    return 0
+  if [[ -d /nix/store ]]; then
+    local nix_bin
+    nix_bin=$(find /nix/store -maxdepth 4 -name "$bin" -type f -perm +111 2>/dev/null | head -1)
+    if [[ -n "${nix_bin:-}" ]]; then
+      echo "$nix_bin"
+      return 0
+    fi
   fi
   return 1
 }
@@ -42,7 +44,6 @@ if [[ -n "$SEMGREP" ]]; then
   FOUND_TOOL=true
   while IFS= read -r line; do
     # Parse semgrep JSON output
-    local file check_id message sline
     file=$(echo "$line" | grep -o '"path":"[^"]*"' | head -1 | cut -d'"' -f4)
     sline=$(echo "$line" | grep -o '"start":{"line":[0-9]*' | head -1 | grep -o '[0-9]*$')
     message=$(echo "$line" | grep -o '"message":"[^"]*"' | head -1 | cut -d'"' -f4)
@@ -80,14 +81,17 @@ fi
 BANDIT=$(resolve_bin bandit 2>/dev/null || true)
 if [[ -n "$BANDIT" ]] && { [[ -f "$TARGET/requirements.txt" ]] || [[ -f "$TARGET/pyproject.toml" ]]; }; then
   FOUND_TOOL=true
+  issue=""
   while IFS= read -r line; do
     # bandit output: >> Issue: [<id>:<severity>] <message>
     #                    Location: <file>:<line>:<col>
-    if [[ "$line" =~ ^>\>\ Issue:\ (.+)$ ]]; then
-      local issue="${BASH_REMATCH[1]}"
-    elif [[ "$line" =~ ^[[:space:]]+Location:\ (.+):([0-9]+) ]] && [[ -n "${issue:-}" ]]; then
+    re_issue='^>[>] Issue: (.+)$'
+    re_location='^[[:space:]]+Location: (.+):([0-9]+)'
+    if [[ "$line" =~ $re_issue ]]; then
+      issue="${BASH_REMATCH[1]}"
+    elif [[ "$line" =~ $re_location ]] && [[ -n "${issue:-}" ]]; then
       finding "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "$issue"
-      unset issue
+      issue=""
     fi
   done < <("$BANDIT" -r "$TARGET" 2>&1 || true)
 fi
