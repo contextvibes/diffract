@@ -1,0 +1,33 @@
+# Diffract Configuration
+# Place this file in your project root to configure automated reviews.
+# See: https://github.com/contextvibes/diffract
+#
+# When present, agentic reviewers (Antigravity, Claude Code, etc.) will
+# use these governors without requiring interactive confirmation.
+
+version: "0.2"
+
+# 🧭 Compass — What are we looking for?
+# A clear, falsifiable question that scopes the review.
+compass: "Is this code ready for production?"
+
+# 🐍 Cobra — How cautious should we be?
+# Options:
+#   prototype  — Skip findings requiring >30min to fix or new abstractions
+#   production — Skip only if fixing requires architectural changes AND tests pass
+#   library    — Skip only if fixing would break the published API contract
+cobra: production
+
+# ⚖️ Integrity — What counts as evidence?
+# Options: file-line (default), file-line-with-anchoring
+integrity: file-line
+
+# 📐 Default review scope
+# Options:
+#   pr   — Review only changed files + direct dependents (git diff)
+#   full — Review the entire codebase
+#   path — Review a specific subtree (requires user to specify path)
+scope: pr
+
+# 🔄 PDCA Circuit Breakers
+max_cycles: 3          # Maximum PDCA iterations before stopping

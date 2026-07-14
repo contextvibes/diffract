@@ -3,7 +3,7 @@
 Diffract assumes that reviewers — human and AI — will fail. Not out of
 malice, but because of cognitive fatigue, confirmation bias, time pressure,
 and social dynamics. The framework makes dishonesty structurally difficult
-through 8 concrete mechanisms, each adapted from a high-stakes industry
+through 11 concrete mechanisms, each adapted from a high-stakes industry
 where inspection failures have life-or-death consequences.
 
 ## The Mechanisms
@@ -114,6 +114,45 @@ disposition — the governors (Compass, Cobra) make that determination.
 
 The framework evolves through its own PDCA cycle.
 
+### 9. Context Fidelity (Anti-Confabulation)
+
+**Source:** Pharmaceutical manufacturing — Certificate of Analysis (CoA)
+
+Every batch of medication ships with a CoA proving the specific batch was
+tested. The certificate is tied to the batch, not a template.
+
+**In Diffract:** After DO, verify that every finding citing file:line actually
+contains what you claim. If you cannot re-read (no tool access), flag the
+finding as `[unverified]`.
+
+**Prevents:** Tool hallucination, stale context, confabulated evidence.
+
+### 10. Chunked Attestation (Anti-Degradation)
+
+**Source:** Aviation — Crew Duty Time Limits
+
+Pilots are legally required to stop after a certain number of hours. The
+mechanism isn't "try harder" — it's "stop and hand off."
+
+**In Diffract:** If the artifact exceeds your working capacity, partition it.
+Each partition gets its own DO phase. State partition boundaries in PLAN.
+Findings from partition boundaries (cross-file issues) get a dedicated pass.
+
+**Prevents:** Model degradation at long contexts, diminishing thoroughness.
+
+### 11. Tool Verification (Anti-Tool-Hallucination)
+
+**Source:** Legal — Chain of Custody
+
+Physical evidence must have an unbroken documented chain from collection to
+courtroom.
+
+**In Diffract:** When citing tool output as evidence, include the command run
+and a representative snippet of raw output. If tool execution cannot be
+independently verified, flag findings as `[tool-unverified]`.
+
+**Prevents:** Hallucinated tool output, fabricated scan results.
+
 ---
 
 ## Summary Table
@@ -128,3 +167,6 @@ The framework evolves through its own PDCA cycle.
 | 6 | Challenge-Response | Aviation (CRM) | Passive agreement |
 | 7 | Finder/Decider Separation | Aviation (RII) | Conflict of interest |
 | 8 | Retro | Manufacturing (Deming) | Framework stagnation |
+| 9 | Context Fidelity | Pharma (CoA) | Tool hallucination, confabulated evidence |
+| 10 | Chunked Attestation | Aviation (duty limits) | Degradation at long contexts |
+| 11 | Tool Verification | Legal (chain of custody) | Hallucinated tool output |

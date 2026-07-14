@@ -13,7 +13,7 @@ exactly. Do not skip steps. Do not fix issues during analysis.
 
 - **PLAN is the only hard checkpoint.** Present governors, wait for "yes."
   DO → CHECK → LEARN flow continuously unless the user interrupts.
-- **Show all 9 lenses.** Even when a lens has no findings, show the
+- **Show all 10 lenses.** Even when a lens has no findings, show the
   cognitive anchoring (describe what a finding *would* look like — this
   proves you examined the artifact, not just skimmed it).
 - **Use tables for data, prose for judgment.** Findings go in tables.
@@ -51,7 +51,7 @@ confirmation]` in your output.
 
 ### DO (analysis — collect only, do not fix)
 
-Run all 9 lenses in order. Then run W5H1.
+Run all 10 lenses in order. Then run W5H1.
 
 **Use deterministic tools when available.** If you have access to `grep`,
 linters, compilers, or test runners — use them. A `grep` for unused exports
@@ -81,7 +81,7 @@ No findings matching this pattern.
 incomplete.** Add the cognitive anchoring — this is how we verify you
 actually looked.
 
-#### The 9 Lenses (in order)
+#### The 10 Lenses (in order)
 
 1. 🗑️ **Subtract** — Can I remove this entirely?
 2. ✂️ **Simplify** — Can this be simpler without losing capability?
@@ -89,9 +89,10 @@ actually looked.
 4. 📌 **Truth** — Is this knowledge in exactly one place?
 5. 🧱 **Boundary** — Can an isolated change stay in one boundary?
 6. 🛡️ **Shield** — Does it neutralize all inputs violating its invariants?
-7. 🎯 **Variety** — Does every possible input map to a defined output?
-8. 🔍 **Observability** — Can I determine system state from outputs?
-9. ⚡ **Efficiency** — Is resource use proportional to work required?
+7. 🔗 **Provenance** — Can I verify the origin and integrity of every dependency?
+8. 🎯 **Variety** — Does every possible input map to a defined output?
+9. 🔍 **Observability** — Can I determine system state from outputs?
+10. ⚡ **Efficiency** — Is resource use proportional to work required?
 
 #### W5H1 (after all lenses)
 
@@ -213,3 +214,11 @@ cannot. The lenses find what's wrong. You find what's missing.
 
 **Don't wait for the agent to finish.** Your inline challenges are not
 interruptions — they are the most productive input the framework receives.
+
+## Agentic Execution
+
+When running as an autonomous agent (not interactive chat):
+- Read `.diffract.yaml` from the repo root for prescribed governors
+- If no config exists, infer governors from project context and state confidence level
+- Use 3-wave parallel execution (see SKILL.md)
+- Apply circuit breakers: max 3 PDCA cycles, stop on diminishing returns
