@@ -153,6 +153,33 @@ independently verified, flag findings as `[tool-unverified]`.
 
 **Prevents:** Hallucinated tool output, fabricated scan results.
 
+### 12. Adversarial Decoupling (Cold-Start Calibration)
+
+**Source:** Double-Blind Clinical Trials (Medicine) + Independent Red Teaming (Cybersecurity)
+
+In medicine, double-blind trials prevent both the administrator and recipient from knowing who receives the active drug, neutralizing placebo-by-proxy and observer bias. In cybersecurity, red teams operate without prior relationship to the engineering group to prevent professional or emotional captivity.
+
+**In Diffract:**
+1. **Source-Attribution Blindness:** Code reviews must be performed without knowing whether the code was human-written or AI-generated. All code is scrubbed of attribution (author names, AI generator signatures, or prior chat history) before the review begins.
+2. **Cold-Start Calibration:** Before reviewing the target code, the reviewer must complete a "calibration challenge" — a brief code snippet with a seeded critical bug in the same domain. This forces a mental "cold start" and resets the cognitive baseline to actively expect errors.
+3. **Friction-Enforced Critique:** If a review results in zero rejections or accepts a sequence of suggestions without critique, a mandatory "Devil's Advocate" phase is triggered. The reviewer is required to explicitly document at least one architectural trade-off or sub-optimal decision in the accepted code.
+
+**Prevents:** Algorithmic Stockholm Syndrome (Cognitive Captivity), automation bias, sycophantic validation, and cognitive complacency.
+
+### 13. Golden Hammer Neutralization (Domain Decoupling)
+
+**Source:** Systems biology and thermodynamics — cellular organelles (like mitochondria) are specialized structures optimized for specific cellular environments, but they must follow universal thermodynamic principles (minimizing waste heat/entropy, maximizing metabolic throughput). No biological entity builds complex internal structures unless there is an absolute selective advantage (subtraction by natural selection).
+
+**In Diffract:** Reviewers (especially AI) must justify architectural recommendations and criticisms using universal, non-language-specific systems principles (such as energy minimization, Shannon entropy, Conway's Law, or evolutionary subtraction) rather than tech-stack jargon (e.g., "Go DDD," "React best practices," "Clean Architecture template").
+
+If a reviewer suggests adding a wrapper, interface, abstraction, or helper, they must answer:
+1. *What thermodynamic/informational entropy is reduced by this addition?*
+2. *How does the energy cost of maintaining this abstraction compare to the raw cost of the duplication or simple direct implementation?*
+
+Any finding based purely on "best practice" dogmatism without a universal systems-level justification must be discarded.
+
+**Prevents:** Tech Stack Bias (Golden Hammer effect), over-abstraction, framework dogmatism, AI training-set gravity.
+
 ---
 
 ## Summary Table
@@ -170,3 +197,5 @@ independently verified, flag findings as `[tool-unverified]`.
 | 9 | Context Fidelity | Pharma (CoA) | Tool hallucination, confabulated evidence |
 | 10 | Chunked Attestation | Aviation (duty limits) | Degradation at long contexts |
 | 11 | Tool Verification | Legal (chain of custody) | Hallucinated tool output |
+| 12 | Adversarial Decoupling | Medicine (Double-Blind) + Cyber (Red Team) | Algorithmic Stockholm Syndrome (Cognitive Captivity) |
+| 13 | Golden Hammer Neutralization | Systems Biology + Thermodynamics | Tech Stack Bias, over-abstraction, framework dogmatism |

@@ -25,6 +25,8 @@ exactly. Do not skip steps. Do not fix issues during analysis.
   never read" — not "You might want to consider whether this field is used."
 - **Acknowledge mistakes.** If a finding turns out to be wrong, say so.
   Don't defend it.
+- **Neutralize Stockholm Syndrome (Adversarial Decoupling):** Do not adopt the author's framing or rationalizations. Challenge assumptions by default. Start with a "cold-start" perspective — conceptualize what the optimal, secure implementation should be before reviewing the written code.
+- **Neutralize Tech-Stack Bias (Golden Hammer):** Actively challenge every framework, library, and complex pattern. Ask if a simpler, vanilla, or standard solution exists. Do not let familiarity justify over-engineering.
 
 ## Process: PDCA
 
@@ -50,6 +52,9 @@ async), state the governors and proceed. Note `[async — no PLAN
 confirmation]` in your output.
 
 ### DO (analysis — collect only, do not fix)
+
+**Cold-Start Calibration (REQUIRED BEFORE LENSES):**
+Before looking at the implementation details, write down 2-3 universal domain invariants or rules that this system must satisfy, independent of the current code. Keep these in mind to anchor your review and prevent Algorithmic Stockholm Syndrome.
 
 Run all 10 lenses in order. Then run W5H1.
 
@@ -100,6 +105,7 @@ Ask what's MISSING. Focus on:
 - **Why** — missing rationale for non-obvious choices
 - **Who** — missing ownership
 - **When** — missing expiry, timeouts, edge cases
+- **How (Tech-Stack Neutralization)** — Is the chosen technology stack, framework, or library a 'golden hammer'? Could this be solved with simpler, vanilla, or standard features without introducing external dependencies or architectural complexity?
 
 ### CHECK (vet every finding through governors)
 
@@ -116,6 +122,8 @@ Present ALL findings in a single table:
 After CHECK, ask yourself: *"If I deliberately introduced a bug in each
 lens's domain, would my process have caught it?"* State at least one
 example.
+
+**Stockholm & Hammer Audit:** Ask yourself: *"Did I let any issues pass because I empathized with the author's explanation (Stockholm)? Did I accept over-engineering because it matches a familiar pattern (Golden Hammer)?"*
 
 #### User Override
 
@@ -185,6 +193,8 @@ first missed, the review is not yet complete — cycle again.
 5. **The framework applies to any language, any paradigm, any architecture.**
 6. **Scope to context window.** If the artifact is too large to review in
    one pass, state what you reviewed and what you didn't in the Gap Analysis.
+7. **Never accept a complex architectural choice or library without questioning its simplicity.** (Golden Hammer Neutralization)
+8. **Always calibrate against domain invariants first before reading code.** (Cold-Start Calibration)
 
 ## Guardrails
 
