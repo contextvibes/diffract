@@ -26,7 +26,7 @@ claim must be testable.
    - **Same stable claim, different verdict:** governor calibration differs
 
 **Why multiple runs:** one run per reviewer cannot distinguish "Reviewer B
-is miscalibrated" from run-to-run noise. Measured on a frozen 126-line
+is miscalibrated" from run-to-run noise. Measured on a frozen 125-line
 artifact (`docs/governors.md` @ `bd780e4`): the same model, same prompt, and
 same Compass produced 0–4 surviving findings across four runs of one
 reviewer, and 14–23 across four runs of another. In the same experiment a

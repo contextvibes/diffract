@@ -83,9 +83,8 @@ understanding the real-world tradeoffs.
 Named after the story of a colonial-era bounty on cobras in Delhi that led
 people to breed cobras for the reward, making the problem worse. The story is
 widely told but no primary source documents it — treat it as an illustration,
-not as history. In code
-review, this manifests as "fixing" something by adding complexity that
-introduces new vulnerabilities.
+not as history. In code review, this manifests as "fixing" something by
+adding complexity that introduces new vulnerabilities.
 
 ---
 
