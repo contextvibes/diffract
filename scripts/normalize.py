@@ -66,7 +66,6 @@ LENS_PREFIX: Dict[str, str] = {
     "truth": "T",
     "boundary": "B",
     "shield": "SH",
-    "provenance": "P",
     "variety": "V",
     "observability": "O",
     "efficiency": "E",
