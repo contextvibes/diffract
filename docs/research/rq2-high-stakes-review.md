@@ -37,7 +37,12 @@
 | Radiology | Synthetic defect injection | Known abnormal slides mixed into daily screening — missed slides trigger threshold recalibration |
 | Legal e-discovery | Control sets | Pre-coded documents seeded into review pool — missed documents force algorithm retraining |
 
-**Adopted in Diffract:** Nothing-Found Verification (mechanism 5)
+**Adopted in Diffract:** Nothing-Found Verification (mechanism 5) — but as a
+reviewer self-check, not as seeding. All three mechanisms above depend on a
+third party planting a real defect the reviewer does not know about; Diffract
+implements none of that, and
+[RQ3](rq3-calibration-reproducibility.md) shows the self-check passing on four
+reviews that missed a verified error.
 
 ### 4. Combining Independent Perspectives
 

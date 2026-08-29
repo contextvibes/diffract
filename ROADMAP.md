@@ -45,6 +45,9 @@ only judgment can assess.
 
 ### v0.4 — Calibration Automation
 - [ ] Automated calibration via subagent (second reviewer with fresh context)
+- [ ] Seeded-error variant of Nothing-Found Verification — a real defect
+      planted by a third party, per RQ2's blind-seeding designs. RQ3 showed
+      the current self-check cannot detect its own misses
 - [ ] IDE extension: highlight findings inline with lens icons
 - [ ] Auto-generate PLAN from project context (language, CI config)
 

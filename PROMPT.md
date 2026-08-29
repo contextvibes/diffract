@@ -140,6 +140,11 @@ caught it?"* State a concrete example for each such lens — a single example
 does not test ten domains. If the answer is no for any lens, the process
 failed, not the code: re-run that lens.
 
+This is a self-check, not a seeded test — it can only surface a gap you are
+already able to see. In RQ3, four reviews passed this step while missing a
+verified factual error, and two affirmed the error in the course of passing.
+Treat a ✓ as a prompt to look at that lens again, not as evidence it is clean.
+
 **Stockholm & Hammer Audit:** Ask yourself: *"Did I let any issues pass because I empathized with the author's explanation (Stockholm)? Did I accept over-engineering because it matches a familiar pattern (Golden Hammer)?"*
 
 #### User Override

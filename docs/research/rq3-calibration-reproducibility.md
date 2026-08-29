@@ -77,10 +77,57 @@ line 11 — fixed in PR #6):
 | Fable | 1 of 1 | 1 of 1 |
 | Opus | 4 of 4 | 3 of 4 (one run Compass-skipped it) |
 
-Haiku run 4 returned **zero findings** on a document containing that
-verified factual error — after running Nothing-Found Verification
-(mechanism 5, see RQ2) and concluding its process was sound. The
-mechanism verifies that the reviewer *believes* it looked; it does not
+All six runs that raised it filed it under 🔗 Provenance, so the lens that
+owned the defect is not a matter of interpretation.
+
+### Nothing-Found Verification did not detect any of the four misses
+
+Mechanism 5 exists to catch exactly this: a reviewer reporting nothing on an
+artifact that contains something. It caught none of the four Haiku misses,
+and the run transcripts show why.
+
+**Run 1 — anchoring fixed the error as the standard of correctness.** Under
+🔗 Provenance the run listed the line (*"'Bounded Rationality (Kahneman)' —
+author named, no work cited"*), then wrote its required anchoring example:
+
+> A finding would look like: A claim about "Bounded Rationality" with no
+> indication that Kahneman is the originator, forcing readers to guess.
+>
+> No findings matching this pattern.
+
+The document *does* name Kahneman as originator — which is the error. Having
+defined correctness that way, the run could only pass. Cognitive anchoring,
+the rule 3 safeguard against unexamined "no findings", made this miss more
+certain rather than less.
+
+**Run 3 — the false claim recorded as a verification result:**
+
+> "Kahneman" (line 11): Explicitly named; "Bounded Rationality" is Kahneman's
+> framework.
+
+The same list marks Meadows and Popper "correct attribution", so the run was
+actively adjudicating attribution accuracy and got this one wrong.
+
+**Run 4 — the full self-certification.** It read line 11 and judged it for
+the wrong property (*"scholar named, no publication cited"*), reported "no
+findings matching this pattern" on all ten lenses, and then ran mechanism 5,
+answering ✓ for every lens — including:
+
+> **Lens 7 (Provenance):** Would catch missing attribution. ✓
+>
+> **Result:** Process is sound. All bugs would be caught if present.
+
+**Why the mechanism cannot work as specified.** In its three source domains
+(UXO, radiology, e-discovery) a third party plants a real defect and the
+reviewer is not told. Diffract's version keeps the name and drops all three
+properties: the reviewer imagines a hypothetical bug, in a domain of its own
+choosing, and grades its own process. The faculty answering *"would I have
+caught it?"* is the faculty that just missed it — and a reviewer holding a
+false belief will imagine a seeded bug its belief system can detect. Run 1
+demonstrates this directly: it wrote its imagined bug down, and the imagined
+bug was the document's actual error inverted.
+
+The mechanism verifies that the reviewer *believes* it looked. It does not
 verify that looking would have found anything.
 
 ## The Reproducibility Claim Is Falsified
@@ -154,7 +201,7 @@ artifact (`bd780e4`).
 | Cobra's Calibration field was a stub ("Context-dependent.") | Now directs the reviewer to the levels block |
 | One run per reviewer cannot separate reviewer effect from noise | docs/calibration.md: ≥3 runs per reviewer, recurrence scoring |
 | The rewritten success criterion was one-directional: Haiku's zero stable claims satisfy it vacuously | docs/calibration.md: criterion is bidirectional and requires stable claims from both reviewers |
-| Nothing-Found Verification passed on a zero-finding run that missed a real error | Open — mechanism 5 needs a seeded-error variant (see RQ2, blind seeding) |
+| Nothing-Found Verification passed on all four runs that missed a real error; in two it affirmed the error while verifying | `docs/anti-dishonesty.md`: mechanism 5 now carries the evidence and states it is a self-attestation, not blind seeding. A real seeded-error variant remains unbuilt |
 | Verdict vocabulary, governor precedence, solo/async path, per-finding vet record | Open — design questions, not one-line fixes |
 
 ## Limitations

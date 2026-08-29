@@ -15,6 +15,18 @@ never cut as a release; v0.2.0 is the first tagged version.
 
 ### Added
 
+- **Evidence against Nothing-Found Verification (mechanism 5).** RQ3's run
+  transcripts are now written up in `docs/anti-dishonesty.md` and
+  `docs/research/`. The mechanism is named for blind seeding but implements
+  none of its three properties — no third party, no real defect, no blindness
+  — and in the only test it has, it passed on all four reviews that missed a
+  verified misattribution. Two of those affirmed the error while performing
+  the verification; one wrote the error into its own cognitive-anchoring
+  example and then found nothing matching it. `PROMPT.md` now tells reviewers
+  a ✓ is self-attestation, the mechanism table no longer claims it prevents
+  false negatives, README no longer lists blind seeding as a component, and
+  ROADMAP tracks the seeded-error variant as unbuilt.
+
 - **Verdict vocabulary.** CHECK verdicts are now one of four values —
   `Fix`, `Skip:Compass`, `Skip:Cobra`, `Discard:Integrity` — instead of
   free-text "Fix / Skip (reason)". Every rejection names the governor that
