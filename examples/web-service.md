@@ -1,6 +1,6 @@
 # Example: Web Service Review
 
-> Written against [Diffract v0.2.4](../PROMPT.md).
+> Written against [Diffract v0.3.0](../PROMPT.md).
 
 This is an anonymized example of a full Diffract cycle applied to a
 production web service (Go) with vendor API integrations, email
@@ -15,7 +15,7 @@ Entry checks ran first: `go build ./...`, `go test ./...`, `go vet ./...`
 — all pass.
 
 ```
-Diffract: 0.2.4
+Diffract: 0.3.0
 🧭 Compass: "Is this code ready to be extracted as a reusable library?"
 🐍 Cobra:   Cautious — library-grade bar; skip only where fixing breaks a published contract.
 ⚖️ Integrity: file:line evidence per lens. Cognitive anchoring required.
@@ -35,10 +35,10 @@ independent of the code as written:
 
 ### 🗑️ Subtract
 Checked: all registered middleware, exported symbols, struct fields.
-| ID | File | Finding | Line | Severity |
-|---|------|---------|------|----------|
-| SUB-1 | internal/httpserver/middleware.go | Dead logging middleware — defined but never mounted | 41 | Minor |
-| SUB-2 | internal/store/entity.go | Unused `OtherDetails` struct field — never read or written | 27 | Minor |
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| SUB-1 | internal/httpserver/middleware.go | Dead logging middleware — defined but never mounted | 41 | Minor | High |
+| SUB-2 | internal/store/entity.go | Unused `OtherDetails` struct field — never read or written | 27 | Minor | High |
 
 ### ✂️ Simplify
 Checked: all function signatures, interface definitions, configuration layers.
@@ -49,30 +49,30 @@ No findings matching this pattern.
 
 ### 🏷️ Name
 Checked: package names, exported identifiers, comments against behavior.
-| ID | File | Finding | Line | Severity |
-|---|------|---------|------|----------|
-| NAM-1 | internal/geocoder/client.go | Comment says "Maps client" but package was renamed to "geocoder" | 12 | Minor |
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| NAM-1 | internal/geocoder/client.go | Comment says "Maps client" but package was renamed to "geocoder" | 12 | Minor | High |
 
 ### 📌 Truth
 Checked: constants, IDs, and configuration for duplicated knowledge.
-| ID | File | Finding | Line | Severity |
-|---|------|---------|------|----------|
-| TRU-1 | internal/store/entity.go | Entity ID field duplicates the map key — single source of truth violated | 19 | Major |
-| TRU-2 | cmd/server/main.go | Timeout constants duplicated across two binaries (also cmd/worker/main.go:29) | 33 | Minor |
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| TRU-1 | internal/store/entity.go | Entity ID field duplicates the map key — single source of truth violated | 19 | Major | High |
+| TRU-2 | cmd/server/main.go | Timeout constants duplicated across two binaries (also cmd/worker/main.go:29) | 33 | Minor | High |
 
 ### 🧱 Boundary
 Checked: import graph between delivery, domain, and template packages.
-| ID | File | Finding | Line | Severity |
-|---|------|---------|------|----------|
-| BOU-1 | internal/email/client.go | Email delivery client imports domain and template packages — should accept raw HTML | 8 | Major |
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| BOU-1 | internal/email/client.go | Email delivery client imports domain and template packages — should accept raw HTML | 8 | Major | High |
 
 ### 🛡️ Shield
 Checked: session handling, logging of request data, public endpoint protections.
-| ID | File | Finding | Line | Severity |
-|---|------|---------|------|----------|
-| SHI-1 | internal/httpserver/handlers.go | PII (name, email) logged in structured output | 88 | Major |
-| SHI-2 | internal/session/session.go | Session cookie has no expiry — lives until browser closes | 54 | Major |
-| SHI-3 | cmd/server/main.go | No rate limiting on public endpoints | 61 | Major |
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| SHI-1 | internal/httpserver/handlers.go | PII (name, email) logged in structured output | 88 | Major | High |
+| SHI-2 | internal/session/session.go | Session cookie has no expiry — lives until browser closes | 54 | Major | High |
+| SHI-3 | cmd/server/main.go | No rate limiting on public endpoints | 61 | Major | High |
 
 ### 🔗 Provenance
 Checked: go.mod, go.sum, lockfile integrity, and dependency publication dates.
@@ -82,17 +82,17 @@ No findings matching this pattern.
 
 ### 🎯 Variety
 Checked: status-code handling in all vendor clients.
-| ID | File | Finding | Line | Severity |
-|---|------|---------|------|----------|
-| VAR-1 | internal/vendors/client.go | No 503 handling in any vendor client — all fall to default branch | 102 | Major |
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| VAR-1 | internal/vendors/client.go | No 503 handling in any vendor client — all fall to default branch | 102 | Major | High |
 
 ### 🔍 Observability
 Checked: error paths, recovery handlers, request tracing.
-| ID | File | Finding | Line | Severity |
-|---|------|---------|------|----------|
-| OBS-1 | internal/license/lookup.go | Error silently swallowed after refactor — no logging on license lookup failure | 47 | Major |
-| OBS-2 | internal/httpserver/recover.go | Recovery handler catches panics without logging any context | 22 | Major |
-| OBS-3 | internal/httpserver/server.go | No correlation IDs for request tracing | 30 | Minor |
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| OBS-1 | internal/license/lookup.go | Error silently swallowed after refactor — no logging on license lookup failure | 47 | Major | High |
+| OBS-2 | internal/httpserver/recover.go | Recovery handler catches panics without logging any context | 22 | Major | High |
+| OBS-3 | internal/httpserver/server.go | No correlation IDs for request tracing | 30 | Minor | High |
 
 ### ⚡ Efficiency
 Checked: all HTTP clients, template rendering, JSON encoding.
@@ -101,11 +101,11 @@ nested loop producing O(n²) where O(n) is achievable.
 No findings matching this pattern.
 
 ### W5H1
-| Q | ID | File | Finding | Line | Severity |
-|---|---|------|---------|------|----------|
-| Why | W5H-1 | cmd/server/main.go | No comment explaining 35s write timeout | 35 | Minor |
-| Why | W5H-2 | internal/vendors/parse.go | No comment explaining backward-compat field name fallback | 74 | Minor |
-| When | — | — | Session cookie expiry — already raised as SHI-2, not counted again | — | — |
+| Q | ID | File | Finding | Line | Severity | Confidence |
+|---|---|------|---------|------|----------|------------|
+| Why | W5H-1 | cmd/server/main.go | No comment explaining 35s write timeout | 35 | Minor | Medium |
+| Why | W5H-2 | internal/vendors/parse.go | No comment explaining backward-compat field name fallback | 74 | Minor | Medium |
+| When | — | — | Session cookie expiry — already raised as SHI-2, not counted again | — | — | — |
 
 ## CHECK
 
@@ -127,25 +127,43 @@ No findings matching this pattern.
 | W5H-1: Timeout comment | Read line; constant uncommented | Rationale must travel with the library | None | Fix |
 | W5H-2: Fallback comment | Read line; fallback uncommented | Same | None | Fix |
 
-### Nothing-Found Verification
+### Scope and Nothing-Found Verification
 
 **Form check:** All ten lens sections are present, in order. The three
 nothing-found lenses (Simplify, Provenance, Efficiency) each contain an
 *"A finding would look like:"* line. All stated counts were recounted
 against the FINDINGS INDEX: 15 rows, matching the Scorecard.
 
-Per nothing-found lens — would the process have caught a deliberate bug?
+Per lens in scope — would the process have caught a deliberate bug?
+(Where a lens has DO-time anchoring, the example differs from it.)
 
-- ✂️ **Simplify:** a handler that both validates and persists in one
-  function — the signature pass walks every function body's
-  responsibilities, so yes.
-- 🔗 **Provenance:** a go.mod entry pointing at a fork with no go.sum
-  pin — the lockfile diff would flag the missing entry, so yes.
-- ⚡ **Efficiency:** an `io.ReadAll` on a vendor response with no
-  `http.MaxBytesReader` — the client sweep checks every body read, so yes.
+- 🗑️ **Subtract:** an exported helper constant no caller references — the
+  exported-symbol sweep reads every declaration, so yes.
+- ✂️ **Simplify:** a wrapper type that delegates every method unchanged to
+  its embedded field — the interface pass lists each type's method set,
+  so yes.
+- 🏷️ **Name:** a `MustLoad` function that returns an error instead of
+  panicking — the comments-against-behavior pass reads each exported
+  function under its name, so yes.
+- 📌 **Truth:** the vendor base URL hard-coded in both the client and its
+  test fixtures — the constants sweep covers every literal, so yes.
+- 🧱 **Boundary:** a template helper importing the store package for
+  display data — the import-graph walk covers every package edge, so yes.
+- 🛡️ **Shield:** a query parameter passed unvalidated into the geocoder
+  request — the endpoint sweep traces each input to its sinks, so yes.
+- 🔗 **Provenance:** a `replace` directive in go.mod silently redirecting
+  a module to a local path — the go.mod read covers every directive,
+  so yes.
+- 🎯 **Variety:** a vendor error body whose JSON shape differs by endpoint
+  but is decoded by one struct — the client sweep reads every decode
+  site, so yes.
+- 🔍 **Observability:** a background job that retries and then gives up
+  without logging — the error-path sweep reads every goroutine, so yes.
+- ⚡ **Efficiency:** a template re-parsed from disk on every request — the
+  rendering sweep reads each handler's setup, so yes.
 
-Treated as a prompt to re-look, not proof of cleanliness: each of the three
-lenses was re-skimmed once; no new findings.
+Treated as a prompt to re-look, not proof of cleanliness: the three
+nothing-found lenses were each re-skimmed once; no new findings.
 
 **Stockholm & Hammer Audit:** TRU-2 was the closest call — the author's
 "different workloads" rationale was accepted, but only after confirming the
@@ -183,22 +201,27 @@ artifact and produced zero new Fix outcomes.
 
 ### Scorecard
 
-Counts below are derived from the [FINDINGS INDEX](#findings-index);
-"Total" and "Major" count findings **raised**.
+Counts below are derived from the [FINDINGS INDEX](#findings-index).
 
 | Metric | Value |
 |--------|-------|
 | Reviewer | anonymized (AI reviewer; configuration withheld with the project details) |
-| Total findings | 15 |
-| Major findings | 8 |
+| Artifact | anonymized web service repository (identifying details withheld; no public hash) |
+| Instrument | Diffract 0.3.0 |
+| Governors | 🧭 "Is this code ready to be extracted as a reusable library?" · 🐍 Library/Framework · ⚖️ file:line + anchoring |
+| Entry checks | `go build ./...`, `go test ./...`, `go vet ./...` — all pass |
+| Findings raised | 15 |
+| Major findings raised | 8 |
 | Fixed | 13 |
 | Cobra-skipped | 1 |
 | Compass-skipped | 1 |
 | Integrity-discarded | 0 |
-| PDCA cycles to converge | 2 |
+| PDCA cycles run | 2 — converged: yes |
+| Lenses run | 10 of 10 — none omitted |
 | Most productive lens | 🔍 Observability and 🛡️ Shield (3 findings each) |
 | Estimated remaining Majors | ≈1 — basis: historical per-lens yield (Observability has yielded one further Major on re-review in comparable services) |
 | Calibration | not tested |
+| Tags | none |
 
 ### Gap Analysis
 

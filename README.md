@@ -1,7 +1,7 @@
 # Diffract — A Review Protocol for Human-AI Collaboration
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.4-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](CHANGELOG.md)
 
 > **AI is not a tool. It is an agent.**
 > — paraphrasing [Yuval Noah Harari](https://en.wikipedia.org/wiki/Yuval_Noah_Harari),
@@ -28,10 +28,10 @@ failures — the protocol exists to make them visible, not to hide them.
 Diffract emerged from code review, but the lenses apply to anything that
 can be reviewed: code, documentation, architecture, API designs, or processes.
 
-**Honest value proposition:** A good senior reviewer does 80% of what
-Diffract does intuitively. The value is in the other 20% — the lenses
-you'd skip, the proof you actually looked, and the calibration test that
-catches what you missed. [No single component is original.](#references)
+**Value proposition (not measured):** A good senior reviewer already does
+most of what Diffract does, intuitively. The claimed value is in the rest —
+the lenses you'd skip, the proof you actually looked, and the calibration
+test that catches what you missed. [No single component is original.](#references)
 The value is in the combination.
 
 ## Table of Contents
@@ -70,7 +70,9 @@ find what's wrong. You find what's missing.
 1. Open your preferred AI assistant (Claude, Gemini, ChatGPT, or any LLM)
 2. Paste the contents of [`PROMPT.md`](PROMPT.md) into the chat
 3. Paste the artifact you want to review (code, documentation, design)
-4. The AI will propose governors (PLAN) and wait for your confirmation
+4. The AI runs the deterministic entry checks it can (or tags the review
+   `[entry waived: cannot run checks]`), then proposes governors (PLAN)
+   and waits for your confirmation
 5. Once confirmed, the AI runs all 10 lenses and produces findings
 
 You can also use `PROMPT.md` as a checklist for human-only reviews.
@@ -86,15 +88,26 @@ Per-tool adapters are planned, not built; see [ROADMAP](ROADMAP.md).
 **Start simple (human checklist use):** You don't need all 10 lenses to
 review by hand — try 🗑️ Subtract and 🛡️ Shield on your next PR and declare
 the narrowed lens set as partial coverage (PROMPT.md, Rule 6). An agent
-executing PROMPT.md always runs all 10.
+executing PROMPT.md runs all 10 unless the user narrows the set; no
+`diffract.yaml` key selects lenses.
 
 ## The Protocol at a Glance
 
-[PROMPT.md](PROMPT.md) is the normative protocol; this section summarizes it.
+[PROMPT.md](PROMPT.md) is the normative protocol. Everything this README
+says about how a review runs — here and in *Why Diffract?* and *How to
+Use* — summarizes it; where they disagree, PROMPT.md is right and the
+README has a defect.
 
 ### 1. PLAN — Set your governors
 
-Before any analysis, agree on scope, calibration, and evidence rules:
+**First, run the cheap deterministic checks** — build, test, and lint for
+code; links, anchors, code fences, and version strings for prose. State
+what you ran and what it returned at the top of the review: review
+attention is the expensive resource and must not be spent finding what a
+tool reports for free. PROMPT.md's PLAN section makes this a gate before
+governors and defines the tags for waiving it.
+
+Then, before any analysis, agree on scope, calibration, and evidence rules:
 
 ```
 🧭 Compass: "Is this code ready for production?"
@@ -102,8 +115,10 @@ Before any analysis, agree on scope, calibration, and evidence rules:
 ⚖️ Integrity: file:line evidence per lens. Cognitive anchoring required.
 ```
 
-(The Cobra governor is named for the cobra effect — a "fix" that breeds the
-very problem it set out to solve.)
+**Cognitive anchoring** means: on any lens that reports nothing, write down
+what a finding in that lens's domain *would* have looked like for this
+artifact. It is the evidence that the lens was run rather than skipped —
+borrowed from Shisa Kanko (see [References](#references)).
 
 **PLAN is a checkpoint.** Propose governors, get agreement, then proceed.
 No agreement = no analysis. Running async with nobody to agree? State the
@@ -125,6 +140,9 @@ governors, proceed, and tag the output `[async — no PLAN confirmation]`.
 ### 2. DO — Apply 10 lenses + W5H1
 
 Run each lens across the codebase. Collect ALL findings. **Do not fix yet.**
+
+*Reproduced from PROMPT.md's normative lens list. If the two disagree,
+PROMPT.md is right and this table is a defect.*
 
 | # | Lens | Question |
 |---|------|----------|
@@ -149,27 +167,31 @@ they are covered by the 🏷️ Name and 🧱 Boundary lenses.
 ```
 Finding
   → ⚖️ Integrity: "Did I look? Is it objective?"
-    → No  → Discard:Integrity (bikeshedding or bias)
+    → No  → Discard:Integrity (fails the evidence bar — not established as real)
     → Yes →
       → 🧭 Compass: "Is this relevant to our goal?"
         → No  → Skip:Compass
         → Yes →
-          → 🐍 Cobra: "Does fixing it cause a new problem?"
+          → 🐍 Cobra: "Does the declared level say to skip?"
+            (level tests are normative in PROMPT.md, PLAN)
             → Yes → Skip:Cobra
             → No  → Fix
 ```
 
+Low-Confidence findings first weigh competing hypotheses — keep the one the
+evidence *least disconfirms* — before any verdict (see `PROMPT.md`, CHECK).
+
 ### 4. LEARN — Fix, verify, retro
 
 - Apply all fixes
-- Verify (build + test + lint)
+- Verify (re-run the PLAN entry checks)
 - Retro: scorecard, gap analysis, defect prevention
 - If fixes were applied → cycle back to PLAN
 
-**Done when a full cycle produces zero new Fix outcomes AND the review
-states an Exit Estimate** — the estimated Major defects remaining, with its
-basis, or the explicit tag `[exit unestimated]`. Zero new findings says the
-reviewer stopped finding; the Exit Estimate is the claim about the artifact.
+**Done when a full cycle produces zero new Major Fix outcomes AND the
+review states an Exit Estimate** — the estimated Major defects remaining,
+with its basis (PROMPT.md's LEARN section is normative on the rule, its
+tags, and why Minors do not gate exit).
 In [our first application](examples/web-service.md), Diffract raised 15
 findings across 2 PDCA cycles, with 🔍 Observability and 🛡️ Shield as the
 most productive lenses (3 findings each).
@@ -281,6 +303,9 @@ No single component of Diffract is original. The value is in the combination.
 | PDCA cycle | Walter Shewhart (origin); popularized by W. Edwards Deming, Toyota Production System |
 | Inspection method: entry/exit criteria, checking rates, sampling, Major/Minor severity | Tom Gilb & Dorothy Graham, *Software Inspection* (1993); antecedent: Michael Fagan (IBM, 1976) |
 | Capture–recapture defect estimation | Lincoln–Petersen (ecology); applied to software inspections by Eick et al. (1992); remaining-defect estimation per Gilb & Graham |
+| Brier-scored confidence calibration | Glenn W. Brier (1950); judgment-calibration practice per Philip Tetlock, *Superforecasting* (2015) |
+| Analysis of Competing Hypotheses (Low-Confidence vetting) | Richards J. Heuer Jr., *Psychology of Intelligence Analysis* (CIA, 1999) |
+| Governors declared before findings exist (PLAN precedes DO) | Preregistration / registered reports (Chris Chambers; Center for Open Science) |
 | Planguage — a goal names its failure level | Tom Gilb, *Competitive Engineering* (2005) |
 | Evolutionary delivery (ancestor of the PDCA circuit breakers) | Tom Gilb, *Principles of Software Engineering Management* (1988) |
 | Defect Prevention Process | Robert Mays & Carole Jones (IBM), as integrated by Gilb & Graham |

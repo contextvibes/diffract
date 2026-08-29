@@ -36,10 +36,25 @@ only judgment can assess.
 - [ ] Add guidance for reviewing non-code artifacts (API specs, schemas)
 - [ ] Add more example reviews (different languages, architectures)
 
-### v0.3 — Multi-Tool Adapters + Output Formats
+### v0.3 — Confidence Calibration + Multi-Tool Adapters
 - [x] Vendor-neutral adapter: `AGENTS.md` (shipped in 0.2.4) — the
       convention file most coding agents read on arrival; points review
       runs at `PROMPT.md` and contributors at the house rules
+- [x] Brier-scored Confidence (shipped in 0.3.0) — canonical bin
+      probabilities in `PROMPT.md`, scoring method + worked example from
+      real self-review data in `docs/calibration.md`
+- [x] ACH-style vetting for Low-Confidence findings (shipped in 0.3.0) —
+      competing hypotheses weighed before the verdict, per Heuer
+- [x] Majors-only done-rule (shipped in 0.3.0) — five self-review cycles
+      showed Minor findings are inexhaustible for prose artifacts; see
+      issue #29
+- [x] CI gate, first slice (shipped in 0.3.0): `scripts/check.py` runs
+      link/anchor resolution, fence balance, version-string agreement, and
+      the README↔PROMPT.md lens-table diff in
+      `.github/workflows/check.yml` — recommended by the 0.3.0 validation
+      cycles after the drift class recurred
+- [ ] CI gate, remaining slice: mechanical README↔PROMPT.md spec diff for
+      verdict glosses, the done-rule, and tag strings
 - [ ] Define a machine-readable output format for findings (JSON/SARIF)
 - [ ] Claude Code adapter (`.claude/CLAUDE.md`) — for setups where
       `CLAUDE.md` shadows `AGENTS.md`
