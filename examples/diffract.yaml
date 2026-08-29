@@ -19,8 +19,11 @@ compass: "Is this code ready for production?"
 cobra: production
 
 # ⚖️ Integrity — What counts as evidence?
-# Options: file-line (default), file-line-with-anchoring
-integrity: file-line
+# Options: file-line, file-line-with-anchoring (default)
+# PROMPT.md's Integrity default is file:line *plus* cognitive anchoring, and
+# rule 3 forbids claiming "no findings" without it — so `file-line` alone
+# cannot produce a compliant empty lens.
+integrity: file-line-with-anchoring
 
 # 📐 Default review scope
 # Options:

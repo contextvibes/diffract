@@ -45,6 +45,10 @@ only judgment can assess.
 
 ### v0.4 — Calibration Automation
 - [ ] Automated calibration via subagent (second reviewer with fresh context)
+- [ ] Executable partitioning spec for mechanism 10 — needs an operational
+      trigger, a precedence rule over boundary kinds, fresh-context hand-off,
+      and a deduplication procedure at CHECK. A draft was rejected in review
+      on all four counts
 - [ ] Seeded-error variant of Nothing-Found Verification — a real defect
       planted by a third party, per RQ2's blind-seeding designs. RQ3 showed
       the current self-check cannot detect its own misses
