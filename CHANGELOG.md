@@ -26,6 +26,13 @@ never cut as a release; v0.2.0 is the first tagged version.
 - ROADMAP listed the Antigravity skill driver as delivered. It never
   existed. This is the same defect 0.2.0 fixed for the shell scripts, one
   line above it on the same checklist; the audit missed it.
+- The calibration success criterion shipped in 0.2.0 was one-directional
+  and could be satisfied by silence: a reviewer producing zero stable
+  claims passed vacuously, contradicting step 6 of The Test on the same
+  page. In RQ3 the weakest reviewer would have been certified calibrated
+  while missing all nine of the other reviewer's stable clusters. The
+  criterion is now bidirectional and requires stable claims from both
+  reviewers; Recording Results tracks both directions.
 
 ## [0.2.0] — 2026-08-29
 
