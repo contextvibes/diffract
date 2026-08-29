@@ -123,7 +123,7 @@ Present ALL findings in a single table:
 
 | Verdict | Meaning |
 |---------|---------|
-| `Fix` | Survives all three governors |
+| `Fix` | Passes all three governors |
 | `Skip:Compass` | Real, but outside this review's goal |
 | `Skip:Cobra` | Real and in scope, but fixing costs more than it returns |
 | `Discard:Integrity` | Fails the evidence bar — not established as real |
@@ -136,10 +136,12 @@ Scorecard counts below unverifiable from the review's own output.
 
 **First, check the form.** Confirm all ten lens sections are present — a lens
 you never ran reports nothing, and every check below is scoped to lenses that
-reported. Then, for every lens that reported no findings, confirm its section
-actually contains an *"A finding would look like:"* line. A lens
-missing that line did not produce Output B — mark it failed and re-run the
-lens. Do not verify a lens whose anchoring is absent: there is nothing to
+reported. Confirm every count you have stated matches the Findings Index row
+count; a review whose Scorecard contradicts its own index fails this check and
+is recounted, not verified. Then, for every lens that reported no findings,
+confirm its section actually contains an *"A finding would look like:"* line.
+A lens missing that line did not produce Output B — mark it failed and re-run
+the lens. Do not verify a lens whose anchoring is absent: there is nothing to
 verify, and attesting that you would have caught a bug is exactly the claim
 the anchoring exists to support. In RQ5 one reviewer omitted anchoring on
 every nothing-found lens in all three of its runs and this step passed all
@@ -181,6 +183,9 @@ fixes with exact file, line, and replacement code. The human will apply them.*
 
 Summarize the review outcome. This makes results comparable across reviews.
 
+Build the [Findings Index](#findings-index) first and count its rows; the
+Scorecard restates that table and cannot disagree with it.
+
 ```markdown
 ### Scorecard
 | Metric | Value |
@@ -218,11 +223,25 @@ per finding **raised** — skips and discards included, not fixes only.
 |----|------|---------|---------|----------------------|------------|
 ```
 
-**Raised** means the finding has a row here. **Survived** means its verdict is
-`Fix`. State which of the two any count refers to. Reviews that count findings
-by different rules are not comparable, and comparing runs is the whole point
-of calibration: in RQ5, twelve runs used three different counting policies and
-the dispersion metric had to be recomputed before it meant anything.
+**Raised** means the finding has a row here. **Survived** means raised and not
+`Discard:Integrity` — a governor skip still counts, because verdict
+disagreement between reviewers is expected while failing the evidence bar is
+not. **Fixed** means the verdict is `Fix`. State which of the three any count
+refers to.
+
+Reviews that count findings by different rules are not comparable, and
+comparing runs is the whole point of calibration: in RQ5, twelve runs used
+three different counting policies and the dispersion metric had to be
+recomputed before it meant anything. This file previously defined *survived*
+as verdict `Fix` while `docs/calibration.md` defined it as raised and not
+`Discard:Integrity` — the two disagreed by an order of magnitude on the same
+run, which is the defect this section exists to prevent, reintroduced one
+level up.
+
+**This index is authoritative.** Every count stated anywhere else in the
+review — Scorecard, prose summary, per-lens totals — is derived by counting
+rows here. If a stated count disagrees with the table, the table is right and
+the count is wrong: recount before finishing.
 
 #### Calibration Test (optional but recommended)
 

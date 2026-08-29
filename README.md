@@ -1,7 +1,7 @@
 # Diffract — A Review Protocol for Human-AI Collaboration
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.2-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.3-green.svg)](CHANGELOG.md)
 
 > **AI is not a tool. It is an agent.**
 > — [Yuval Noah Harari](https://en.wikipedia.org/wiki/Yuval_Noah_Harari)
