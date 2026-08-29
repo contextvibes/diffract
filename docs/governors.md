@@ -3,8 +3,14 @@
 Governors are meta-level principles that govern the review process itself.
 They do not examine the artifact — they vet the findings produced by lenses.
 
-Governors are set **before** analysis begins (in the PLAN phase) and must be
-explicitly agreed upon by all reviewers.
+Governors are set **before** analysis begins (in the PLAN phase).
+
+Where a human is present, they must be explicitly agreed upon by all
+reviewers. Where none is — API, batch, or async execution — the reviewer
+states its governors, proceeds, and tags the output `[async — no PLAN
+confirmation]`. A declared-and-tagged review is valid. An untagged review
+that skipped agreement is not: the tag is what makes the difference
+auditable afterwards.
 
 ## 🧭 Compass
 

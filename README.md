@@ -92,7 +92,8 @@ Before any analysis, agree on scope, calibration, and evidence rules:
 ```
 
 **PLAN is a checkpoint.** Propose governors, get agreement, then proceed.
-No agreement = no analysis.
+No agreement = no analysis. Running async with nobody to agree? State the
+governors, proceed, and tag the output `[async — no PLAN confirmation]`.
 
 **Pick a Compass that fits your situation:**
 
@@ -131,13 +132,13 @@ Then ask [W5H1](docs/w5h1.md) to find what's **missing** — especially
 ```
 Finding
   → ⚖️ Integrity: "Is this objective? Would another reviewer agree?"
-    → No  → Discard (bikeshedding or bias)
+    → No  → Discard:Integrity (bikeshedding or bias)
     → Yes →
       → 🧭 Compass: "Is this relevant to our goal?"
-        → No  → Skip (Compass)
+        → No  → Skip:Compass
         → Yes →
           → 🐍 Cobra: "Does fixing it cause a new problem?"
-            → Yes → Skip (Cobra)
+            → Yes → Skip:Cobra
             → No  → Fix
 ```
 
