@@ -4,7 +4,7 @@
 >
 > This file is self-contained. You can execute a full Diffract review using
 > only the instructions below. For deeper understanding of the principles,
-> see the [full documentation](https://github.com/duizendstra/diffract).
+> see the [full documentation](https://github.com/contextvibes/diffract).
 
 You are executing the Diffract review framework. Follow these instructions
 exactly. Do not skip steps. Do not fix issues during analysis.
@@ -175,10 +175,20 @@ because it was out of scope or beyond the reviewer's context.
 
 #### Calibration Test (optional but recommended)
 
-A review is fully calibrated when a **different reviewer** (human or AI model
-at the same capability level) applies the same lenses to the same artifact
-and produces **zero new findings**. If the second reviewer finds issues the
-first missed, the review is not yet complete — cycle again.
+Calibration compares **stable claims**, not single runs. Each reviewer
+completes at least 3 independent runs against a frozen artifact. A claim is
+**stable** for a reviewer when it recurs in a majority of that reviewer's
+own runs.
+
+A review is calibrated when both hold:
+
+1. **Both directions clear** — no stable claim of either reviewer is absent
+   from all of the other reviewer's runs.
+2. **Both reviewers produced stable claims** — a reviewer whose claims never
+   recur across its own runs has a failed run set, not a passing score.
+
+One run per reviewer cannot separate a miscalibrated reviewer from
+run-to-run noise. Full protocol: `docs/calibration.md`.
 
 ## Rules
 
@@ -228,7 +238,7 @@ interruptions — they are the most productive input the framework receives.
 ## Agentic Execution
 
 When running as an autonomous agent (not interactive chat):
-- Read `.diffract.yaml` from the repo root for prescribed governors
+- Read `diffract.yaml` from the repo root for prescribed governors
+  (see `examples/diffract.yaml`)
 - If no config exists, infer governors from project context and state confidence level
-- Use 3-wave parallel execution (see SKILL.md)
 - Apply circuit breakers: max 3 PDCA cycles, stop on diminishing returns

@@ -59,8 +59,13 @@ testable.
 
 **Calibration Test:** After a review is complete, a second reviewer
 (human or AI at the same capability level) independently applies the same
-lenses. If they produce zero new findings, the review is calibrated. If
-they find issues the first reviewer missed, the review is incomplete.
+lenses. Each reviewer completes at least 3 runs against a frozen artifact,
+and the comparison is on **stable claims** — those recurring in a majority
+of a reviewer's own runs. Calibrated requires both directions to be clear
+*and* both reviewers to have produced stable claims; a reviewer whose
+claims never recur has a failed run set, not a passing score. One run per
+reviewer cannot separate a miscalibrated reviewer from noise
+(see `calibration.md`).
 
 ### 5. Nothing-Found Verification (Blind Seeding)
 
