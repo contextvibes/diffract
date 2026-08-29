@@ -66,6 +66,12 @@ A finding would look like: an unbounded read of a response body, or a
 nested loop producing O(n²) where O(n) is achievable.
 No findings matching this pattern.
 
+### 🔗 Provenance
+Checked: go.mod, go.sum, lockfile integrity, and dependency publication dates.
+A finding would look like: a dependency with no lockfile entry, or a package
+whose name closely resembles a more popular one (typosquat).
+No findings matching this pattern.
+
 ### W5H1
 | Q | Finding |
 |---|---------|
