@@ -150,7 +150,7 @@ artifact (`bd780e4`).
   models in general.
 - **One vendor:** all four reviewers are Claude-family models
   (Haiku, Sonnet, Fable, Opus). Cross-vendor reproducibility is untested.
-- **One artifact type:** a 126-line prose document. Code artifacts, where
+- **One artifact type:** a 125-line prose document. Code artifacts, where
   more lenses are deterministic, may show less variance.
 - **Sonnet and Fable ran once each**, so their within-tier variance is
   unmeasured; only Haiku and Opus have repeat data.
