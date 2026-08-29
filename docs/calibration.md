@@ -78,7 +78,7 @@ Artifact to review:
 
 Use this Compass: "[SAME COMPASS AS REVIEWER A]"
 Do not wait for confirmation — proceed directly (async review).
-Apply all 9 lenses + W5H1. Vet through governors. Provide retro.
+Apply all 10 lenses + W5H1. Vet through governors. Provide retro.
 
 At the end, rate each finding's calibration confidence (high/medium/low):
 "Would a different reviewer reach the same conclusion?"
