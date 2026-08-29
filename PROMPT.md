@@ -134,9 +134,11 @@ Scorecard counts below unverifiable from the review's own output.
 
 #### Nothing-Found Verification
 
-After CHECK, ask yourself: *"If I deliberately introduced a bug in each
-lens's domain, would my process have caught it?"* State at least one
-example.
+After CHECK, ask for **every lens that reported no findings**: *"If I
+deliberately introduced a bug in this lens's domain, would my process have
+caught it?"* State a concrete example for each such lens — a single example
+does not test ten domains. If the answer is no for any lens, the process
+failed, not the code: re-run that lens.
 
 **Stockholm & Hammer Audit:** Ask yourself: *"Did I let any issues pass because I empathized with the author's explanation (Stockholm)? Did I accept over-engineering because it matches a familiar pattern (Golden Hammer)?"*
 
@@ -219,8 +221,11 @@ run-to-run noise. Full protocol: `docs/calibration.md`.
 3. **Never claim "no findings" without cognitive anchoring.**
 4. **Findings must be testable.** Opinion is not a finding.
 5. **The framework applies to any language, any paradigm, any architecture.**
-6. **Scope to context window.** If the artifact is too large to review in
-   one pass, state what you reviewed and what you didn't in the Gap Analysis.
+6. **Declare partial coverage.** If you reviewed less than the whole
+   artifact — because it did not fit in one pass, or because scope was
+   narrowed by config or by the user — name what you left out in the Gap
+   Analysis. A narrowed scope is still a partial review, and setting it in
+   config is not the disclosure.
 7. **Never accept a complex architectural choice or library without questioning its simplicity.** (Golden Hammer Neutralization)
 8. **Always calibrate against domain invariants first before reading code.** (Cold-Start Calibration)
 

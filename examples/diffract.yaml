@@ -27,6 +27,9 @@ integrity: file-line
 #   pr   — Review only changed files + direct dependents (git diff)
 #   full — Review the entire codebase
 #   path — Review a specific subtree (requires user to specify path)
+# Any value other than `full` produces a partial review. Name what it left
+# out in the Gap Analysis — see PROMPT.md rule 6. Setting this key is not
+# the disclosure.
 scope: pr
 
 # 🔄 PDCA Circuit Breakers
