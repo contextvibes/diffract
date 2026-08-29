@@ -33,6 +33,13 @@ never cut as a release; v0.2.0 is the first tagged version.
   while missing all nine of the other reviewer's stable clusters. The
   criterion is now bidirectional and requires stable claims from both
   reviewers; Recording Results tracks both directions.
+- `PROMPT.md` still carried the pre-0.2.1 calibration criterion — one
+  reviewer, one run, "zero new findings" — after `docs/calibration.md` was
+  corrected. `PROMPT.md` is the self-contained file reviewers paste, so the
+  correction reached no one until now.
+- `PROMPT.md` referenced `SKILL.md` (never existed in any commit) and
+  `.diffract.yaml` (the shipped example is `examples/diffract.yaml`, no
+  leading dot), and linked to the pre-rename repository URL.
 
 ## [0.2.0] — 2026-08-29
 
