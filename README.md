@@ -69,30 +69,12 @@ find what's wrong. You find what's missing.
 
 You can also use `PROMPT.md` as a checklist for human-only reviews.
 
-### Agentic (Antigravity)
+### Agentic (any coding agent)
 
-Diffract ships as an [Antigravity](https://antigravity.google) skill. When
-loaded, it transforms Antigravity into a structured Diffract review agent
-with parallel lens execution and deterministic tool integration.
-
-1. Clone: `git clone https://github.com/contextvibes/diffract.git`
-2. Register the skill globally in `~/.gemini/config/skills.json`:
-   ```json
-   { "entries": [{ "path": "/path/to/diffract/.agents/skills" }] }
-   ```
-3. In any project (CLI, IDE, or Antigravity 2.0): *"Run a diffract review"*
-
-### Programmatic (Python SDK)
-
-```python
-from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig
-
-config = LocalAgentConfig(capabilities=CapabilitiesConfig())
-async with Agent(config) as agent:
-    response = await agent.chat("Run a diffract review on ./src")
-    async for token in response:
-        print(token, end="")
-```
+No skill package ships with this repo. To run Diffract inside a coding agent
+— Claude Code, Antigravity, Cursor — point the agent at
+[`PROMPT.md`](PROMPT.md) and ask it to follow the protocol. Per-tool adapters
+are planned, not built; see [ROADMAP](ROADMAP.md).
 
 **Start simple:** You don't need to master all 10 lenses on day one. Try
 🗑️ Subtract and 🛡️ Shield on your next PR. Add lenses as you get comfortable.

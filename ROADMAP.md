@@ -23,8 +23,10 @@ only judgment can assess.
 
 ## Roadmap
 
-### v0.2 — Agentic Skill
-- [x] Antigravity skill driver (clone, locate, execute the protocol)
+### v0.2 — Prompt-Only + Calibration
+- Antigravity skill driver — **never shipped.** No `.agents/` directory has
+  existed in any commit. Diffract is driven by pointing an agent at
+  `PROMPT.md`; per-tool adapters are tracked under v0.3.
 - Deterministic tool scripts — **dropped.** Diffract ships prompt-only. The
   lens-to-tool mapping lives in `docs/lenses.md` ("Automation: Tools First");
   tools are invoked directly rather than through wrappers.

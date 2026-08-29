@@ -11,6 +11,22 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+## [Unreleased]
+
+### Fixed
+
+- README documented three installation paths; two could not work. The
+  Antigravity skill registration pointed at `.agents/skills`, a directory
+  that has never existed in any commit, and the Python SDK snippet depended
+  on that same registration. Both removed; the agentic section now says what
+  actually ships.
+- README advertised "deterministic tool integration" after 0.2.0 removed
+  `scripts/` and declared Diffract prompt-only — the README contradicted its
+  own release notes.
+- ROADMAP listed the Antigravity skill driver as delivered. It never
+  existed. This is the same defect 0.2.0 fixed for the shell scripts, one
+  line above it on the same checklist; the audit missed it.
+
 ## [0.2.0] — 2026-08-29
 
 Framework grew from 9 to 10 lenses and from 8 to 13 anti-dishonesty
