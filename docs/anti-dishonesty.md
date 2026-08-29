@@ -158,7 +158,7 @@ independently verified, flag findings as `[tool-unverified]`.
 
 **Prevents:** Hallucinated tool output, fabricated scan results.
 
-### 12. Adversarial Decoupling (Cold-Start Calibration)
+### 12. Adversarial Decoupling (Blind Review)
 
 **Source:** Double-Blind Clinical Trials (Medicine) + Independent Red Teaming (Cybersecurity)
 
@@ -166,7 +166,7 @@ In medicine, double-blind trials prevent both the administrator and recipient fr
 
 **In Diffract:**
 1. **Source-Attribution Blindness:** Code reviews must be performed without knowing whether the code was human-written or AI-generated. All code is scrubbed of attribution (author names, AI generator signatures, or prior chat history) before the review begins.
-2. **Cold-Start Calibration:** Before reviewing the target code, the reviewer must complete a "calibration challenge" — a brief code snippet with a seeded critical bug in the same domain. This forces a mental "cold start" and resets the cognitive baseline to actively expect errors.
+2. **Calibration Challenge:** Before reviewing the target code, the reviewer completes a brief code snippet carrying a seeded critical bug in the same domain, forcing a mental "cold start" that resets the cognitive baseline to actively expect errors. This is **not** the Cold-Start Calibration in `PROMPT.md` — that one has the reviewer write 2-3 domain invariants before reading code (rule 8), ships, and is required. This one is a research-derived design from RQ2: no challenge set exists, and nothing generates one.
 3. **Friction-Enforced Critique:** If a review results in zero rejections or accepts a sequence of suggestions without critique, a mandatory "Devil's Advocate" phase is triggered. The reviewer is required to explicitly document at least one architectural trade-off or sub-optimal decision in the accepted code.
 
 **Prevents:** Algorithmic Stockholm Syndrome (Cognitive Captivity), automation bias, sycophantic validation, and cognitive complacency.

@@ -59,6 +59,23 @@ never cut as a release; v0.2.0 is the first tagged version.
 - `PROMPT.md` referenced `SKILL.md` (never existed in any commit) and
   `.diffract.yaml` (the shipped example is `examples/diffract.yaml`, no
   leading dot), and linked to the pre-rename repository URL.
+- Rule 6 required declaring partial coverage only when the artifact was too
+  large to fit in one pass. `examples/diffract.yaml` ships `scope: pr` as the
+  default and `PROMPT.md` directs agents to read it, so the common agentic
+  run reviewed changed files only and triggered no disclosure obligation at
+  all. Rule 6 now covers scope narrowed by config or by the user, and the
+  config comment states that setting the key is not the disclosure.
+- "Cold-Start Calibration" named two different procedures: writing 2-3
+  domain invariants before reading code (`PROMPT.md`, rule 8 — the one that
+  ships) and completing a seeded-bug challenge (`docs/anti-dishonesty.md`,
+  mechanism 12.2 — which nothing generates). The second is now the
+  **Calibration Challenge**, marked as an unshipped RQ2 design.
+- Nothing-Found Verification asked whether a seeded bug in *each* lens's
+  domain would have been caught, then required "at least one example" — one
+  example satisfied the letter and tested one domain out of ten. It now
+  requires an example per lens that reported no findings, matching
+  mechanism 5, which was always scoped to a single lens's nothing-found
+  round.
 
 ## [0.2.0] — 2026-08-29
 
