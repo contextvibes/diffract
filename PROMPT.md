@@ -47,9 +47,11 @@ headings or paragraph references instead of `file:line`.
 **Do not proceed to DO until the user confirms.** If the user adjusts a
 governor, acknowledge and re-present the updated set.
 
-*One-shot mode:* If you cannot wait for confirmation (API, batch, or
-async), state the governors and proceed. Note `[async — no PLAN
-confirmation]` in your output.
+*One-shot mode:* If no human is available to agree (API, batch, or async),
+state the governors and proceed. You **must** tag the output `[async — no
+PLAN confirmation]`. The tag is not optional. It is what separates a review
+whose governors a human agreed to from one whose governors the reviewer
+chose for itself, and calibration records which of the two it was.
 
 ### DO (analysis — collect only, do not fix)
 
@@ -114,8 +116,21 @@ Present ALL findings in a single table:
 ```markdown
 | Finding | ⚖️ Integrity | 🧭 Compass | 🐍 Cobra | Verdict |
 |---------|-------------|-----------|---------|---------|
-| [ID: description] | [Did I look? Is it objective?] | [Relevant to goal?] | [Does fixing cause harm?] | Fix / Skip (reason) |
+| [ID: description] | [Did I look? Is it objective?] | [Relevant to goal?] | [Does fixing cause harm?] | [verdict] |
 ```
+
+**Verdict** is one of four values, not free text:
+
+| Verdict | Meaning |
+|---------|---------|
+| `Fix` | Survives all three governors |
+| `Skip:Compass` | Real, but outside this review's goal |
+| `Skip:Cobra` | Real and in scope, but fixing costs more than it returns |
+| `Discard:Integrity` | Fails the evidence bar — not established as real |
+
+Always name the governor that rejected the finding. `Skip (out of scope)` is
+not a verdict: it leaves no record of which governor acted, which makes the
+Scorecard counts below unverifiable from the review's own output.
 
 #### Nothing-Found Verification
 
@@ -196,7 +211,10 @@ run-to-run noise. Full protocol: `docs/calibration.md`.
    The purpose of a review is to improve the artifact AND strengthen the
    team. A review that demoralizes is a failed review, regardless of how
    many findings it produces.
-1. **Never skip PLAN.** No agreement = no analysis.
+1. **Never skip PLAN.** No agreement = no analysis — unless running in
+   one-shot mode (see PLAN), where governors are stated, tagged, and
+   proceeded on. Skipping PLAN is never permitted; skipping *agreement* is,
+   and only when tagged.
 2. **Never fix during DO.** Collect all findings first.
 3. **Never claim "no findings" without cognitive anchoring.**
 4. **Findings must be testable.** Opinion is not a finding.

@@ -79,24 +79,27 @@ No findings matching this pattern.
 | Why | No comment explaining backward-compat field name fallback |
 | When | Session cookie expiry (same as H2) |
 
-## CHECK
+## CHECK — Selected Findings
+
+Same selection as DO above. The Scorecard reports the complete review, so
+its counts do not sum to the rows in this table.
 
 | Finding | Verdict |
 |---------|---------|
-| S1 Dead middleware | ✅ Fix |
-| S2 Unused field | ✅ Fix |
-| N1 Stale comment | ✅ Fix |
-| T1 Duplicated ID | ✅ Fix |
-| T2 Duplicated timeouts | 🐍 Skip — binaries serve different workloads, values may diverge |
-| B1 Email client boundary | ✅ Fix — created composition layer, made delivery client pure |
-| H1 PII in logs | ✅ Fix |
-| H2 Cookie no expiry | ✅ Fix — added 4-hour MaxAge |
-| V1 No 503 handling | ✅ Fix — added retryable sentinel error to all 3 clients |
-| O1 Swallowed error | ✅ Fix |
-| O2 No context in recovery | ✅ Fix — added method, path, request ID |
-| O3 No correlation ID | ✅ Fix — added request ID middleware |
-| W1 Timeout comment | ✅ Fix — added "accounts for upstream vendor latency" |
-| W2 Fallback comment | ✅ Fix — added "backward compat with legacy systems" |
+| S1 Dead middleware | Fix |
+| S2 Unused field | Fix |
+| N1 Stale comment | Fix |
+| T1 Duplicated ID | Fix |
+| T2 Duplicated timeouts | Skip:Cobra — binaries serve different workloads, values may diverge |
+| B1 Email client boundary | Fix — created composition layer, made delivery client pure |
+| H1 PII in logs | Fix |
+| H2 Cookie no expiry | Fix — added 4-hour MaxAge |
+| V1 No 503 handling | Fix — added retryable sentinel error to all 3 clients |
+| O1 Swallowed error | Fix |
+| O2 No context in recovery | Fix — added method, path, request ID |
+| O3 No correlation ID | Fix — added request ID middleware |
+| W1 Timeout comment | Fix — added "accounts for upstream vendor latency" |
+| W2 Fallback comment | Fix — added "backward compat with legacy systems" |
 
 ## LEARN
 

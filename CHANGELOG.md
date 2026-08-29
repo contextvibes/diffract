@@ -13,6 +13,24 @@ never cut as a release; v0.2.0 is the first tagged version.
 
 ## [Unreleased]
 
+### Added
+
+- **Verdict vocabulary.** CHECK verdicts are now one of four values —
+  `Fix`, `Skip:Compass`, `Skip:Cobra`, `Discard:Integrity` — instead of
+  free-text "Fix / Skip (reason)". Every rejection names the governor that
+  made it, so the Scorecard's per-governor counts are derivable from the
+  review's own output. RQ3 found the framework's reproducibility claim
+  unverifiable precisely because that attribution was not recorded.
+
+### Changed
+
+- **One-shot mode is the documented solo path.** `PROMPT.md` already
+  permitted stating governors and proceeding when no human is available to
+  agree, while Rule 1, `docs/governors.md`, and the README all said "no
+  agreement = no analysis". The three now defer to one-shot mode, and its
+  `[async — no PLAN confirmation]` tag is mandatory rather than a note.
+  Calibration records which mode a review ran in.
+
 ### Fixed
 
 - README documented three installation paths; two could not work. The

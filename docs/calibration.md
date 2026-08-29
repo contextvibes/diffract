@@ -144,6 +144,7 @@ Document calibration results in your retro:
 - Reviewer A: [name/model] — [N] runs
 - Reviewer B: [name/model] — [N] runs
 - Same Compass: [yes/no]
+- Governors: [agreed (human-confirmed) / declared (async, tagged)]
 - Artifact frozen at: [tag/commit + checksum]
 - Findings per run: A [n₁, n₂, …] / B [n₁, n₂, …]
 - Stable claims (majority of runs): A [X] / B [Y]
