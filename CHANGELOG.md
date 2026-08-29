@@ -11,6 +11,48 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+## [0.2.3] — 2026-08-29
+
+Two counting defects found by re-running RQ3 and RQ5 against 0.2.2 — 22 runs,
+same artifacts, same allocation, only the instrument changed. The three
+mechanisms 0.2.2 shipped held (22/22 lens sections present, 22/22 parseable
+findings index, every nothing-found lens the extractor saw carrying its
+anchoring line). These are the two things the runs showed it got wrong.
+
+### Fixed
+
+- **`PROMPT.md` and `docs/calibration.md` defined "survived" differently.**
+  The instrument said a finding survived if its verdict was `Fix`;
+  `docs/calibration.md` said raised and not `Discard:Integrity`, with a
+  governor skip counting, because verdict disagreement between reviewers is
+  expected while failing the evidence bar is not. On one re-run those two
+  rules gave 2 and 12 for the same review. 0.2.2 shipped the findings index
+  to stop reviews counting by different rules and then reintroduced the same
+  defect one level up, in the paragraph defining the terms. The instrument now
+  carries `docs/calibration.md`'s definition, and **fixed** is named
+  separately for the verdict-`Fix` count that the Scorecard already reports.
+  `Fix` is described as *passing* all three governors, so "survives" carries
+  one meaning in the file rather than two.
+
+- **A review's Scorecard could contradict its own findings index, and
+  nothing checked.** Three of the 22 runs did: one reported 23 findings and 15
+  `Fix` over a table holding 20 rows and 16; one reported 25 over 26; one
+  reported two `Discard:Integrity` verdicts that appear in no row of its
+  table. The index is now stated as authoritative, every count elsewhere in
+  the review is derived by counting its rows, and the mechanical form check in
+  Nothing-Found Verification confirms they agree before verifying anything —
+  a review whose Scorecard contradicts its index is recounted, not verified.
+  The index is built before the Scorecard, since the Scorecard restates it.
+
+### Note on prior measurements
+
+This release changes `PROMPT.md`, so every reviewer tier measured against
+0.2.2 — including the 22 runs that found these two defects — is stale, by
+the same rule 0.2.2 applied to its predecessors. The finding that all four
+reviewers measured tier 4 while all six pairings between them failed Success
+Criteria condition 1 is a property of the criteria, not of an instrument
+version, and is not addressed here.
+
 ## [0.2.2] — 2026-08-29
 
 ### Added
