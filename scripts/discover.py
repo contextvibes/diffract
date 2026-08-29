@@ -36,7 +36,6 @@ LENS_TOOLS: Dict[str, List[str]] = {
     "subtract": ["deadcode", "vulture", "ts-prune"],
     "truth": ["jscpd", "simian"],
     "shield": ["semgrep", "gosec", "bandit"],
-    "provenance": ["osv-scanner", "syft", "npm"],
     "boundary": ["go", "madge"],
     "variety": ["go"],
     "observability": ["errcheck"],
@@ -45,7 +44,6 @@ LENS_TOOLS: Dict[str, List[str]] = {
 
 # Display names for tools that are invoked with subcommands.
 TOOL_DISPLAY: Dict[str, Dict[str, str]] = {
-    "provenance": {"npm": "npm audit"},
     "boundary": {"go": "go vet"},
     "variety": {"go": "go vet"},
     "efficiency": {"go": "go test -bench"},
