@@ -180,7 +180,18 @@ mechanism isn't "try harder" — it's "stop and hand off."
 Each partition gets its own DO phase. State partition boundaries in PLAN.
 Findings from partition boundaries (cross-file issues) get a dedicated pass.
 
-**Prevents:** Model degradation at long contexts, diminishing thoroughness.
+**No executable form ships.** `PROMPT.md` does not mention partitioning, so
+the procedure above cannot be followed by a reviewer working from the
+self-contained prompt. A specification was drafted and rejected in review:
+"working capacity" has no operational definition, the boundary kinds have no
+precedence rule, and the isolation requirement is unfollowable for a reviewer
+in a single context — the mode this mechanism exists for. The mechanism's own
+source is "stop and **hand off**", which implies a fresh context per
+partition; specifying that is tracked on the ROADMAP. Until then, treat this
+as source material, not as an instruction you can execute.
+
+**Prevents:** Nothing, as shipped. Model degradation at long contexts and
+diminishing thoroughness are what a partitioning procedure would address.
 
 ### 11. Tool Verification (Anti-Tool-Hallucination)
 
@@ -237,7 +248,7 @@ Any finding based purely on "best practice" dogmatism without a universal system
 | 7 | Finder/Decider Separation | Aviation (RII) | Conflict of interest |
 | 8 | Retro | Manufacturing (Deming) | Framework stagnation |
 | 9 | Context Fidelity | Pharma (CoA) | Tool hallucination, confabulated evidence |
-| 10 | Chunked Attestation | Aviation (duty limits) | Degradation at long contexts |
+| 10 | Chunked Attestation | Aviation (duty limits) | Nothing — no executable form ships; see mechanism 10 |
 | 11 | Tool Verification | Legal (chain of custody) | Hallucinated tool output |
 | 12 | Adversarial Decoupling | Medicine (Double-Blind) + Cyber (Red Team) | Algorithmic Stockholm Syndrome (Cognitive Captivity) |
 | 13 | Golden Hammer Neutralization | Systems Biology + Thermodynamics | Tech Stack Bias, over-abstraction, framework dogmatism |
