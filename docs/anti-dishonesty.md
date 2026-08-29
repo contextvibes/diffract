@@ -82,6 +82,43 @@ reviewer cannot separate a miscalibrated reviewer from noise
 introduced a bug in this lens's domain, would my process have caught it?"*
 If not, the process failed — not the code.
 
+**Known limitation — this is not blind seeding.** In all three source
+domains a *third party* plants a *real* defect and the reviewer is not told.
+Diffract's version has none of the three: the reviewer imagines a
+hypothetical bug, in a domain of its own choosing, and grades its own
+process. The faculty that answers *"would I have caught it?"* is the faculty
+that just missed it.
+
+[RQ3](research/rq3-calibration-reproducibility.md) measured this. The frozen
+artifact contained one verified misattribution — Bounded Rationality credited
+to Kahneman rather than Herbert Simon. Every reviewer that caught it filed it
+under 🔗 Provenance (4 Opus runs, Sonnet, Fable — 6 of 6), so the lens that
+owned the defect is not in dispute. Across four Haiku runs it was never
+raised, and the verification step never registered the miss:
+
+- **Run 1** wrote the error into its own cognitive-anchoring example — *"A
+  finding would look like: A claim about 'Bounded Rationality' with no
+  indication that Kahneman is the originator"* — and then: *"No findings
+  matching this pattern."* Anchoring made the miss more certain, not less. It
+  fixed the false attribution as the standard of correctness.
+- **Run 3** recorded the false claim as a verification result: *"'Kahneman'
+  (line 11): Explicitly named; 'Bounded Rationality' is Kahneman's
+  framework."*
+- **Run 4** read line 11, judged it only for missing publication details,
+  reported nothing on all ten lenses, then attested *"Lens 7 (Provenance):
+  Would catch missing attribution. ✓"* and closed with *"Process is sound.
+  All bugs would be caught if present."*
+
+A reviewer holding a false belief imagines a seeded bug that its belief
+system can detect. The mechanism therefore cannot fail its own audit: it
+verifies that the reviewer *believes* it looked, not that looking would have
+found anything. Read it as a self-attestation.
+
+Until a real seeded-error variant exists — see the Calibration Challenge
+(mechanism 12), also unshipped — this mechanism does not do what its source
+domains do, and the "(Blind Seeding)" in its title describes the source, not
+the implementation.
+
 ### 6. Challenge-Response
 
 **Source:** Aviation Crew Resource Management (CRM) — the monitoring pilot
@@ -195,7 +232,7 @@ Any finding based purely on "best practice" dogmatism without a universal system
 | 2 | Cognitive Anchoring | Railways (shisa kanko) | Looking without seeing |
 | 3 | Falsifiability | Philosophy (Popper) | Opinion disguised as fact |
 | 4 | Calibration | Metrology + Radiology (dual-reading) | Reviewer-dependent outcomes |
-| 5 | Nothing-Found Verification | UXO / Radiology / Law | False negatives |
+| 5 | Nothing-Found Verification | UXO / Radiology / Law | Unexamined "nothing found" claims — **not** false negatives; see the limitation under mechanism 5 |
 | 6 | Challenge-Response | Aviation (CRM) | Passive agreement |
 | 7 | Finder/Decider Separation | Aviation (RII) | Conflict of interest |
 | 8 | Retro | Manufacturing (Deming) | Framework stagnation |

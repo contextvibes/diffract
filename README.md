@@ -254,7 +254,7 @@ No single component of Diffract is original. The value is in the combination.
 | Clean Architecture | Robert C. Martin |
 | CRM / Challenge-Response | Aviation industry |
 | Dual-reading / Calibration | Radiology |
-| Blind seeding | UXO clearance, Radiology, Legal e-discovery |
+| Blind seeding (adapted as a reviewer self-check, not implemented as seeding) | UXO clearance, Radiology, Legal e-discovery |
 | "First, do no harm" | Hippocratic tradition |
 
 ## License
