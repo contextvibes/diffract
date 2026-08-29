@@ -112,6 +112,19 @@ clusters against 0 stable Haiku clusters is a far sharper separation than
 minimum 3 runs per reviewer, claims scored on recurrence across runs, and
 single-pair overlap dropped as the success criterion.
 
+**The first rewrite carried its own defect.** The success criterion shipped
+in v0.2.0 read: calibrated when Reviewer B produces zero stable claims that
+appear in none of Reviewer A's runs. Haiku produced zero stable claims —
+so the condition is vacuously true and the protocol returns *calibrated*,
+for the reviewer that missed nine of Opus's nine stable clusters and never
+once raised the verified Kahneman/Simon error. The rule also contradicted
+step 6 of The Test on the same page, which classes a stable-for-A claim
+absent from all of B's runs as B's process failing. The criterion was only
+ever one-directional; adding the "stable" qualifier widened the hole,
+because a reviewer can now pass by producing nothing stable. The criterion
+is now bidirectional and carries a floor: zero stable claims is a failed
+run set, not a passing score.
+
 ## High-Recurrence Findings (design input)
 
 Clusters recurring in ≥3 of 4 Opus runs. Line numbers refer to the frozen
@@ -140,6 +153,7 @@ artifact (`bd780e4`).
 | Cobra Effect anecdote asserted as history with no source | Now labeled a widely told but undocumented illustration |
 | Cobra's Calibration field was a stub ("Context-dependent.") | Now directs the reviewer to the levels block |
 | One run per reviewer cannot separate reviewer effect from noise | docs/calibration.md: ≥3 runs per reviewer, recurrence scoring |
+| The rewritten success criterion was one-directional: Haiku's zero stable claims satisfy it vacuously | docs/calibration.md: criterion is bidirectional and requires stable claims from both reviewers |
 | Nothing-Found Verification passed on a zero-finding run that missed a real error | Open — mechanism 5 needs a seeded-error variant (see RQ2, blind seeding) |
 | Verdict vocabulary, governor precedence, solo/async path, per-finding vet record | Open — design questions, not one-line fixes |
 

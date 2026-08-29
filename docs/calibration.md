@@ -108,13 +108,32 @@ At the end, rate each finding's calibration confidence (high/medium/low):
 
 ## Success Criteria
 
-A review is calibrated when Reviewer B produces **zero stable claims** that
-appear in none of Reviewer A's runs. Disagreements on governor *verdicts*
-(fix vs skip) are expected — Compass calibration is inherently subjective.
-But a *stable* disagreement on findings (whether something IS an issue)
-indicates a framework problem. A claim that appears in only one run of
-several is noise, not a calibration failure — record it, but do not cycle
-on it.
+A review is calibrated when **both** conditions hold:
+
+1. **Both directions clear.** No stable claim of either reviewer is absent
+   from all of the other reviewer's runs. Check A against B *and* B against
+   A — a one-directional check certifies a reviewer who found nothing.
+2. **Both reviewers produced stable claims.** A reviewer whose own claims
+   never recur across its own runs has not been shown to agree with anyone;
+   it has been shown to be unreliable. Zero stable claims is a failed run
+   set, not a passing score. Re-run, or replace the reviewer.
+
+Disagreements on governor *verdicts* (fix vs skip) are expected — Compass
+calibration is inherently subjective. But a *stable* disagreement on
+findings (whether something IS an issue) indicates a framework problem. A
+claim that appears in only one run of several is noise, not a calibration
+failure — record it, but do not cycle on it.
+
+**Why condition 2 exists.** The criterion shipped in v0.2.0 tested one
+direction only: calibrated when B produced zero stable claims absent from
+A's runs. Replay [RQ3](research/rq3-calibration-reproducibility.md) against
+it. Reviewer B produced *zero stable claims at all* — nothing recurred in a
+majority of its four runs — while nine of Reviewer A's stable claims were
+absent from every single B run, including a verified factual error B never
+raised once. The one-directional rule returns **calibrated**. Step 6 of The
+Test, on the same page, returns **B's process failed**. A criterion that
+contradicts its own comparison table, and that the weakest reviewer passes
+by finding nothing, measures nothing.
 
 ## Recording Results
 
@@ -129,6 +148,7 @@ Document calibration results in your retro:
 - Findings per run: A [n₁, n₂, …] / B [n₁, n₂, …]
 - Stable claims (majority of runs): A [X] / B [Y]
 - Stable-claim overlap: [count]
-- Stable claims unique to B: [count]
+- Stable claims of A absent from all B runs: [count]
+- Stable claims of B absent from all A runs: [count]
 - Result: [calibrated / not calibrated — cycle again]
 ```
