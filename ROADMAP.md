@@ -2,7 +2,7 @@
 
 ## Vision
 
-Diffract's 9 lenses start as human/AI judgment. Over time, the deterministic
+Diffract's 10 lenses start as human/AI judgment. Over time, the deterministic
 parts should be offloaded to tools — freeing the reviewer to focus on what
 only judgment can assess.
 

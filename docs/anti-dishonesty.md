@@ -3,7 +3,7 @@
 Diffract assumes that reviewers — human and AI — will fail. Not out of
 malice, but because of cognitive fatigue, confirmation bias, time pressure,
 and social dynamics. The framework makes dishonesty structurally difficult
-through 11 concrete mechanisms, each adapted from a high-stakes industry
+through 13 concrete mechanisms, each adapted from a high-stakes industry
 where inspection failures have life-or-death consequences.
 
 ## The Mechanisms

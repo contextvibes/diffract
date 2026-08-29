@@ -65,7 +65,7 @@ find what's wrong. You find what's missing.
 2. Paste the contents of [`PROMPT.md`](PROMPT.md) into the chat
 3. Paste the artifact you want to review (code, documentation, design)
 4. The AI will propose governors (PLAN) and wait for your confirmation
-5. Once confirmed, the AI runs all 9 lenses and produces findings
+5. Once confirmed, the AI runs all 10 lenses and produces findings
 
 You can also use `PROMPT.md` as a checklist for human-only reviews.
 
@@ -114,7 +114,7 @@ bandit -r src/ 2>&1  | python3 scripts/normalize.py --tool bandit
 
 The finding output format is defined in `scripts/schema.json`.
 
-**Start simple:** You don't need to master all 9 lenses on day one. Try
+**Start simple:** You don't need to master all 10 lenses on day one. Try
 🗑️ Subtract and 🛡️ Shield on your next PR. Add lenses as you get comfortable.
 
 ## Quick Start
@@ -145,7 +145,7 @@ No agreement = no analysis.
 
 [More examples →](docs/governors.md)
 
-### 2. DO — Apply 9 lenses + W5H1
+### 2. DO — Apply 10 lenses + W5H1
 
 Run each lens across the codebase. Collect ALL findings. **Do not fix yet.**
 
@@ -196,7 +196,7 @@ across 3 PDCA cycles, with Observability and Subtract as the most productive len
 |----------|-------------|
 | [Governors](docs/governors.md) | Detailed governor specifications |
 | [Lenses](docs/lenses.md) | Each lens with root principle, evidence format, and examples |
-| [Anti-Dishonesty](docs/anti-dishonesty.md) | 8 structural mechanisms adapted from high-stakes industries |
+| [Anti-Dishonesty](docs/anti-dishonesty.md) | 13 structural mechanisms adapted from high-stakes industries |
 | [W5H1](docs/w5h1.md) | Completeness scan for what's missing |
 | [Review Prompt](PROMPT.md) | Self-contained instructions for running a Diffract review |
 | [Calibration](docs/calibration.md) | How to validate review consistency across reviewers |

@@ -12,7 +12,7 @@ an issue describing:
 1. **What you were reviewing** (language, architecture style)
 2. **What the lenses missed** (the specific finding)
 3. **Which lens should have caught it** (or whether a new lens is needed)
-4. **Evidence** that none of the existing 9 lenses cover it
+4. **Evidence** that none of the existing 10 lenses cover it
 
 ### Propose a Lens Change
 
