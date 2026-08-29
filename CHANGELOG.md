@@ -11,7 +11,7 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
-## [Unreleased]
+## [0.2.1] — 2026-08-29
 
 ### Added
 
