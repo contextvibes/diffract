@@ -16,6 +16,7 @@ only judgment can assess.
 | 📌 **Truth** | Partially | Duplication detectors (`jscpd`, `flay`, `simian`) |
 | 🧱 **Boundary** | Partially | Dependency graph analyzers, import cycle detectors |
 | 🛡️ **Shield** | Mostly | Security scanners (`gosec`, `bandit`, `semgrep`) |
+| 🔗 **Provenance** | Mostly | Advisory scanners (`npm audit`, `osv-scanner`), lockfile diff, SBOM generators |
 | 🎯 **Variety** | Partially | Exhaustive match warnings (compiler), coverage tools |
 | 🔍 **Observability** | Partially | Lint rules for swallowed errors, missing log calls |
 | ⚡ **Efficiency** | Partially | Profilers, benchmark suites, allocation trackers |
