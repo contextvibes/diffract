@@ -22,6 +22,10 @@ To propose adding, removing, or modifying a lens:
 2. **Uniqueness proof** — what does it catch that no other lens catches?
 3. **The question** — express it as a single yes/no question
 4. **Evidence format** — what does the output look like?
+5. **Adversarial assumption** — what does it assume about the artifact
+   being non-adversarial? Mechanisms imported from human-inspection
+   industries assume the artifact cannot talk back; an artifact reviewed
+   by an LLM can.
 
 ### Share a Review Example
 
@@ -45,15 +49,16 @@ confirm:
 - [ ] PLAN shows either a confirmation exchange or the
       `[async — no PLAN confirmation]` tag, and DO opens with Cold-Start
       Calibration
-- [ ] Lens finding tables carry the `# | File | Finding | Line | Severity`
-      columns; the CHECK table carries the
+- [ ] Lens finding tables carry the `ID | File | Finding | Line | Severity`
+      columns, with IDs in PROMPT.md's `<lens abbreviation>-<n>` grammar;
+      the CHECK table carries the
       `⚖️ Integrity | 🧭 Compass | 🐍 Cobra | Verdict` columns
 - [ ] CHECK includes Nothing-Found Verification; LEARN includes
-      fix application + verification, Scorecard (with "Major findings" and
-      "Estimated remaining Majors" rows), Gap Analysis, and Defect
-      Prevention
-- [ ] The review ends with `## FINDINGS INDEX`, and every count stated
-      elsewhere matches its row count
+      fix application + verification, Scorecard (with "Reviewer",
+      "Major findings", and "Estimated remaining Majors" rows), Gap
+      Analysis, and Defect Prevention
+- [ ] The review ends with `## FINDINGS INDEX` carrying the `Cycle`
+      column, and every count stated elsewhere matches its row count
 
 ### Improve Documentation
 
@@ -76,6 +81,60 @@ validated by running Diffract on itself:
 2. Does it pass the 📌 Truth lens? (Is it in one place?)
 3. Does it pass the 🏷️ Name lens? (Is it well-named?)
 4. Is the finding that motivated the change falsifiable?
+
+## Release Gates
+
+Defect-prevention rules from this repo's own reviews — each gate traces to
+a defect that shipped, or survived multiple releases, before a review
+caught it:
+
+- [ ] **Research blockers are closed or deferred.** Every blocker a
+      research report (`docs/research/`) names is either fixed or
+      explicitly deferred in the release's CHANGELOG entry. (RQ5 named
+      the "Start simple" contradiction and the W5H1 gap; both survived
+      two releases because report findings had no pipeline into fixes.)
+- [ ] **No mandated column without a definition.** Every table column a
+      PROMPT.md template mandates has an inline definition in PROMPT.md.
+      (The Findings Index `Confidence` column shipped undefined.)
+- [ ] **README's spec statements diff clean against PROMPT.md** — the
+      done-rule, lens questions, verdict names, and tag strings.
+      (README shipped a superseded exit rule after 0.2.4 changed it.)
+- [ ] **Version strings agree** — the README badge and the PROMPT.md
+      header. (0.2.3 shipped with the header still reading 0.2.2.)
+- [ ] **Template changes re-sync `examples/`** — the checklist above,
+      in the same PR.
+- [ ] **Prose that cites an example's metrics is diffed against that
+      example's FINDINGS INDEX** whenever either file changes. (README
+      shipped claiming "3 PDCA cycles" and the wrong most-productive
+      lenses about an example whose own scorecard said otherwise.)
+- [ ] **Quantified governor thresholds appear only in PROMPT.md** —
+      ">30 minutes", "architectural changes", "published API contract"
+      and their kin; other files link, never restate. (Cobra's operational
+      definitions lived in docs/governors.md and drifted from PROMPT.md's
+      glosses — the `survived` defect class, one governor over.)
+- [ ] **A PR adding an execution path walks the full state matrix**:
+      every reviewer-reachable stop state names its tag, every governor
+      states its mapping for code, non-code, and agentic inputs, and
+      every Rule states its behavior for instruction-artifact inputs —
+      self-review is an advertised use. (Agentic mode shipped with
+      untagged circuit-breaker stops; the non-code adaptation remapped
+      Integrity but left Cobra code-only; Rule 9 turned self-review into
+      a false-finding generator.)
+- [ ] **A mandated check consumes only artifacts that exist by its
+      phase.** (Nothing-Found Verification, in CHECK, shipped ordering a
+      count check against the Findings Index, which is built in LEARN.)
+- [ ] **A PR that adds an input channel to PROMPT.md** — a config key, a
+      tag, a mode, a file the reviewer reads — **includes a written
+      🛡️ Shield + 🎯 Variety pass over that channel** in the PR
+      description. (Agentic mode's `diffract.yaml` shipped with governors
+      obeyed unchallenged from the repo under review, and with the
+      user-present-plus-config-present state undefined — the protocol was
+      applied to its prose but never to its new attack and state surface.)
+- [ ] **Version-string equality is checked mechanically, not by eye** —
+      `grep` the README badge against the PROMPT.md header before
+      tagging. (The duplication is forced — the badge and the standalone
+      paste each need a version — and prose rules around it have already
+      failed once: 0.2.3 shipped with the header reading 0.2.2.)
 
 ## Code of Conduct
 

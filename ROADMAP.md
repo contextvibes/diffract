@@ -37,11 +37,17 @@ only judgment can assess.
 - [ ] Add more example reviews (different languages, architectures)
 
 ### v0.3 — Multi-Tool Adapters + Output Formats
+- [x] Vendor-neutral adapter: `AGENTS.md` (shipped in 0.2.4) — the
+      convention file most coding agents read on arrival; points review
+      runs at `PROMPT.md` and contributors at the house rules
 - [ ] Define a machine-readable output format for findings (JSON/SARIF)
-- [ ] Claude Code adapter (`.claude/CLAUDE.md`)
+- [ ] Claude Code adapter (`.claude/CLAUDE.md`) — for setups where
+      `CLAUDE.md` shadows `AGENTS.md`
 - [ ] Cursor adapter (`.cursor/rules/diffract.md`)
 - [ ] Map popular linters/scanners to lenses so existing tool output can be
-      presented in Diffract format
+      presented in Diffract format — the per-lens example rules in
+      `docs/lenses.md` are the mapping substrate: linters are rule engines,
+      so each tool check maps to the lens whose rule it enforces
 
 ### v0.4 — Calibration Automation
 - [ ] Automated calibration via subagent (second reviewer with fresh context)
@@ -58,7 +64,11 @@ only judgment can assess.
       contradiction
 - [ ] Seeded-error variant of Nothing-Found Verification — a real defect
       planted by a third party, per RQ2's blind-seeding designs. RQ3 showed
-      the current self-check cannot detect its own misses
+      the current self-check cannot detect its own misses. Complemented
+      since 0.2.4 by capture–recapture estimation in `docs/calibration.md`
+      (Lincoln–Petersen; Eick et al.; Gilb & Graham), which attacks the same
+      gap from the other side: estimation says *how many* defects remain,
+      seeding says *which one* was missed
 - [ ] IDE extension: highlight findings inline with lens icons
 - [ ] Auto-generate PLAN from project context (language, CI config)
 

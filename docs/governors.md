@@ -52,6 +52,24 @@ Always state the Compass as a single sentence:
 | "Would a newcomer feel welcomed or intimidated?" | Approachability review |
 | "Are all ideas properly attributed to their sources?" | Intellectual honesty review |
 
+### Name the Failure, Not Only the Goal
+
+A Compass states an aspiration; the sharpest ones also state what failure
+would look like. This is Tom Gilb's Planguage discipline (*Competitive
+Engineering*, 2005): an objective without a failure level is a wish, not a
+requirement. "Ready for production" leaves every `Skip:Compass` verdict to
+taste; "no Major defect reachable by user input survives unfixed" can be
+argued about with evidence. Where the quality can be quantified, quantify
+it — a scale, and the level below which the review fails:
+
+```
+🧭 Compass: "Ready for production — fail level: any Major defect reachable
+by user input survives unfixed."
+```
+
+The single-sentence form stays the rule; the failure level is what makes
+that sentence testable.
+
 ### Bounded Rationality
 
 The Compass includes a self-awareness check: *"Do I have the context to
@@ -72,17 +90,12 @@ understanding the real-world tradeoffs.
 
 **Prevents:** Overreaction, over-engineering, cascading breakage
 
-**Calibration:** Choose one of the three levels below.
-
-```
-🐍 Cobra levels:
-- Prototype: Skip findings that require >30 minutes to fix OR introduce new abstractions.
-  Ask: "Will fixing this slow down learning what works?"
-- Production: Skip findings only if fixing requires architectural changes AND current code
-  passes all tests. Ask: "Is the cure worse than the disease?"
-- Library/Framework: Skip findings only if fixing would break the published API contract.
-  Ask: "Will downstream consumers need to change their code?"
-```
+**Calibration:** Choose one of the three levels — **prototype**,
+**production**, or **library/framework**. The levels' operational
+definitions (the skip thresholds and the question each level asks) are
+normative in [PROMPT.md](../PROMPT.md)'s PLAN section and are deliberately
+not restated here — this repo once shipped a release because a counting
+term was defined in two files that drifted apart.
 
 ### The Cobra Effect
 

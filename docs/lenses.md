@@ -4,6 +4,20 @@ Each lens is grounded in a first principle from a domain **outside** software
 engineering. This grounding ensures the lenses are universal — they apply to
 any programming language, paradigm, or architecture style.
 
+## Rules Make Findings Citeable
+
+A finding is strongest when it names the written rule it violates — "no
+defect without a rule" is the discipline of software inspection (Tom Gilb &
+Dorothy Graham, *Software Inspection*, 1993, after Michael Fagan's IBM
+inspections), and it is what makes Rule 4's "findings must be testable"
+operational rather than aspirational. The lens remains the question; the
+**Example rules** under each lens are answers made falsifiable. They are
+starting points, not exhaustive lists — when a finding matches no written
+rule, state the invariant it violates (PROMPT.md, Rule 4) and consider
+adding the rule here. Because linters are rule engines, these rules are also
+the substrate for mapping existing tool output onto lenses
+([ROADMAP](../ROADMAP.md) v0.3).
+
 ## Ordering Rationale
 
 The lenses are ordered from most destructive to most constructive:
@@ -25,6 +39,13 @@ The most productive lens. Dead code, unused fields, unnecessary abstractions,
 vestigial features — all are real findings that are never Cobra-skipped.
 Subtraction improves the system by reducing the surface area for bugs.
 
+**Example rules:**
+- No exported symbol with zero references outside its own tests.
+- No configuration field that no code path reads.
+- No feature flag whose branches are identical, or that is never toggled.
+- No abstraction with exactly one implementation and no concrete second
+  consumer.
+
 **Evidence format:**
 ```
 ### 🗑️ Subtract
@@ -45,6 +66,15 @@ Checked: all modules, all exported types, all configuration fields
 
 Complexity that serves no purpose is entropy. This lens catches over-abstraction,
 unnecessary indirection, and cleverness masquerading as elegance.
+
+**Example rules:**
+- No indirection layer that forwards calls without adding behavior, policy,
+  or a boundary.
+- No design pattern (factory, registry, observer) serving a single fixed
+  case.
+- No parameter list a call site cannot fill without reading the signature —
+  past roughly five, pass a structured object.
+- No conditional logic re-deriving a fact the caller already knew.
 
 **Evidence format:**
 ```
@@ -68,6 +98,14 @@ Names shape understanding. A misnamed function misleads every future reader.
 This lens catches stale comments, misleading variable names, and inconsistent
 terminology across the codebase.
 
+**Example rules:**
+- No name that states a different type, unit, or direction than the value
+  holds (`timeoutSeconds` holding milliseconds).
+- No comment that contradicts the code it annotates.
+- No two names for one concept, and no one name for two concepts, within
+  the artifact.
+- No boolean whose name does not read as a predicate.
+
 **Evidence format:**
 ```
 ### 🏷️ Name
@@ -89,6 +127,13 @@ Checked: all exported names, comments, error messages
 When the same fact exists in two places, they will diverge. This lens catches
 duplicated configuration, copy-pasted logic, and identifiers that duplicate
 their container's key.
+
+**Example rules:**
+- No literal value whose meaning is defined in more than one place.
+- No copy-pasted block that must change in every copy to stay correct.
+- No schema, type, or interface restated by hand where it can be derived or
+  imported from the source of truth.
+- No documentation restating a detail the code itself declares.
 
 **Evidence format:**
 ```
@@ -113,6 +158,13 @@ Boundaries exist to contain change. When a boundary is wrong, a single
 requirement change forces edits across multiple modules. This lens catches
 tight coupling, misplaced responsibilities, and import cycles.
 
+**Example rules:**
+- No import cycle between modules.
+- No module reaching past another's public surface into its internals.
+- No plausible single-requirement change that forces edits in more than one
+  module (name the change to make the finding testable).
+- No domain logic inside an I/O adapter, and no I/O inside domain logic.
+
 **Evidence format:**
 ```
 ### 🧱 Boundary
@@ -136,6 +188,15 @@ A cell survives only if its membrane selectively blocks pathogens. Code
 survives only if it validates, sanitizes, or rejects hostile input. This lens
 catches missing input validation, exposed PII, insecure defaults, and
 missing authentication.
+
+**Example rules:**
+- Every external input (network, file, environment, user) crosses a
+  validation before its first use.
+- No secret or PII written to logs, error messages, or URLs.
+- No security-relevant default that fails open (permissive CORS, no expiry,
+  debug enabled).
+- Every authentication or authorization check runs on the trusted side of
+  the boundary it guards.
 
 **Evidence format:**
 ```
@@ -166,6 +227,14 @@ typosquat packages.
 | AI-generated code pasted without review | Whether AI code is correct |
 | Phantom/typosquat packages | Licensing issues |
 
+**Example rules:**
+- Every dependency is pinned by a lockfile or checksum.
+- No dependency with a known unpatched advisory at the pinned version.
+- No dependency whose name near-collides with a popular package without a
+  documented reason it was chosen.
+- No AI-generated or vendored block merged without a named human having
+  read it.
+
 **Evidence format:**
 ```
 ### 🔗 Provenance
@@ -193,6 +262,15 @@ fallthrough in switch/match statements.
 **Shield vs. Variety:** Shield asks "does it block bad input?" Variety asks
 "does it handle ALL input — including valid but unexpected states?"
 
+**Example rules:**
+- No switch/match on an external value without an explicit, handled
+  default branch.
+- No error return or rejected promise that a caller silently ignores.
+- No partial function: every input state the interface admits maps to a
+  defined output state.
+- No retryable failure handled as fatal, and no fatal failure handled as
+  retryable.
+
 **Evidence format:**
 ```
 ### 🎯 Variety
@@ -215,6 +293,14 @@ external outputs?*
 A system that fails silently is worse than one that crashes loudly. This lens
 catches swallowed errors, missing log statements, and the absence of
 correlation IDs for distributed tracing.
+
+**Example rules:**
+- No caught exception that is neither handled nor logged.
+- Every background job or long-running operation reports start, success,
+  and failure distinguishably.
+- No user-facing failure whose server-side cause cannot be located from
+  emitted outputs alone.
+- Every request crossing a service boundary carries a correlation ID.
 
 **Evidence format:**
 ```
@@ -241,6 +327,14 @@ suffices, and memory leaks.
 
 **Context-dependent:** Skip for cold paths and prototypes. Apply rigorously
 for hot paths and production systems.
+
+**Example rules:**
+- No query inside a loop that a batch or join can replace (N+1).
+- No unbounded read of external input (response body, file, queue) on a
+  hot path.
+- No O(n²) pass over unbounded n where a linear or O(n log n) equivalent
+  exists.
+- No resource acquired without a bounded release path.
 
 **Evidence format:**
 ```
