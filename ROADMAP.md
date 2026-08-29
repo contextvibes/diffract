@@ -23,10 +23,11 @@ only judgment can assess.
 
 ## Roadmap
 
-### v0.2 — Agentic Skill + Deterministic Tools
+### v0.2 — Agentic Skill
 - [x] Antigravity skill driver (clone, locate, execute the protocol)
-- [x] Deterministic tool scripts (`scripts/discover.sh`, `subtract.sh`,
-      `shield.sh`, `truth.sh`, `boundary.sh`)
+- Deterministic tool scripts — **dropped.** Diffract ships prompt-only. The
+  lens-to-tool mapping lives in `docs/lenses.md` ("Automation: Tools First");
+  tools are invoked directly rather than through wrappers.
 - [ ] Execute calibration tests across 3+ AI models
 - [ ] Add guidance for reviewing non-code artifacts (API specs, schemas)
 - [ ] Add more example reviews (different languages, architectures)
