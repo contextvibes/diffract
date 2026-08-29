@@ -11,6 +11,86 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+## [0.2.2] — 2026-08-29
+
+### Added
+
+- **RQ5 — reviewer tiering** (`docs/research/rq5-reviewer-tiering.md`): 12
+  independent reviews of `README.md` @ `22926ec`, three runs each across four
+  models, testing whether the tier scale shipped in 0.2.1 separates reviewer
+  configurations. It does not. All four configurations measured tier 4, and
+  all six pairings between them then failed Success Criteria condition 1 —
+  the framework issued two contradictory certifications from one dataset.
+- **`## FINDINGS INDEX` is now required**, with *raised* (has a row) and
+  *survived* (verdict `Fix`) defined against each other. `PROMPT.md` defined
+  neither, so the twelve RQ5 runs used three different counting policies and
+  the study's dispersion metric had to be recomputed before it meant
+  anything. Comparing runs is what calibration is for.
+- **A Contributing section in the README.** The Table of Contents linked to
+  `#contributing` and no such heading existed, while `CONTRIBUTING.md`
+  shipped in the repo unlinked. Found by 8 of the 12 RQ5 runs.
+
+### Changed
+
+- **A reviewer tier now binds to the artifact**, not only to the model,
+  version, settings and `PROMPT.md` version. RQ5 measured four
+  configurations ranging from 3 to more than 11 stable claims each as
+  identically tier 4, because the artifact carried one easy defect. Artifact
+  difficulty was an uncontrolled variable in a definition that claimed to
+  name all of them. A tier reported without its artifact means nothing.
+- **Tier 4 is documented as necessary, not sufficient**, for The Test. It
+  gates entry; RQ5 shows it does not predict passing.
+- **One ground-truth defect is an upper bound, not a measurement.**
+  `docs/calibration.md` said an artifact needs "at least one" independently
+  verified defect. One self-contained defect saturates the recall criterion.
+  Separating tiers needs several defects at graded difficulty — tracked on
+  the ROADMAP, not claimed as shipped.
+- **"Survives CHECK" is defined** as raised and not `Discard:Integrity`;
+  governor skips count, since verdict disagreement is expected and failing
+  the evidence bar is not. Undefined, it moved one reviewer's recall between
+  0 of 3 and 2 of 3 on the same run set.
+- **Nothing-Found Verification checks form before it checks judgment.**
+  Its first step is now mechanical: a lens that reported no findings without
+  an "A finding would look like:" line has not produced Output B, and is
+  re-run rather than verified, and the same step confirms all ten lens
+  sections are present. In RQ5 one reviewer anchored none of its twelve
+  nothing-found lenses across three runs and the mechanism passed all three,
+  once while its own Truth lens had affirmed the defect under test — the third
+  recorded instance of mechanism 5 certifying an error it exists to catch. A
+  separate run silently reviewed 9 of the 10 lenses, omitting 🔗 Provenance,
+  and nothing detected it: every check the framework runs afterwards is scoped
+  to lenses that *reported*, and a lens never run reports nothing. It does not make the
+  mechanism sound; it makes one failure mode detectable from the review's own
+  output. Seeded-error verification remains unbuilt.
+- Recording Results now carries a cluster map, so reported stability counts
+  are re-derivable by someone who did not do the clustering.
+
+### Fixed
+
+- **The README lens table listed 9 of 10 lenses.** 🔗 Provenance was absent
+  and Variety/Observability/Efficiency were numbered 7/8/9 against
+  `PROMPT.md`'s 8/9/10 — two lines below a heading reading "Apply 10 lenses".
+  This is the defect 0.2.0 claims to have fixed: its entry reads "Provenance
+  missing from the lens count, the ROADMAP automation table, and the worked
+  example". It reached the other two and the README was the only markdown
+  file in the repo with no mention of the lens at all. The 0.2.0 entry
+  overclaimed; this is the correction.
+- **`docs/lenses.md` documented a Provenance evidence format that the
+  instrument does not define.** Nine lenses show the `### <icon> <Lens>` /
+  `Checked:` / findings-table form of Output A; Provenance alone still showed
+  a pre-0.2.0 `Before:/Finding:/Risk:` block. A reviewer following it for
+  that lens produced output `PROMPT.md` never specifies.
+- **RQ3 was never listed in the README's documentation table** after shipping
+  in 0.2.0, alongside RQ1 and RQ2. Both it and RQ5 are now listed.
+
+### Note on prior measurements
+
+Every reviewer tier recorded in `docs/calibration.md` and the research
+documents is **stale as of this release**, because this release changed
+`PROMPT.md` and a tier does not carry across instrument versions. That is the
+rule working as written, not an oversight. RQ3's and RQ5's assignments stand
+as records of method, not as usable measurements.
+
 ## [0.2.1] — 2026-08-29
 
 ### Added

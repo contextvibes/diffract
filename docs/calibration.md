@@ -139,9 +139,14 @@ by finding nothing, measures nothing.
 
 A **reviewer tier** is a measured property of a *reviewer configuration*, not
 a vendor's product name. A configuration is the model, its version, its
-settings, and the version of `PROMPT.md` it ran. Change any of the four and
-the tier must be re-measured — a tier assigned against one instrument does
-not carry to the next.
+settings, the version of `PROMPT.md` it ran, and the artifact it was measured
+against (identity + checksum). Change any of the five and the tier must be
+re-measured — a tier assigned against one instrument does not carry to the
+next, and a tier assigned against one artifact does not carry to another.
+
+A tier is a statement about a configuration *on an artifact*, never a
+property of a model. Reported without its artifact, a tier number means
+nothing.
 
 Tiers are assigned from two criteria, both already defined on this page:
 
@@ -149,7 +154,11 @@ Tiers are assigned from two criteria, both already defined on this page:
   least 3 of its own runs (Success Criteria, condition 2).
 - **Ground-truth recall** — on an artifact containing an independently
   verified defect, the reviewer raises that defect *and* the claim survives
-  CHECK, in a majority of its runs.
+  CHECK, in a majority of its runs. **Survives** means raised and not
+  `Discard:Integrity`; a governor skip still counts, because verdict
+  disagreement is expected (see Success Criteria) while failing the evidence
+  bar is not. Without this rule the same run set yields different recall
+  numbers depending on who counts.
 
 |  | Recall passes | Recall fails |
 |---|---|---|
@@ -161,6 +170,12 @@ The Test. Tiers 2 and 3 each fail one criterion; which failure is worse has
 not been measured, so the numbering between them is a slot label, not a
 ranking.
 
+**Tier 4 is necessary, not sufficient.** It gates entry to The Test; it does
+not predict passing it. In [RQ5](research/rq5-reviewer-tiering.md) all four
+configurations measured tier 4 on the same artifact, and every one of the six
+pairings then failed Success Criteria condition 1. Qualifying two reviewers
+does not mean they will agree.
+
 **Why Success Criteria does not already cover this.** Those criteria measure
 *agreement*, not correctness. Two stable reviewers that share a blind spot
 agree with each other perfectly and are certified calibrated, while both miss
@@ -168,7 +183,15 @@ the same defect on every run — tier 3 on both sides. Ground-truth recall is
 the axis that agreement cannot supply.
 
 **What tiering requires.** Ground-truth recall needs an artifact carrying at
-least one defect verified independently of the reviewers being tested.
+least one defect verified independently of the reviewers being tested. One
+defect is a floor for *assigning* a tier, not for *trusting* one. A single
+self-contained defect saturates: in [RQ5](research/rq5-reviewer-tiering.md)
+four configurations ranging from 3 to more than 11 stable claims each — and
+differing sharply in whether they followed the instrument at all — cleared the
+same two-line contradiction, and all four measured tier 4. Read a
+tier measured against one defect as an upper bound. Separating the tiers
+needs several independently established defects at graded difficulty — the
+reference artifact set on the [ROADMAP](../ROADMAP.md).
 [RQ3](research/rq3-calibration-reproducibility.md) used a defect found after
 the fact — sound, but not repeatable on demand, and a published ground truth
 degrades as soon as reviewers can read it. A designed reference set is on the
@@ -178,8 +201,12 @@ review under test.
 
 **Assignments measured so far:**
 [RQ3](research/rq3-calibration-reproducibility.md) placed two reviewers and
-left two unplaced. Those measurements are bound to `PROMPT.md` @ `bd780e4`;
-v0.2.1 changed that file, so they are stale until re-measured.
+left two unplaced, bound to `PROMPT.md` @ `bd780e4`.
+[RQ5](research/rq5-reviewer-tiering.md) placed four at tier 4, bound to
+`PROMPT.md` v0.2.1 @ `9cb9cf2` and to `README.md` @ `22926ec`. Both sets are
+**stale**: this release changed `PROMPT.md` again. Every tier on this page
+must be re-measured before it is relied on — which is the rule in the
+definition above doing its job, not an oversight.
 
 ## Recording Results
 
@@ -187,8 +214,8 @@ Document calibration results in your retro:
 
 ```markdown
 ### Calibration Test
-- Reviewer A: [name/model + version] — [N] runs — tier [1-4 / unplaced]
-- Reviewer B: [name/model + version] — [N] runs — tier [1-4 / unplaced]
+- Reviewer A: [name/model + version] — [N] runs — tier [1-4 / unplaced] on [artifact]
+- Reviewer B: [name/model + version] — [N] runs — tier [1-4 / unplaced] on [artifact]
 - Instrument: PROMPT.md [version] + checksum
 - Ground-truth defect in artifact: [yes, verified by X / no — tiers not assignable]
 - Same Compass: [yes/no]
@@ -196,6 +223,7 @@ Document calibration results in your retro:
 - Artifact frozen at: [tag/commit + checksum]
 - Findings per run: A [n₁, n₂, …] / B [n₁, n₂, …]
 - Stable claims (majority of runs): A [X] / B [Y]
+- Cluster map: [cluster → the run-local finding IDs it groups, per reviewer]
 - Stable-claim overlap: [count]
 - Stable claims of A absent from all B runs: [count]
 - Stable claims of B absent from all A runs: [count]

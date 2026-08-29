@@ -168,10 +168,11 @@ typosquat packages.
 
 **Evidence format:**
 ```
-🔗 P1 (Provenance · go.mod:L12)
-   Before: require github.com/unknown/jwt v0.0.1
-   Finding: Dependency has 0 stars, created 2 days ago, name similar to dgrijalva/jwt-go
-   Risk: Potential dependency confusion / typosquat attack
+### 🔗 Provenance
+Checked: go.mod, go.sum, lockfile diff since last release, AI-pasted blocks
+| # | File | Finding | Line |
+|---|------|---------|------|
+| P1 | go.mod | `github.com/unknown/jwt` v0.0.1 — 0 stars, created 2 days ago, name near-collides with `dgrijalva/jwt-go`; possible typosquat | 12 |
 ```
 
 **Maps to:** Supply Chain Security, SBOM, SLSA
