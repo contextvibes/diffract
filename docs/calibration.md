@@ -135,14 +135,62 @@ Test, on the same page, returns **B's process failed**. A criterion that
 contradicts its own comparison table, and that the weakest reviewer passes
 by finding nothing, measures nothing.
 
+## Reviewer Tiers
+
+A **reviewer tier** is a measured property of a *reviewer configuration*, not
+a vendor's product name. A configuration is the model, its version, its
+settings, and the version of `PROMPT.md` it ran. Change any of the four and
+the tier must be re-measured — a tier assigned against one instrument does
+not carry to the next.
+
+Tiers are assigned from two criteria, both already defined on this page:
+
+- **Stability** — the reviewer produces at least one stable claim across at
+  least 3 of its own runs (Success Criteria, condition 2).
+- **Ground-truth recall** — on an artifact containing an independently
+  verified defect, the reviewer raises that defect *and* the claim survives
+  CHECK, in a majority of its runs.
+
+|  | Recall passes | Recall fails |
+|---|---|---|
+| **Stable** | **Tier 4** — qualified as a calibration counterpart | **Tier 3** — repeatable, and repeatably wrong: it misses the same defect every run |
+| **Unstable** | **Tier 2** — sees the defect, cannot be relied on to see it again | **Tier 1** — output is noise; unusable on either side of a calibration pair |
+
+Tier 4 is the only tier qualified to serve as Reviewer A or Reviewer B in
+The Test. Tiers 2 and 3 each fail one criterion; which failure is worse has
+not been measured, so the numbering between them is a slot label, not a
+ranking.
+
+**Why Success Criteria does not already cover this.** Those criteria measure
+*agreement*, not correctness. Two stable reviewers that share a blind spot
+agree with each other perfectly and are certified calibrated, while both miss
+the same defect on every run — tier 3 on both sides. Ground-truth recall is
+the axis that agreement cannot supply.
+
+**What tiering requires.** Ground-truth recall needs an artifact carrying at
+least one defect verified independently of the reviewers being tested.
+[RQ3](research/rq3-calibration-reproducibility.md) used a defect found after
+the fact — sound, but not repeatable on demand, and a published ground truth
+degrades as soon as reviewers can read it. A designed reference set is on the
+[ROADMAP](../ROADMAP.md). Until one exists, tiers can only be assigned
+against artifacts whose defects were established by some means other than the
+review under test.
+
+**Assignments measured so far:**
+[RQ3](research/rq3-calibration-reproducibility.md) placed two reviewers and
+left two unplaced. Those measurements are bound to `PROMPT.md` @ `bd780e4`;
+v0.2.1 changed that file, so they are stale until re-measured.
+
 ## Recording Results
 
 Document calibration results in your retro:
 
 ```markdown
 ### Calibration Test
-- Reviewer A: [name/model] — [N] runs
-- Reviewer B: [name/model] — [N] runs
+- Reviewer A: [name/model + version] — [N] runs — tier [1-4 / unplaced]
+- Reviewer B: [name/model + version] — [N] runs — tier [1-4 / unplaced]
+- Instrument: PROMPT.md [version] + checksum
+- Ground-truth defect in artifact: [yes, verified by X / no — tiers not assignable]
 - Same Compass: [yes/no]
 - Governors: [agreed (human-confirmed) / declared (async, tagged)]
 - Artifact frozen at: [tag/commit + checksum]

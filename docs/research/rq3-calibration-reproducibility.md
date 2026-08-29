@@ -34,12 +34,12 @@ INDEX).
 
 **Two experiments:**
 
-1. **Cross-tier** — the documented protocol: four models
+1. **Cross-model** — the documented protocol: four models
    (Haiku, Sonnet, Fable, Opus), one run each
-2. **Within-tier** — the control the protocol lacks: Haiku ×4 and
+2. **Within-model** — the control the protocol lacks: Haiku ×4 and
    Opus ×4, identical runs
 
-## Experiment 1 — Cross-Tier, One Run Each
+## Experiment 1 — Cross-Model, One Run Each
 
 | Reviewer | Surviving findings |
 |----------|-------------------:|
@@ -49,10 +49,10 @@ INDEX).
 | Opus | 18 |
 
 Read alone — and this is exactly what the documented protocol produces —
-this is a clean monotonic tier effect: the strongest reviewer reports 6x
+this is a clean monotonic model-tier effect: the strongest reviewer reports 6x
 the findings of the weakest.
 
-## Experiment 2 — Within-Tier, Four Identical Runs
+## Experiment 2 — Within-Model, Four Identical Runs
 
 | Reviewer | Findings per run | Mean | Range | CV |
 |----------|------------------|-----:|------:|---:|
@@ -61,7 +61,7 @@ the findings of the weakest.
 
 CV = sample standard deviation / mean.
 
-**Recurrence separates the tiers; raw counts do not.** Clustering
+**Recurrence separates the reviewers; raw counts do not.** Clustering
 equivalent claims across each reviewer's four runs: at least nine Opus
 claim clusters recur in 3 or more of 4 runs. No Haiku claim recurs in more
 than 2 of 4 runs — zero Haiku claims meet the 3-of-4 bar.
@@ -147,9 +147,9 @@ with n=1 per reviewer there is no estimate of either reviewer's own
 variance.
 
 This is not theoretical. Experiment 1 ran exactly the documented protocol,
-produced the 3-vs-18 split, and supported a "6x tier effect" conclusion.
+produced the 3-vs-18 split, and supported a "6x model-tier effect" conclusion.
 Experiment 2 then showed that Haiku alone spans 0–4 across identical runs
-— a range that could have produced the low side of that split with no tier
+— a range that could have produced the low side of that split with no model-tier
 difference at all. The protocol as documented would have let the wrong
 conclusion stand.
 
@@ -179,7 +179,7 @@ artifact (`bd780e4`).
 
 | Claim cluster (docs/governors.md) | Opus runs (of 4) |
 |-----------------------------------|-----------------:|
-| Cobra levels and the `file:line` rule are stated in code-only terms; non-code artifacts have no defined mapping (:71–79, :103) — found by all four tiers | 4 |
+| Cobra levels and the `file:line` rule are stated in code-only terms; non-code artifacts have no defined mapping (:71–79, :103) — found by all four models | 4 |
 | No verdict vocabulary and no precedence/combination rule when the three governors disagree (:3–4) | 4 |
 | "Must be explicitly agreed upon by all reviewers" (:6–7) has no solo, async, or automated path — a rule all 10 runs violated by construction | 4 |
 | Integrity "Prevents: manipulation" (:99) names no mechanism against an adversary | 4 |
@@ -204,16 +204,42 @@ artifact (`bd780e4`).
 | Nothing-Found Verification passed on all four runs that missed a real error; in two it affirmed the error while verifying | `docs/anti-dishonesty.md`: mechanism 5 now carries the evidence and states it is a self-attestation, not blind seeding. A real seeded-error variant remains unbuilt |
 | Verdict vocabulary, governor precedence, solo/async path, per-finding vet record | Open — design questions, not one-line fixes |
 
+## Reviewer Tier Assignments
+
+Applying the tier criteria in [calibration.md](../calibration.md) to these
+results. "Tier" here means a **reviewer tier** — a measured property — not
+the vendor model tier used elsewhere on this page.
+
+| Reviewer | Runs | Stable claims | Ground-truth recall | Tier |
+|----------|-----:|---------------|---------------------|------|
+| Haiku | 4 | 0 | 0 of 4 | **1** |
+| Opus | 4 | ≥9 clusters | 3 of 4 survived CHECK | **4** |
+| Sonnet | 1 | undefined (needs ≥3 runs) | 1 of 1 | unplaced |
+| Fable | 1 | undefined (needs ≥3 runs) | 1 of 1 | unplaced |
+
+Sonnet and Fable are unplaced by the protocol's own rule rather than by
+oversight: stability is undefined below 3 runs. Both cleared recall, so
+neither can be tier 1 — but separating tier 2 from tier 4 requires runs that
+were never made.
+
+The two reviewers that could be placed land at opposite corners with nothing
+between them. This experiment produced no evidence for a graded scale, only
+for its two extremes; tiers 2 and 3 are defined but unpopulated.
+
+These assignments are bound to the instrument they were measured against —
+`PROMPT.md` @ `bd780e4`, md5 `1af01c72503a75047d8b91ad1e600f90`. They do not
+carry to v0.2.1.
+
 ## Limitations
 
-- **Small sample:** n=4 runs per tier, two tiers, one artifact, one
+- **Small sample:** n=4 runs per model, two models, one artifact, one
   prompt, one Compass. The statistics describe this experiment, not the
   models in general.
 - **One vendor:** all four reviewers are Claude-family models
   (Haiku, Sonnet, Fable, Opus). Cross-vendor reproducibility is untested.
 - **One artifact type:** a 125-line prose document. Code artifacts, where
   more lenses are deterministic, may show less variance.
-- **Sonnet and Fable ran once each**, so their within-tier variance is
+- **Sonnet and Fable ran once each**, so their within-model variance is
   unmeasured; only Haiku and Opus have repeat data.
 - **Claim clustering is judgment.** Deciding that two differently worded
   findings are "the same claim" is exactly the kind of unfalsifiable step
