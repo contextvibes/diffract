@@ -35,9 +35,9 @@ exactly. Do not skip steps. Do not fix issues during analysis.
 Before any analysis, propose governors and **wait for agreement**:
 
 ```
-Diffract: v0.1.0
+Diffract: [version]
 🧭 Compass: [one sentence — what is the goal of this review?]
-🐍 Cobra:   [how cautious? prototype = aggressive (skip more) | production = cautious (fix more)]
+🐍 Cobra:   [how cautious? prototype = aggressive (skip more) | production = cautious (fix more) | library/framework = API-bound (skip only if fixing breaks the published contract)]
 ⚖️ Integrity: [evidence rules — default: file:line per lens, cognitive anchoring required]
 ```
 

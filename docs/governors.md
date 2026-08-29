@@ -8,7 +8,7 @@ explicitly agreed upon by all reviewers.
 
 ## 🧭 Compass
 
-**Root principle:** Goal-seeking (cybernetics) + Bounded Rationality (Kahneman)
+**Root principle:** Goal-seeking (cybernetics) + Bounded Rationality (Simon)
 
 **Questions:**
 - *Is this finding relevant to our stated goal?*
@@ -118,7 +118,7 @@ introduces new vulnerabilities.
 Before every review, state all three:
 
 ```
-Diffract: v0.1.0
+Diffract: [version]
 🧭 Compass: [one sentence goal]
 🐍 Cobra:   [prototype | production | library/framework] (see Cobra levels above)
 ⚖️ Integrity: [evidence rules]
