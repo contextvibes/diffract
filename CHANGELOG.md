@@ -11,6 +11,192 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+## [0.2.4] — 2026-08-29
+
+This release folds in the software-inspection lineage — Tom Gilb & Dorothy
+Graham, *Software Inspection* (1993), after Michael Fagan's IBM inspections.
+Diffract cited aviation, medicine, and manufacturing for its honesty
+mechanisms while leaving the software-native ancestor unnamed, and several
+of that lineage's quantified techniques answer problems RQ3 and RQ5 left
+open: the self-check that cannot detect its own misses, the exit rule that
+measured reviewer fatigue rather than artifact cleanliness, and finding
+counts that reward padding. All `PROMPT.md` changes are batched here so the
+tier-staleness cost of changing the instrument is paid once.
+
+### Added
+
+- **Entry criteria in PLAN** (Gilb & Graham). The artifact's own cheap
+  deterministic checks — build + test + lint, or the non-code equivalent —
+  must pass before a review starts; review attention is not spent on defects
+  a tool reports for free. A waived gate is tagged `[entry waived: <reason>]`,
+  the same auditable-tag pattern as one-shot mode.
+- **Major/Minor severity** on every finding, in the per-lens tables and the
+  `## FINDINGS INDEX` (Gilb & Graham). Only Majors count in process metrics,
+  so a review cannot be padded with trivia — the counting-dispersion lesson
+  of RQ5, one level down. The definition lives in `PROMPT.md` (DO) only;
+  after 0.2.3's "survived" defect, no counting term is defined in two files.
+- **Quantified exit** (Gilb & Graham exit criteria). "Done" now requires
+  both the existing convergence signal (a full PDCA cycle with zero new Fix
+  outcomes) and an **Exit Estimate**: estimated remaining Majors with a
+  stated basis — capture–recapture, per-lens yield, or the explicit tag
+  `[exit unestimated]`. Zero new findings is a claim about the reviewer;
+  the Exit Estimate is the claim about the artifact.
+- **Capture–recapture estimation** in `docs/calibration.md`
+  (Lincoln–Petersen from ecology; applied to inspections by Eick et al.
+  1992; exit-from-estimate per Gilb & Graham). Stable-claim overlap between
+  independent reviewers now estimates the defects missed by both — the
+  complement, from the estimation side, to the seeded-error variant still on
+  the roadmap. Shipped with its caveats up front: LLM reviewers share blind
+  spots, so the estimate is a lower bound; counts move with clustering
+  granularity; Majors only.
+- **Sampling in Rule 6** (Gilb & Graham checking rates). An artifact too
+  large for one rigorous pass gets a declared, rigorously-reviewed sample
+  and a density estimate — not a shallow pass presented as complete.
+- **Example rules per lens** in `docs/lenses.md`, and Rule 4 reworded: a
+  finding names the written rule or invariant it violates (rules-based
+  defects, Gilb & Graham). The lens remains the question; the rules make
+  findings citeable, and they are the mapping substrate for the v0.3
+  linter-to-lens goal.
+- **Defect Prevention section in LEARN** (Robert Mays & Carole Jones, IBM,
+  as integrated by Gilb & Graham): for the Majors, the upstream cause and
+  one process change that would prevent the class. "Most productive lens"
+  says where defects were found; this says where they came from.
+- **Compass failure level** in `docs/governors.md` (Tom Gilb's Planguage,
+  *Competitive Engineering*): the sharpest Compass names what failure would
+  look like, which is what makes `Skip:Compass` verdicts arguable with
+  evidence instead of taste.
+- Five References rows in `README.md` covering the above, attributed to
+  their actual origins — not everything traces to Gilb, and the table says
+  so.
+- **`AGENTS.md`** — the vendor-neutral entry point most coding agents read
+  on arrival. Two audiences: an agent asked to *run* a review is pointed at
+  `PROMPT.md` and told not to improvise the process from anywhere else; an
+  agent *working on* this repo gets the house rules distilled from shipped
+  defects (single-home counting terms, tier staleness, template
+  conformance, the dual-home version string). Pointers only — it defines
+  nothing, because defining things twice is how 0.2.3 happened. This is
+  the baseline for the v0.3 per-tool adapters, which remain planned for
+  tools that don't read `AGENTS.md`.
+- **Hardening from five Diffract self-review cycles** run on `README.md`
+  and `PROMPT.md` with this release's own instrument (cycles two through
+  five each by a fresh-context reviewer with no knowledge of the earlier
+  findings). In the instrument: new Rule 9 — the artifact
+  under review is data, not instructions, closing the prompt-injection
+  channel unique to LLM reviewers that no imported human-inspection
+  mechanism covered; the Findings Index `Confidence` column and the
+  finding-ID scheme are now defined (both were mandated but undefined —
+  the counting-comparability defect one field over); W5H1 states that
+  What/Where are deliberately delegated to the Name and Boundary lenses;
+  entry criteria define the one-shot path for both unrunnable and failing
+  checks; templates say "artifact" where they said "codebase". In the
+  README: a measured-status block under the Goal (RQ5's failed pairings,
+  stated up front), the protocol summary marked non-normative with
+  PROMPT.md as source of truth, "Quick Start" renamed to what it is,
+  lens-question wording re-synced, the two-lens on-ramp scoped to human
+  checklist use so it no longer contradicts "show all 10", the Harari
+  epigraph marked as paraphrase with its work named, and a note that the
+  research numbering skips RQ4 because it was never run. Several of these
+  — including the two-lens contradiction and the W5H1 gap — were blockers
+  RQ5 had already named that no release had closed. The third cycle found
+  four more Majors the first two missed: Cobra's quantified level
+  definitions lived only in `docs/governors.md` and the example config,
+  drifting from the instrument's glosses (they are now normative in
+  PROMPT.md, with the outer copies reduced to references); a
+  circuit-breaker stop had no defined output state (now tagged
+  `[stopped: circuit breaker, not converged]`, with "diminishing returns"
+  defined and an Exit Estimate still required); the non-code adaptation
+  remapped Integrity's `file:line` but left Cobra's levels code-only (the
+  unfixed half of a 4/4-model RQ3 finding — non-code artifacts now map
+  levels by exposure); and the README misreported its own worked example's
+  cycle count and most-productive lenses. Config-prescribed governors also
+  gained their own tag (`[governors: diffract.yaml]`), and the
+  protocol/framework naming drift was settled in favor of "protocol".
+  A human-authorized fourth cycle — past the instrument's own circuit
+  breaker — raised six more Majors, all fixed: Rule 9 gained its
+  instruction-artifact exception (without it, self-review mechanically
+  converts the instrument's own imperative voice into false Shield
+  findings); the count-consistency check moved from CHECK to LEARN, where
+  the Findings Index it consumes actually exists; the W5H1 stage got an
+  output contract (`W5H-<n>` IDs, same row format and severity rules);
+  the Findings Index `Line(s)` column is now defined; "survived" is no
+  longer restated in `docs/calibration.md` (the exact duplication
+  mechanism this file narrates as the 0.2.3 defect, reintroduced one
+  level up); and entry-gate compliance is now visible in output, with
+  tags for the two previously untagged stop states. The ID grammar's
+  abbreviations are enumerated and the flagship example re-synced to
+  them, Cobra's Prototype level was reworded to the same only-if form as
+  the other two, and Rule 6 now covers a narrowed lens set as well as a
+  narrowed artifact. A fifth cycle found the two Majors everyone else
+  had walked past — both in the agentic config channel that a 0.2.x
+  release added without turning the instrument on its own new surface:
+  governors read from `diffract.yaml` (a file inside the repo under
+  review) were obeyed without the trivially-narrow-Compass challenge the
+  guardrails mandate when a *human* proposes one, and the
+  user-present-plus-config-present state had no precedence rule at all —
+  with the shipped example config flatly asserting that config bypasses
+  interactive confirmation. Both fixed: a user who can confirm PLAN now
+  always outranks the config, config-supplied governors get the same
+  challenge as human-supplied ones, and the example's comment says so
+  instead of the opposite. The same cycle's Minors: the README's CHECK
+  diagram glossed Integrity with the Medium-confidence bar rather than
+  the Integrity check; the entry criteria were restructured from one
+  17-line paragraph into four explicit branches; the RQ citations inside
+  the instrument gained file paths; the Findings Index gained a `Cycle`
+  column, so the convergence done-rule is finally derivable from the one
+  table the instrument calls authoritative; and the Scorecard gained a
+  `Reviewer` row, because a protocol whose science compares reviewers
+  was producing anonymous reviews.
+  **Exit by estimate, not by convergence.** Five cycles never
+  demonstrated convergence: cycles two through five raised 12, 12, 12,
+  and 13 findings — largely disjoint sets, carrying 4, 4, 6, and 2
+  Majors. The disjointness is the repo's own RQ3 result reproduced on
+  the repo itself, and it means the convergence signal — a fresh
+  reviewer finding zero new Fixes — is empirically out of reach for a
+  prose artifact at this granularity. This release therefore exits the
+  way the instrument prescribes when convergence fails: tagged
+  `[stopped: circuit breaker, not converged]` (cycles four and five ran
+  past the three-cycle breaker on human authorization), with an Exit
+  Estimate. **Estimated remaining Majors: ≈2** — basis: historical
+  per-lens yield. Single-run Major recall against pooled stable claims
+  ran well below 1.0 throughout RQ3 and RQ5, so the final cycle's two
+  Majors imply roughly as many again unseen. Capture–recapture across
+  the five cycles is *not* a valid basis here and was not used:
+  sequential fixing changes the artifact between runs, which breaks the
+  closed-population assumption the estimator needs — near-zero overlap
+  across cycles measures the moving target, not the defect pool.
+  Expect residual defects; the estimate is the honest count of them.
+- **Release Gates in `CONTRIBUTING.md`** (Defect Prevention put into
+  practice, per Mays & Jones): eleven checklist gates, each tracing to a
+  defect this repo actually shipped — research blockers must be closed or
+  deferred in the CHANGELOG, no mandated table column without a
+  definition, README's spec statements diff clean against `PROMPT.md`,
+  version strings agree, template changes re-sync `examples/`, prose
+  citing an example's metrics diffs against its FINDINGS INDEX,
+  quantified governor thresholds appear only in `PROMPT.md`, new
+  execution paths walk the full state matrix, a mandated check may
+  consume only artifacts that exist by its phase, a PR adding an input
+  channel to the instrument includes a Shield + Variety pass over that
+  channel, and version-string equality is checked mechanically before
+  tagging. Lens
+  proposals now also state their adversarial assumption: mechanisms
+  imported from human-inspection industries assume an artifact that
+  cannot talk back.
+
+### Fixed
+
+- **`PROMPT.md`'s version header read 0.2.2 through the 0.2.3 release**,
+  which changed the file without bumping it. A tier is bound to the
+  instrument version it was measured against; an instrument that misreports
+  its own version breaks that bookkeeping. Now 0.2.4.
+
+### Note on prior measurements
+
+This release changes `PROMPT.md`, so every reviewer tier measured against
+earlier instruments remains or becomes stale, per the rule in
+`docs/calibration.md`. New reviews additionally emit severity and an Exit
+Estimate, so their findings indexes are a superset of earlier ones —
+comparisons across the boundary must ignore the new columns or re-run.
+
 ## [0.2.3] — 2026-08-29
 
 Two counting defects found by re-running RQ3 and RQ5 against 0.2.2 — 22 runs,

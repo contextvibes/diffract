@@ -2,8 +2,11 @@
 # Place this file in your project root to configure automated reviews.
 # See: https://github.com/contextvibes/diffract
 #
-# When present, agentic reviewers (Antigravity, Claude Code, etc.) will
-# use these governors without requiring interactive confirmation.
+# When present, agentic reviewers (Antigravity, Claude Code, etc.) read
+# these governors as the prescribed defaults. A user who can confirm PLAN
+# still outranks this file — the config is a proposal presented at the
+# checkpoint, not a bypass of it. Only a run with no user available
+# proceeds on the config alone, tagged [governors: diffract.yaml].
 
 version: "0.2"
 
@@ -12,10 +15,9 @@ version: "0.2"
 compass: "Is this code ready for production?"
 
 # 🐍 Cobra — How cautious should we be?
-# Options:
-#   prototype  — Skip findings requiring >30min to fix or new abstractions
-#   production — Skip only if fixing requires architectural changes AND tests pass
-#   library    — Skip only if fixing would break the published API contract
+# Options: prototype | production | library-framework
+# The levels' operational definitions are normative in PROMPT.md's PLAN
+# section (non-normative restatement here would drift, so there isn't one).
 cobra: production
 
 # ⚖️ Integrity — What counts as evidence?

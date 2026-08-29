@@ -1,10 +1,11 @@
 # Diffract — A Review Protocol for Human-AI Collaboration
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.3-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.4-green.svg)](CHANGELOG.md)
 
 > **AI is not a tool. It is an agent.**
-> — [Yuval Noah Harari](https://en.wikipedia.org/wiki/Yuval_Noah_Harari)
+> — paraphrasing [Yuval Noah Harari](https://en.wikipedia.org/wiki/Yuval_Noah_Harari),
+> a central argument of *Nexus* (2024)
 >
 > A linter runs the same way every time. An AI agent reasons, interprets,
 > and makes judgment calls — just like a human. And like any agent, it can
@@ -19,6 +20,11 @@ who reviews it.
 
 **Goal:** Same artifact + same lenses + different reviewer = same findings.
 
+**Measured status:** not yet achieved. In the latest tiering experiment
+(August 2026, against the 0.2.x instrument), every reviewer pairing failed
+the calibration criteria ([RQ5](docs/research/rq5-reviewer-tiering.md)). Diffract publishes its own
+failures — the protocol exists to make them visible, not to hide them.
+
 Diffract emerged from code review, but the lenses apply to anything that
 can be reviewed: code, documentation, architecture, API designs, or processes.
 
@@ -32,7 +38,7 @@ The value is in the combination.
 
 - [Why Diffract?](#why-diffract)
 - [How to Use](#how-to-use)
-- [Quick Start](#quick-start)
+- [The Protocol at a Glance](#the-protocol-at-a-glance)
 - [Documentation](#documentation)
 - [How It Emerged](#how-it-emerged)
 - [Acknowledgments](#acknowledgments)
@@ -73,13 +79,18 @@ You can also use `PROMPT.md` as a checklist for human-only reviews.
 
 No skill package ships with this repo. To run Diffract inside a coding agent
 — Claude Code, Antigravity, Cursor — point the agent at
-[`PROMPT.md`](PROMPT.md) and ask it to follow the protocol. Per-tool adapters
-are planned, not built; see [ROADMAP](ROADMAP.md).
+[`PROMPT.md`](PROMPT.md) and ask it to follow the protocol. Agents that read
+[`AGENTS.md`](AGENTS.md) on arrival are pointed there automatically.
+Per-tool adapters are planned, not built; see [ROADMAP](ROADMAP.md).
 
-**Start simple:** You don't need to master all 10 lenses on day one. Try
-🗑️ Subtract and 🛡️ Shield on your next PR. Add lenses as you get comfortable.
+**Start simple (human checklist use):** You don't need all 10 lenses to
+review by hand — try 🗑️ Subtract and 🛡️ Shield on your next PR and declare
+the narrowed lens set as partial coverage (PROMPT.md, Rule 6). An agent
+executing PROMPT.md always runs all 10.
 
-## Quick Start
+## The Protocol at a Glance
+
+[PROMPT.md](PROMPT.md) is the normative protocol; this section summarizes it.
 
 ### 1. PLAN — Set your governors
 
@@ -87,9 +98,12 @@ Before any analysis, agree on scope, calibration, and evidence rules:
 
 ```
 🧭 Compass: "Is this code ready for production?"
-🐍 Cobra:   Cautious — fix more, skip less.
+🐍 Cobra:   Production — cautious: fix more, skip less.
 ⚖️ Integrity: file:line evidence per lens. Cognitive anchoring required.
 ```
+
+(The Cobra governor is named for the cobra effect — a "fix" that breeds the
+very problem it set out to solve.)
 
 **PLAN is a checkpoint.** Propose governors, get agreement, then proceed.
 No agreement = no analysis. Running async with nobody to agree? State the
@@ -119,20 +133,22 @@ Run each lens across the codebase. Collect ALL findings. **Do not fix yet.**
 | 3 | 🏷️ **Name** | Does the name match the thing? |
 | 4 | 📌 **Truth** | Is this knowledge in exactly one place? |
 | 5 | 🧱 **Boundary** | Can an isolated change stay in one boundary? |
-| 6 | 🛡️ **Shield** | Does it neutralize all inputs that violate its invariants? |
+| 6 | 🛡️ **Shield** | Does it neutralize all inputs violating its invariants? |
 | 7 | 🔗 **Provenance** | Can I verify the origin and integrity of every dependency? |
 | 8 | 🎯 **Variety** | Does every possible input map to a defined output? |
-| 9 | 🔍 **Observability** | Can I determine system state from its outputs? |
-| 10 | ⚡ **Efficiency** | Is resource use proportional to the work required? |
+| 9 | 🔍 **Observability** | Can I determine system state from outputs? |
+| 10 | ⚡ **Efficiency** | Is resource use proportional to work required? |
 
-Then ask [W5H1](docs/w5h1.md) to find what's **missing** — especially
-**Why** (rationale), **Who** (ownership), and **When** (expiry).
+Then ask [W5H1](docs/w5h1.md) to find what's **missing** — **Why**
+(rationale), **Who** (ownership), **When** (expiry), and **How**
+(tech-stack neutralization). What and Where are omitted deliberately:
+they are covered by the 🏷️ Name and 🧱 Boundary lenses.
 
 ### 3. CHECK — Vet findings through governors
 
 ```
 Finding
-  → ⚖️ Integrity: "Is this objective? Would another reviewer agree?"
+  → ⚖️ Integrity: "Did I look? Is it objective?"
     → No  → Discard:Integrity (bikeshedding or bias)
     → Yes →
       → 🧭 Compass: "Is this relevant to our goal?"
@@ -147,12 +163,16 @@ Finding
 
 - Apply all fixes
 - Verify (build + test + lint)
-- Retro: what did the framework miss? Update it.
+- Retro: scorecard, gap analysis, defect prevention
 - If fixes were applied → cycle back to PLAN
 
-**Done when a full cycle produces zero new Fix outcomes.**
-In [our first application](examples/web-service.md), Diffract found 15 issues
-across 3 PDCA cycles, with Observability and Subtract as the most productive lenses.
+**Done when a full cycle produces zero new Fix outcomes AND the review
+states an Exit Estimate** — the estimated Major defects remaining, with its
+basis, or the explicit tag `[exit unestimated]`. Zero new findings says the
+reviewer stopped finding; the Exit Estimate is the claim about the artifact.
+In [our first application](examples/web-service.md), Diffract raised 15
+findings across 2 PDCA cycles, with 🔍 Observability and 🛡️ Shield as the
+most productive lenses (3 findings each).
 
 ## Documentation
 
@@ -163,22 +183,23 @@ across 3 PDCA cycles, with Observability and Subtract as the most productive len
 | [Anti-Dishonesty](docs/anti-dishonesty.md) | 13 structural mechanisms adapted from high-stakes industries |
 | [W5H1](docs/w5h1.md) | Completeness scan for what's missing |
 | [Review Prompt](PROMPT.md) | Self-contained instructions for running a Diffract review |
+| [Agent Entry Point](AGENTS.md) | Where coding agents start: review runs → PROMPT.md, repo work → house rules |
 | [Calibration](docs/calibration.md) | How to validate review consistency across reviewers |
 | [Example Review](examples/web-service.md) | Full Diffract cycle on a web service |
 | [Research: First Principles](docs/research/rq1-first-principles.md) | DeepThink analysis validating the lens set |
 | [Research: High-Stakes Review](docs/research/rq2-high-stakes-review.md) | Patterns from aviation, nuclear, medicine, law |
 | [Research: Calibration Reproducibility](docs/research/rq3-calibration-reproducibility.md) | 10 reviews of one frozen artifact across 4 models |
-| [Research: Reviewer Tiering](docs/research/rq5-reviewer-tiering.md) | 12 reviews testing whether reviewer tiers separate reviewers |
-| [Roadmap](ROADMAP.md) | Future: deterministic tooling, MCP integration, v1.0 criteria |
+| [Research: Reviewer Tiering](docs/research/rq5-reviewer-tiering.md) | 12 reviews testing whether reviewer tiers separate reviewers (numbering skips RQ4 — never run, not withheld) |
+| [Roadmap](ROADMAP.md) | Future: multi-tool adapters, calibration automation, v1.0 criteria |
 
 ## How It Emerged
 
 Diffract was developed through a collaboration between a human engineer
 and AI assistants during a code review session in February 2026. The
-framework started as 8 review lenses, was challenged against independent
+protocol started as 8 review lenses, was challenged against independent
 first-principles research (DeepThink), cross-validated against high-stakes
 industry practices (DeepResearch), and refined through multiple PDCA
-cycles — including applying the framework to itself.
+cycles — including applying the protocol to itself.
 
 The process was itself an act of Diffract: the human set the Compass, the
 AI applied the lenses, and both challenged each other's findings. The
@@ -205,11 +226,11 @@ same artifact, same lenses, different intent — each producing unique findings:
 | "Is it language-neutral?" | Go-specific tools in automation table |
 | "Is every sentence clear and kind?" | "Refuse" → "Pause", added kindness rule |
 
-The Compass is the most powerful lever in the framework.
+The Compass is the most powerful lever in the protocol.
 
 ## Acknowledgments
 
-This framework was co-created by [Jasper Duizendstra](https://github.com/duizendstra)
+This protocol was co-created by [Jasper Duizendstra](https://github.com/duizendstra)
 and AI assistants during a collaborative code review session.
 
 ### AI Contribution
@@ -217,7 +238,7 @@ and AI assistants during a collaborative code review session.
 The following AI systems contributed to the development of Diffract:
 
 - **Antigravity** (Google DeepMind) — Primary collaborator. Co-developed the
-  framework structure, applied lenses to real codebases, drafted documentation,
+  protocol structure, applied lenses to real codebases, drafted documentation,
   and challenged findings across multiple PDCA cycles.
 - **Google DeepThink** (Gemini 3.1 Pro) — Independent first-principles
   analysis (RQ1) that validated the lens set and identified two missing lenses
@@ -234,7 +255,7 @@ The AI proposed; the human decided.
 
 ### Disclaimer
 
-This framework contains AI-generated content. While the human author reviewed
+This project contains AI-generated content. While the human author reviewed
 and approved all material, the documentation, examples, and structural design
 were produced through human-AI collaboration. We believe in full transparency
 about AI involvement in intellectual and creative work.
@@ -248,7 +269,7 @@ Proposals, calibration runs, and lens challenges are welcome — see
 The most useful contribution is a calibration run: apply
 [`PROMPT.md`](PROMPT.md) to an artifact of your own, record the results per
 [docs/calibration.md](docs/calibration.md), and open an issue with them —
-including the runs where the framework failed you.
+including the runs where the protocol failed you.
 
 ## References
 
@@ -256,8 +277,13 @@ No single component of Diffract is original. The value is in the combination.
 
 | Component | Source |
 |-----------|--------|
-| "AI is not a tool, it is an agent" | Yuval Noah Harari |
-| PDCA cycle | W. Edwards Deming, Toyota Production System |
+| "AI is not a tool, it is an agent" (paraphrase) | Yuval Noah Harari, *Nexus* (2024) |
+| PDCA cycle | Walter Shewhart (origin); popularized by W. Edwards Deming, Toyota Production System |
+| Inspection method: entry/exit criteria, checking rates, sampling, Major/Minor severity | Tom Gilb & Dorothy Graham, *Software Inspection* (1993); antecedent: Michael Fagan (IBM, 1976) |
+| Capture–recapture defect estimation | Lincoln–Petersen (ecology); applied to software inspections by Eick et al. (1992); remaining-defect estimation per Gilb & Graham |
+| Planguage — a goal names its failure level | Tom Gilb, *Competitive Engineering* (2005) |
+| Evolutionary delivery (ancestor of the PDCA circuit breakers) | Tom Gilb, *Principles of Software Engineering Management* (1988) |
+| Defect Prevention Process | Robert Mays & Carole Jones (IBM), as integrated by Gilb & Graham |
 | Shisa Kanko (cognitive anchoring) | Japanese National Railways |
 | Falsifiability | Karl Popper, *The Logic of Scientific Discovery* |
 | Via Negativa | Nassim Nicholas Taleb, *Antifragile* |
