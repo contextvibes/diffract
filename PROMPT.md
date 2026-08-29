@@ -1,6 +1,6 @@
 # Diffract — Review Prompt
 
-> **Version: 0.1.0** · [Changelog](CHANGELOG.md)
+> **Version: 0.2.0** · [Changelog](CHANGELOG.md)
 >
 > This file is self-contained. You can execute a full Diffract review using
 > only the instructions below. For deeper understanding of the principles,
