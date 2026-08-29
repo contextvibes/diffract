@@ -28,7 +28,9 @@ only judgment can assess.
 - Deterministic tool scripts — **dropped.** Diffract ships prompt-only. The
   lens-to-tool mapping lives in `docs/lenses.md` ("Automation: Tools First");
   tools are invoked directly rather than through wrappers.
-- [ ] Execute calibration tests across 3+ AI models
+- [x] Execute calibration tests across 3+ AI models — see
+      [RQ3](docs/research/rq3-calibration-reproducibility.md) (4 models,
+      10 runs, one frozen artifact)
 - [ ] Add guidance for reviewing non-code artifacts (API specs, schemas)
 - [ ] Add more example reviews (different languages, architectures)
 
