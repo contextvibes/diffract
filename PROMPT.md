@@ -1,6 +1,6 @@
 # Diffract — Review Prompt
 
-> **Version: 0.2.1** · [Changelog](CHANGELOG.md)
+> **Version: 0.2.2** · [Changelog](CHANGELOG.md)
 >
 > This file is self-contained. You can execute a full Diffract review using
 > only the instructions below. For deeper understanding of the principles,
@@ -134,7 +134,16 @@ Scorecard counts below unverifiable from the review's own output.
 
 #### Nothing-Found Verification
 
-After CHECK, ask for **every lens that reported no findings**: *"If I
+**First, check the form.** For every lens that reported no findings, confirm
+its section actually contains an *"A finding would look like:"* line. A lens
+missing that line did not produce Output B — mark it failed and re-run the
+lens. Do not verify a lens whose anchoring is absent: there is nothing to
+verify, and attesting that you would have caught a bug is exactly the claim
+the anchoring exists to support. In RQ5 one reviewer omitted anchoring on
+every nothing-found lens in all three of its runs, and this step passed all
+three.
+
+Then ask for **every lens that reported no findings**: *"If I
 deliberately introduced a bug in this lens's domain, would my process have
 caught it?"* State a concrete example for each such lens — a single example
 does not test ten domains. If the answer is no for any lens, the process
@@ -194,6 +203,23 @@ because it was out of scope or beyond the reviewer's context.
 |-----|--------|---------------|
 | [area not reviewed] | [why — e.g., no access, out of scope, insufficient context] | [next step] |
 ```
+
+#### Findings Index
+
+End the review with this section, headed exactly `## FINDINGS INDEX`. One row
+per finding **raised** — skips and discards included, not fixes only.
+
+```markdown
+## FINDINGS INDEX
+| ID | Lens | Line(s) | Verdict | Claim (one sentence) | Confidence |
+|----|------|---------|---------|----------------------|------------|
+```
+
+**Raised** means the finding has a row here. **Survived** means its verdict is
+`Fix`. State which of the two any count refers to. Reviews that count findings
+by different rules are not comparable, and comparing runs is the whole point
+of calibration: in RQ5, twelve runs used three different counting policies and
+the dispersion metric had to be recomputed before it meant anything.
 
 #### Calibration Test (optional but recommended)
 

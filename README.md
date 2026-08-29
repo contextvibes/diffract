@@ -1,7 +1,7 @@
 # Diffract — A Review Protocol for Human-AI Collaboration
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.1-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.2-green.svg)](CHANGELOG.md)
 
 > **AI is not a tool. It is an agent.**
 > — [Yuval Noah Harari](https://en.wikipedia.org/wiki/Yuval_Noah_Harari)
@@ -120,9 +120,10 @@ Run each lens across the codebase. Collect ALL findings. **Do not fix yet.**
 | 4 | 📌 **Truth** | Is this knowledge in exactly one place? |
 | 5 | 🧱 **Boundary** | Can an isolated change stay in one boundary? |
 | 6 | 🛡️ **Shield** | Does it neutralize all inputs that violate its invariants? |
-| 7 | 🎯 **Variety** | Does every possible input map to a defined output? |
-| 8 | 🔍 **Observability** | Can I determine system state from its outputs? |
-| 9 | ⚡ **Efficiency** | Is resource use proportional to the work required? |
+| 7 | 🔗 **Provenance** | Can I verify the origin and integrity of every dependency? |
+| 8 | 🎯 **Variety** | Does every possible input map to a defined output? |
+| 9 | 🔍 **Observability** | Can I determine system state from its outputs? |
+| 10 | ⚡ **Efficiency** | Is resource use proportional to the work required? |
 
 Then ask [W5H1](docs/w5h1.md) to find what's **missing** — especially
 **Why** (rationale), **Who** (ownership), and **When** (expiry).
@@ -166,6 +167,8 @@ across 3 PDCA cycles, with Observability and Subtract as the most productive len
 | [Example Review](examples/web-service.md) | Full Diffract cycle on a web service |
 | [Research: First Principles](docs/research/rq1-first-principles.md) | DeepThink analysis validating the lens set |
 | [Research: High-Stakes Review](docs/research/rq2-high-stakes-review.md) | Patterns from aviation, nuclear, medicine, law |
+| [Research: Calibration Reproducibility](docs/research/rq3-calibration-reproducibility.md) | 10 reviews of one frozen artifact across 4 models |
+| [Research: Reviewer Tiering](docs/research/rq5-reviewer-tiering.md) | 12 reviews testing whether reviewer tiers separate reviewers |
 | [Roadmap](ROADMAP.md) | Future: deterministic tooling, MCP integration, v1.0 criteria |
 
 ## How It Emerged
@@ -235,6 +238,17 @@ This framework contains AI-generated content. While the human author reviewed
 and approved all material, the documentation, examples, and structural design
 were produced through human-AI collaboration. We believe in full transparency
 about AI involvement in intellectual and creative work.
+
+## Contributing
+
+Proposals, calibration runs, and lens challenges are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for what a lens proposal must carry and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for conduct.
+
+The most useful contribution is a calibration run: apply
+[`PROMPT.md`](PROMPT.md) to an artifact of your own, record the results per
+[docs/calibration.md](docs/calibration.md), and open an issue with them —
+including the runs where the framework failed you.
 
 ## References
 
