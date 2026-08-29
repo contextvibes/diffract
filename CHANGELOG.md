@@ -11,6 +11,117 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+## [0.3.0] — 2026-08-29
+
+This release closes the loop on the `Confidence` column. Since its
+introduction, Confidence has been a label a reviewer asserts and nothing
+ever grades — the same defect class as the pre-0.2.4 exit rule, which
+measured reviewer fatigue rather than artifact cleanliness. Two mechanisms
+from the judgment-calibration literature fix that, and the five-cycle
+self-review record from 0.2.4 supplied the decision data for a third
+change the record itself demanded. All `PROMPT.md` changes are batched
+here so the tier-staleness cost of changing the instrument is paid once.
+
+### Added
+
+- **Brier-scored Confidence** (Glenn W. Brier, 1950; calibration practice
+  per Philip Tetlock, *Superforecasting*). Each Confidence bin now carries
+  a canonical probability that the finding survives vetting — High = 0.95,
+  Medium = 0.75, Low = 0.4, defined in `PROMPT.md` and nowhere else — so
+  the column is a scoreable forecast instead of an ungraded label.
+  `docs/calibration.md` gains a "Scoring Confidence (Brier)" section with
+  the method, a resolution rule (outcomes resolved by vetting not
+  performed by the finder; self-vetted scores flagged), and a worked
+  example computed from the real cycles 3–5 data: 37 findings, 1 discard,
+  pooled Brier 0.0197 — and a per-bin table showing why the pooled number
+  alone flatters (always answering High would score 0.0268 against the
+  97% survival base rate). First empirical insight, visible only in the
+  per-bin view: Medium resolved 8 of 8 — as used, Medium behaves like
+  certainty, so either the reviewers are underconfident at Medium or the
+  bin needs recalibration.
+- **Competing hypotheses for Low-Confidence findings** (Richards J. Heuer
+  Jr., *Psychology of Intelligence Analysis*, CIA 1999 — Analysis of
+  Competing Hypotheses). Before a Low-Confidence finding gets a verdict,
+  CHECK now weighs 2–3 rival explanations (defect is real / artifact
+  intent explains it / reviewer misread) and keeps the one the evidence
+  *least disconfirms* — the inversion is the method: a reviewer can
+  assemble support for anything it has already written down.
+  Confirmation bias is the LLM reviewer's dominant failure mode, and Low
+  findings are where it does verdict damage. Scoped to Low only so the
+  cost stays proportional to the doubt.
+- **Mechanical checks shipped as code.** `scripts/check.py` (standard
+  library only, run in CI by `.github/workflows/check.yml`) implements
+  link/anchor resolution, fence balance, version-string agreement, and a
+  README↔PROMPT.md lens-table diff. The validation cycles below kept
+  raising the same two classes — normative text drifting between files,
+  and an instrument that mandates deterministic checks while shipping no
+  implementation of them ("tools first, reasoning second", applied to
+  itself). The repo now runs its own entry gate.
+- **Preregistration named as an ancestor.** PLAN-before-DO — governors
+  declared before findings exist — *is* preregistration; the References
+  table now says so (Chris Chambers; Center for Open Science). No
+  instrument change, lineage only.
+
+### Changed
+
+- **The done-rule counts Majors only.** Convergence is now "a full PDCA
+  cycle produces zero new **Major** Fix outcomes" (previously all Fix
+  outcomes). The evidence is the 0.2.4 record: cycles 2–5 raised 12, 12,
+  12, and 13 findings — largely disjoint sets — while the Major *kind*
+  shifted from contradictions to marginal underspecification. Minor
+  findings are inexhaustible for prose artifacts, so a done-rule that
+  counts them can never fire and the convergence signal it defines is
+  meaningless. The circuit breaker's diminishing-returns test counts the
+  same quantity. Decision tracked in issue #29.
+
+### Staleness
+
+`PROMPT.md` changed, so all measured reviewer tiers are stale
+(`docs/calibration.md`: a tier is bound to the instrument version it was
+measured against). Reviews run under 0.3.0 additionally emit competing-
+hypotheses blocks for Low-Confidence findings; when comparing finding
+counts across instrument versions, note that 0.3.0 verdicts on Low
+findings are not produced by the same procedure as earlier ones.
+
+### Validation
+
+Four blind validation cycles ran before release — each a fresh-context
+reviewer executing this instrument version against README.md + PROMPT.md,
+one-shot, review-only, with maintainer vetting and fixes applied between
+cycles. The reviewer model changed after cycle 1, so the four cycles are
+two reviewer configurations, not one converging series:
+
+- **Cycle 1** (Claude Fable 5): 13 findings, 3 Major; 6 fixes applied
+  (2 Major).
+- **Cycle 2** (Claude Opus): 22 findings, 15 Major; 18 fixes applied
+  (14 Major). The jump measures the reviewer change as much as the
+  artifact — a new configuration re-opens the finding stream.
+- **Cycle 3** (Claude Opus): 22 findings, 12 Major; 16 fixes applied
+  (11 Major). First same-configuration comparison: Major Fix outcomes
+  fell 14 → 11. Its Competing Hypotheses step produced the release's
+  first genuine ACH self-discard.
+- **Cycle 4** (Claude Opus): 23 findings, 13 Major; 17 fixes applied
+  (12 Major). Its Competing Hypotheses step discarded one of its own
+  Majors for lack of in-scope evidence. Major Fix outcomes did not fall
+  (11 → 12): the diminishing-returns stop fired, so this was the last
+  cycle. Its largest fixes: the Cobra test was stated four non-equivalent
+  ways across the two files, Rule 9's instrument exception was unbounded
+  when the artifact under review is the protocol being executed, and the
+  review-only run type — the very kind these cycles are — had no defined
+  Scorecard rendering.
+
+Not converged: no cycle produced zero new Major Fix outcomes, and the
+instrument's own circuit breaker terms are met — three cycles in the Opus
+configuration (the max), with the Major Fix count no longer falling
+(14 → 11 → 12). These were separate one-shot runs, each cycle 1 of its
+own review, vetted and fixed out-of-band. **Exit Estimate: ≈8 Major
+defects remaining** — basis: the final cycle's per-lens yield;
+capture–recapture does not apply across sequentially-fixed trees, and
+the flat Major trend says to read 8 as a floor, not a ceiling. Shipping
+on the estimate rather than convergence is the 0.2.4 exit rule applied
+to the release itself: the estimate, not reviewer fatigue or a
+finding-free cycle, is the claim about the artifact.
+
 ## [0.2.4] — 2026-08-29
 
 This release folds in the software-inspection lineage — Tom Gilb & Dorothy

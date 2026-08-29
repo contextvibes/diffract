@@ -8,6 +8,11 @@
 # checkpoint, not a bypass of it. Only a run with no user available
 # proceeds on the config alone, tagged [governors: diffract.yaml].
 
+# Config schema version — the key set this file was written against
+# (version, compass, cobra, integrity, scope, max_cycles), normative in
+# PROMPT.md's Agentic Execution section. Unchanged since 0.2. A reviewer
+# that does not know this schema reports the mismatch and does not apply
+# the config.
 version: "0.2"
 
 # 🧭 Compass — What are we looking for?

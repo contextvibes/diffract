@@ -49,14 +49,22 @@ confirm:
 - [ ] PLAN shows either a confirmation exchange or the
       `[async — no PLAN confirmation]` tag, and DO opens with Cold-Start
       Calibration
-- [ ] Lens finding tables carry the `ID | File | Finding | Line | Severity`
-      columns, with IDs in PROMPT.md's `<lens abbreviation>-<n>` grammar;
+- [ ] Lens finding tables carry the
+      `ID | File | Finding | Line | Severity | Confidence` columns, with
+      IDs in PROMPT.md's `<lens abbreviation>-<n>` grammar;
       the CHECK table carries the
       `⚖️ Integrity | 🧭 Compass | 🐍 Cobra | Verdict` columns
-- [ ] CHECK includes Nothing-Found Verification; LEARN includes
+- [ ] Every Low-Confidence finding carries a competing-hypotheses block
+      before its verdict (rival explanations + the evidence that
+      discriminates), per PROMPT.md's CHECK
+- [ ] CHECK includes Scope and Nothing-Found Verification, with a
+      seeded-bug example for every lens in scope that differs from any
+      DO-time anchoring; LEARN includes
       fix application + verification, Scorecard (with "Reviewer",
-      "Major findings", and "Estimated remaining Majors" rows), Gap
-      Analysis, and Defect Prevention
+      "Artifact", "Instrument", "Governors", "Entry checks",
+      "Major findings raised", "Lenses run",
+      "Estimated remaining Majors", and
+      "Tags" rows), Gap Analysis, and Defect Prevention
 - [ ] The review ends with `## FINDINGS INDEX` carrying the `Cycle`
       column, and every count stated elsewhere matches its row count
 

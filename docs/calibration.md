@@ -196,6 +196,69 @@ self-check cannot detect its own misses — from opposite sides: estimation
 says *how many* defects remain, ground truth says *which one* was missed.
 Neither substitutes for the other.
 
+## Scoring Confidence (Brier)
+
+The Findings Index's `Confidence` column is a forecast: each bin carries a
+canonical probability — normative in `PROMPT.md` (Findings Index section),
+not restated here — that the finding **survives** vetting, with *survives*
+as defined there: raised and not `Discard:Integrity`. That makes Confidence
+scoreable. The **Brier score** (Glenn W. Brier, 1950; the judgment-calibration
+practice of Philip Tetlock's forecasting work) is the mean squared error of
+those forecasts:
+
+```
+BS = mean((p − outcome)²)     outcome: 1 = survived, 0 = discarded
+```
+
+0 is perfect; 0.25 is what always answering 50% earns; lower is better.
+
+**Resolution rule.** An outcome counts as resolved when the vetting was not
+performed by the finder — the counterpart reviewer in a calibration pair, or
+maintainer vetting of a fresh-context run. Self-vetted outcomes are
+scoreable but must be flagged as such: a reviewer grading its own forecasts
+can inflate its score.
+
+**Report the per-bin table, not just the score.** Discards are rare (1 in
+37 findings across the v0.2.x self-review cycles), so the base rate is
+heavily skewed and a single pooled number rewards answering High every
+time. The per-bin resolution table is what exposes mis-calibration.
+
+### Worked example — v0.2.x self-review, cycles 3–5
+
+Three fresh-context reviewer runs against the instrument repository, all
+outcomes resolved by maintainer vetting (not the finder — the resolution
+rule above holds). 37 findings raised; 1 discarded.
+
+| Confidence | canonical p | n | resolved true | rate | per-bin Brier |
+|------------|-------------|---|---------------|------|---------------|
+| High       | 0.95        | 28 | 28 | 1.00 | 0.0025 |
+| Medium     | 0.75        | 8  | 8  | 1.00 | 0.0625 |
+| Low        | 0.40        | 1  | 0  | 0.00 | 0.1600 |
+
+The `canonical p` values are inputs copied from `PROMPT.md`, where they are
+normative; this table does not define them. Pooled Brier: **0.0197**
+(per cycle: 0.0125 / 0.0256 / 0.0210).
+
+What the table says that the pooled score hides:
+
+- **Medium resolved 8 of 8.** As used, Medium behaves like ~1.0, not 0.75 —
+  the reviewers were underconfident at Medium, or the bin's probability
+  needs recalibration. The Medium bin alone contributes more total error
+  (0.50) than the other two bins combined.
+- **The pooled score barely beats the degenerate strategy.** Answering High
+  on all 37 findings would score 0.0268 against the actual 0.0197 — with a
+  97% survival base rate, the pooled number can barely distinguish
+  calibration from flattery. The per-bin table can.
+- **Low has n = 1.** Its 0-of-1 resolution is directionally consistent with
+  p = 0.4 and evidentially nearly worthless.
+
+**Caveats:** n is small; the base rate is skewed (see above); and
+resolution-by-vetting measures evidence quality, not ground truth — a wrong
+finding that survives vetting still scores as a success. The frozen-tag
+capture–recapture runs queued in
+[issue #29](https://github.com/contextvibes/diffract/issues/29) will
+provide stricter resolution when they exist.
+
 ## Reviewer Tiers
 
 A **reviewer tier** is a measured property of a *reviewer configuration*, not
@@ -291,5 +354,6 @@ Document calibration results in your retro:
 - Estimated total Majors (capture–recapture, Majors only): [N̂ / n/a — see
   Estimating What Both Reviewers Missed]
 - Estimated missed by both: [count / n/a]
+- Brier score (per-bin table attached): A [x] / B [y]
 - Result: [calibrated / not calibrated — cycle again]
 ```
