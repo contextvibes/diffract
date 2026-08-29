@@ -66,7 +66,7 @@ understanding the real-world tradeoffs.
 
 **Prevents:** Overreaction, over-engineering, cascading breakage
 
-**Calibration:** Context-dependent.
+**Calibration:** Choose one of the three levels below.
 
 ```
 🐍 Cobra levels:
@@ -80,8 +80,10 @@ understanding the real-world tradeoffs.
 
 ### The Cobra Effect
 
-Named after the historical policy in colonial Delhi where a bounty on cobras
-led people to breed cobras for the reward, making the problem worse. In code
+Named after the story of a colonial-era bounty on cobras in Delhi that led
+people to breed cobras for the reward, making the problem worse. The story is
+widely told but no primary source documents it — treat it as an illustration,
+not as history. In code
 review, this manifests as "fixing" something by adding complexity that
 introduces new vulnerabilities.
 
@@ -105,6 +107,9 @@ introduces new vulnerabilities.
 
 ### Three Sub-Principles
 
+Each sub-principle formalizes one of the three Questions above, in order —
+the two lists state the same three obligations:
+
 1. **Evidence** — Every lens must produce proof of observation
 2. **Falsifiability** — Findings must be objective ("this variable is never
    read" is falsifiable; "this variable name feels wrong" is not)
@@ -121,5 +126,5 @@ Before every review, state all three:
 Diffract: [version]
 🧭 Compass: [one sentence goal]
 🐍 Cobra:   [prototype | production | library/framework] (see Cobra levels above)
-⚖️ Integrity: [evidence rules]
+⚖️ Integrity: [evidence rules] (default: see Integrity calibration above)
 ```
