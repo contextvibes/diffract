@@ -61,22 +61,29 @@ everything not discarded; `Fix` verdicts only; and an index of some verdicts
 but not others. The first dispersion table computed for this study compared
 numbers produced under all three and was not meaningful.
 
-Recomputed with one policy throughout — **claims raised**, which is every
-finding that reached CHECK:
+Attempting to recount the runs on a single policy failed, and the failure is
+the result. The twelve documents use incompatible finding-ID schemes, section
+headings, and table layouts; no mechanical rule extracts a comparable count
+from all of them. Each run's self-reported total is therefore all that exists:
 
-| Reviewer | Runs | Mean | Range | CV |
-|---|---|---:|---:|---:|
-| Haiku | 6, 22, 2 | 10.0 | 2–22 | ~1.0 |
-| Sonnet | 5, 4, 9 | 6.0 | 4–9 | 0.44 |
-| Fable | 12, 9, 10 | 10.3 | 9–12 | ~0.15 |
-| Opus | 22, 18, 27 | 22.3 | 18–27 | 0.20 |
+| Reviewer | Self-reported totals | Counting policy |
+|---|---|---|
+| Haiku | 4, 20, 2 | `Fix` verdicts (consistent across its runs) |
+| Sonnet | 5, 1, 6 | mixed — r2 indexed only its `Fix` of 4 raised |
+| Fable | 11, 9, 9 | all surviving verdicts |
+| Opus | 21, 11, 19 | mixed — r1 all surviving, r2 and r3 `Fix` only |
 
-What survives the correction: **Haiku is 3–6x noisier than every other
-configuration**, replicating its CV of 0.91 in RQ3 on a different artifact
-and a different instrument version. What does not survive: any finer ranking
-among the other three. An earlier reading of this data put Fable an order of
-magnitude tighter than Haiku and clearly tighter than Opus; both gaps were
-artifacts of mixed counting policies.
+Only one comparison survives this. Haiku used one policy across its own three
+runs and produced 4, 20, and 2 — a spread of an order of magnitude, CV ≈ 1.1,
+replicating its 0.91 in RQ3 on a different artifact and a different instrument
+version. **That replication is the only quantitative claim in this study.**
+
+Everything else is unsupported. Opus did not use a consistent policy across
+its own runs, so even its within-reviewer variance is unsound. An earlier
+reading of this data reported a cross-reviewer dispersion table and concluded
+Fable was an order of magnitude tighter than Haiku and clearly tighter than
+Opus. Both gaps were artifacts of mixed counting. No ranking among Sonnet,
+Fable and Opus is established here.
 
 This is why `PROMPT.md` now specifies a `## FINDINGS INDEX` and defines
 *raised* against *survived*.
@@ -90,7 +97,12 @@ Scored on GT1 only, per the shipped criteria.
 | Haiku | 4 | 2 of 3 | **4** |
 | Sonnet | 3 | 3 of 3 | **4** |
 | Fable | 8 | 3 of 3 | **4** |
-| Opus | 13 | 3 of 3 | **4** |
+| Opus | ≥11 | 3 of 3 | **4** |
+
+Stable-claim counts depend on clustering granularity and only the individually
+verified ones are counted for Opus. The tier outcome does not depend on them:
+the stability criterion asks for at least one stable claim, and every
+configuration cleared it several times over.
 
 All four pass. The criteria did not discriminate, and the reason is GT1's
 difficulty, not the reviewers' similarity: any reviewer that read the section
@@ -144,15 +156,19 @@ predict passing it. [calibration](../calibration.md) now says so.
 Rule 3 forbids claiming "no findings" without describing what a finding would
 look like. Counting nothing-found lenses against anchoring lines present:
 
-| Reviewer | r1 | r2 | r3 |
-|---|---|---|---|
-| Haiku | 5 lenses, **0 anchored** | 2, **0** | 12, **0** |
-| Sonnet | 4 / 4 | 10 / 8 | 4 / 2 |
-| Fable | 2 / 1 | 2 / 4 | 4 / 3 |
-| Opus | 0 (none empty) | 3 / 1 | 0 (none empty) |
+Lens sections reporting no findings, and how many of those carried anchoring:
 
-Haiku violated rule 3 on every nothing-found lens in all three runs. In every
-one of those runs, Nothing-Found Verification then passed.
+| Reviewer | r1 | r2 | r3 | Total |
+|---|---|---|---|---|
+| Haiku | 2 / **0** | 1 / **0** | 9 / **0** | **0 of 12** |
+| Sonnet | 3 / 3 | 8 / 8 | 2 / 2 | 13 of 13 |
+| Fable | 1 / 1 | 2 / 2 | 4 / 3 | 6 of 7 |
+| Opus | none empty | 2 / 1 | none empty | 1 of 2 |
+
+Haiku anchored none of its twelve nothing-found lenses across three runs. In
+every one of those runs, Nothing-Found Verification then passed. Sonnet
+anchored all thirteen of its own — the requirement is executable, and the
+failure is configuration-specific rather than a defect in the rule.
 
 Haiku r3 is the sharpest case and the third recorded instance of mechanism 5
 affirming the error it exists to catch. Its 📌 Truth lens read the defective
@@ -169,6 +185,24 @@ not produced Output B and is re-run, not verified. This does not make
 mechanism 5 sound; it makes one of its failure modes mechanically detectable.
 Real seeded-error verification remains unbuilt and on the ROADMAP.
 
+## One Run Silently Skipped a Lens
+
+`sonnet-r1` contains nine lens sections. The missing one is 🔗 Provenance —
+the same lens whose absence from the artifact was GT1. The run still caught
+GT1 through its Truth lens, so the omission cost it nothing and nothing
+flagged it.
+
+`PROMPT.md` requires all ten lenses twice (`:16`, `:61`), but every
+verification the framework performs afterwards is scoped to lenses that
+*reported* something. Nothing-Found Verification asks about lenses that
+reported no findings; a lens that was never run reports nothing at all and is
+invisible to it. The Scorecard counts findings, not coverage.
+
+This is the same class of gap as the anchoring failure — a deviation plainly
+visible in the review's own output that no step inspects — so it gets the same
+treatment: the form check now confirms that all ten lens sections are present
+before anything else is verified.
+
 ## Impact on Diffract
 
 | Change | Evidence |
@@ -178,7 +212,8 @@ Real seeded-error verification remains unbuilt and on the ROADMAP.
 | One ground-truth defect is an upper bound, not a measurement | GT1 saturated; GT2 discriminated |
 | "Survives CHECK" defined as raised and not `Discard:Integrity` | Recall for one reviewer varied 0/3 to 2/3 by counting rule alone |
 | `## FINDINGS INDEX` required, *raised* vs *survived* defined | Three counting policies across twelve runs |
-| Nothing-Found Verification checks anchoring form first | Rule 3 violated in 3 of 3 runs by one reviewer, passed 3 of 3 times |
+| Nothing-Found Verification checks anchoring form first | 0 of 12 nothing-found lenses anchored by one reviewer; passed 3 of 3 times |
+| The same check confirms all ten lens sections are present | One run silently ran 9 of 10 lenses; nothing detected it |
 | Cluster map recorded in results | Stability counts were not independently re-derivable |
 | README lens table, `#contributing` anchor, Provenance evidence format | GT1, GT2, and the format drift found while verifying them |
 

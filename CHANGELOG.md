@@ -34,7 +34,7 @@ never cut as a release; v0.2.0 is the first tagged version.
 
 - **A reviewer tier now binds to the artifact**, not only to the model,
   version, settings and `PROMPT.md` version. RQ5 measured four
-  configurations whose run-to-run dispersion differs by roughly 5x as
+  configurations ranging from 3 to more than 11 stable claims each as
   identically tier 4, because the artifact carried one easy defect. Artifact
   difficulty was an uncontrolled variable in a definition that claimed to
   name all of them. A tier reported without its artifact means nothing.
@@ -52,11 +52,14 @@ never cut as a release; v0.2.0 is the first tagged version.
 - **Nothing-Found Verification checks form before it checks judgment.**
   Its first step is now mechanical: a lens that reported no findings without
   an "A finding would look like:" line has not produced Output B, and is
-  re-run rather than verified. In RQ5 one reviewer omitted anchoring on every
-  nothing-found lens in all three of its runs — rule 3 violated 3 of 3 times
-  — and the mechanism passed all three, once while its own Truth lens had
-  affirmed the defect under test. This is the third recorded instance of
-  mechanism 5 certifying an error it exists to catch. It does not make the
+  re-run rather than verified, and the same step confirms all ten lens
+  sections are present. In RQ5 one reviewer anchored none of its twelve
+  nothing-found lenses across three runs and the mechanism passed all three,
+  once while its own Truth lens had affirmed the defect under test — the third
+  recorded instance of mechanism 5 certifying an error it exists to catch. A
+  separate run silently reviewed 9 of the 10 lenses, omitting 🔗 Provenance,
+  and nothing detected it: every check the framework runs afterwards is scoped
+  to lenses that *reported*, and a lens never run reports nothing. It does not make the
   mechanism sound; it makes one failure mode detectable from the review's own
   output. Seeded-error verification remains unbuilt.
 - Recording Results now carries a cluster map, so reported stability counts

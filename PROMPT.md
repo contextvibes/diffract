@@ -134,14 +134,17 @@ Scorecard counts below unverifiable from the review's own output.
 
 #### Nothing-Found Verification
 
-**First, check the form.** For every lens that reported no findings, confirm
-its section actually contains an *"A finding would look like:"* line. A lens
+**First, check the form.** Confirm all ten lens sections are present — a lens
+you never ran reports nothing, and every check below is scoped to lenses that
+reported. Then, for every lens that reported no findings, confirm its section
+actually contains an *"A finding would look like:"* line. A lens
 missing that line did not produce Output B — mark it failed and re-run the
 lens. Do not verify a lens whose anchoring is absent: there is nothing to
 verify, and attesting that you would have caught a bug is exactly the claim
 the anchoring exists to support. In RQ5 one reviewer omitted anchoring on
-every nothing-found lens in all three of its runs, and this step passed all
-three.
+every nothing-found lens in all three of its runs and this step passed all
+three; a run by a different reviewer silently reviewed nine of the ten
+lenses, and nothing detected that either.
 
 Then ask for **every lens that reported no findings**: *"If I
 deliberately introduced a bug in this lens's domain, would my process have

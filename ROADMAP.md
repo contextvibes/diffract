@@ -53,8 +53,9 @@ only judgment can assess.
       **graded difficulty** — required to assign reviewer tiers on demand
       (`docs/calibration.md`) and to populate tiers 2 and 3, which RQ3
       defined but left empty. RQ5 showed a single easy defect saturates the
-      recall criterion: four configurations differing ~5x in run-to-run
-      dispersion all measured tier 4 against one two-line contradiction
+      recall criterion: four configurations ranging from 3 to more than 11
+      stable claims each all measured tier 4 against one two-line
+      contradiction
 - [ ] Seeded-error variant of Nothing-Found Verification — a real defect
       planted by a third party, per RQ2's blind-seeding designs. RQ3 showed
       the current self-check cannot detect its own misses

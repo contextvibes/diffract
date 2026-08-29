@@ -186,8 +186,9 @@ the axis that agreement cannot supply.
 least one defect verified independently of the reviewers being tested. One
 defect is a floor for *assigning* a tier, not for *trusting* one. A single
 self-contained defect saturates: in [RQ5](research/rq5-reviewer-tiering.md)
-four configurations whose run-to-run dispersion differed by roughly 5x all
-cleared the same two-line contradiction, and all four measured tier 4. Read a
+four configurations ranging from 3 to more than 11 stable claims each — and
+differing sharply in whether they followed the instrument at all — cleared the
+same two-line contradiction, and all four measured tier 4. Read a
 tier measured against one defect as an upper bound. Separating the tiers
 needs several independently established defects at graded difficulty — the
 reference artifact set on the [ROADMAP](../ROADMAP.md).
