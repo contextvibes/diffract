@@ -29,7 +29,31 @@ If you've completed a full Diffract review and want to share it:
 
 1. Anonymize all project-specific details
 2. Include the PLAN (governors), DO (findings), CHECK (vetting), and LEARN (retro)
-3. Add it to `examples/` as a pull request
+3. Check it against the template-conformance checklist below
+4. Add it to `examples/` as a pull request
+
+**Template-conformance checklist** — examples in `examples/` demonstrate
+the templates in [PROMPT.md](PROMPT.md), so they must match them. Before
+submitting (and whenever a PR changes PROMPT.md's templates, in that same
+PR), diff each example's section and table headers against PROMPT.md and
+confirm:
+
+- [ ] A version line under the title states which PROMPT.md revision the
+      example was written against ("Written against Diffract vX.Y.Z")
+- [ ] All 10 lens sections are present, in the prescribed 1–10 order, and
+      any cognitive anchoring fits the reviewed artifact's language
+- [ ] PLAN shows either a confirmation exchange or the
+      `[async — no PLAN confirmation]` tag, and DO opens with Cold-Start
+      Calibration
+- [ ] Lens finding tables carry the `# | File | Finding | Line | Severity`
+      columns; the CHECK table carries the
+      `⚖️ Integrity | 🧭 Compass | 🐍 Cobra | Verdict` columns
+- [ ] CHECK includes Nothing-Found Verification; LEARN includes
+      fix application + verification, Scorecard (with "Major findings" and
+      "Estimated remaining Majors" rows), Gap Analysis, and Defect
+      Prevention
+- [ ] The review ends with `## FINDINGS INDEX`, and every count stated
+      elsewhere matches its row count
 
 ### Improve Documentation
 
