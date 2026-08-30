@@ -31,6 +31,16 @@ def strip_fenced(text):
     return re.sub(r'```.*?```', '', text, flags=re.S)
 
 
+def strip_code(text):
+    """Fenced blocks and inline code spans.
+
+    Link checking must ignore both: a document that writes a link pattern
+    inside backticks to explain it is not carrying that link. Heading slugs
+    keep their inline code, so anchors_of() deliberately uses strip_fenced().
+    """
+    return re.sub(r'`+[^`\n]*`+', '', strip_fenced(text))
+
+
 def anchors_of(path):
     """GitHub-style slugs for every heading outside fenced code blocks."""
     slugs = set()
@@ -70,7 +80,7 @@ def check_fences():
 
 def check_links():
     for path in md_files():
-        text = strip_fenced(open(path).read())
+        text = strip_code(open(path).read())
         for match in re.finditer(r'\]\(([^)\s]+)\)', text):
             link = match.group(1)
             if link.startswith(('http://', 'https://', 'mailto:')):

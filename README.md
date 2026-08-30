@@ -194,7 +194,11 @@ with its basis (PROMPT.md's LEARN section is normative on the rule, its
 tags, and why Minors do not gate exit).
 In [our first application](examples/web-service.md), Diffract raised 15
 findings across 2 PDCA cycles, with 🔍 Observability and 🛡️ Shield as the
-most productive lenses (3 findings each).
+most productive lenses (3 findings each). That artifact is anonymized, so its
+findings cannot be independently checked. The
+[SemVer 2.0.0 review](examples/semver-2.0.0-review.md) is the counterpart:
+a public, hash-pinned artifact reviewed blind, where every quote and line
+number can be verified against the original text.
 
 ## Documentation
 
@@ -207,7 +211,11 @@ most productive lenses (3 findings each).
 | [Review Prompt](PROMPT.md) | Self-contained instructions for running a Diffract review |
 | [Agent Entry Point](AGENTS.md) | Where coding agents start: review runs → PROMPT.md, repo work → house rules |
 | [Calibration](docs/calibration.md) | How to validate review consistency across reviewers |
-| [Example Review](examples/web-service.md) | Full Diffract cycle on a web service |
+| [Example Review](examples/web-service.md) | Full Diffract cycle on a web service; the repo's demonstration of Output B (nothing-found lenses) |
+| [Example Review: SemVer 2.0.0](examples/semver-2.0.0-review.md) | Blind adoption review of a public, hash-pinned artifact; every quote machine-verified |
+| [Review Artifacts](examples/artifacts/README.md) | Frozen third-party review targets: provenance, licenses, hashes, and the posture these reviews take |
+| [Calibration Fixtures](calibration/README.md) | Public documents with known defects planted in them, for measuring what a reviewer actually finds |
+| [Calibration Results](calibration/results.md) | Scored runs against those fixtures, and what each score does and does not show |
 | [Research: First Principles](docs/research/rq1-first-principles.md) | DeepThink analysis validating the lens set |
 | [Research: High-Stakes Review](docs/research/rq2-high-stakes-review.md) | Patterns from aviation, nuclear, medicine, law |
 | [Research: Calibration Reproducibility](docs/research/rq3-calibration-reproducibility.md) | 10 reviews of one frozen artifact across 4 models |
