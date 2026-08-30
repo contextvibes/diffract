@@ -13,14 +13,25 @@ never cut as a release; v0.2.0 is the first tagged version.
 
 ## [0.4.0] — 2026-08-30
 
-The review becomes checkable from outside. Every previous release asked
-the reviewer to verify its own arithmetic, its own quotes and its own
-coverage — the same self-attestation defect the Confidence column had
-before 0.3.0, one level up. This release moves four of the thirteen
-anti-dishonesty mechanisms out of the reviewer's own output and into a
-script anyone can run, splits the one Scorecard row that made a correct
-review impossible to state, and writes down what the remaining nine
-still do not detect.
+A review's form becomes partly checkable, and the checker says what it
+does not check. Every previous release asked the reviewer to verify its
+own arithmetic, its own quotes and its own coverage — the same
+self-attestation defect the Confidence column had before 0.3.0, one
+level up. This release moves four of the thirteen anti-dishonesty
+mechanisms out of the reviewer's own output and into a script anyone can
+run, splits the one Scorecard row that made a correct review impossible
+to state, and writes down what the remaining nine still do not detect.
+
+**This release was renamed before it shipped.** It was themed "the
+review becomes checkable from outside" through cycle 7. Blind cycles 8
+and 8b, run independently against the same frozen candidate, each found
+that claim still false — most sharply in a way no earlier cycle had
+reached: `scripts/check_review.py` rejected a multi-cycle review, which
+the done-rule mandates, and rejected a review that headed its CHECK
+phase at the level `PROMPT.md` itself uses. A checker that cannot pass a
+conforming review does not make the review checkable. The narrower title
+above is what the code supports, and the difference between the two is
+the honest content of this release.
 
 The `PROMPT.md` batching rule was overridden deliberately. The rule
 exists to pay the tier-staleness cost once per release, but the tiers it
@@ -376,10 +387,11 @@ stop checking the two frozen 0.3.0 reviews.
 
 ### Validation
 
-Three blind cycles ran before release — a fresh-context reviewer (Claude
+Five blind cycles ran before release — a fresh-context reviewer (Claude
 Opus) executing this instrument version, one-shot and review-only, in a
 directory containing only the artifact. Blindness is procedural, as
-`calibration/README.md` defines it: no repository access, no network.
+`calibration/README.md` defines it: no repository access, no network. A
+run with repository access is void, not low-scoring.
 
 - **Cycle 5** (Claude Opus, against `README.md` + `PROMPT.md`): 23
   findings, 7 Major, 17 Fix verdicts. All seven Majors were verified
@@ -399,6 +411,17 @@ directory containing only the artifact. Blindness is procedural, as
   as fixtures before being accepted and re-run as fixtures after the
   fix, which is the first cycle where every decisive finding has a
   before-and-after it can be checked against.
+- **Cycle 8** (Claude Opus, against the same five files as cycle 7, run
+  after the cycle-7 fixes landed): 25 findings, 13 Major. Four Majors
+  were verified by reading the code and are fixed above; the rest are
+  either filed or recorded below. Cycle 8 falsified this release's
+  original headline claim — see below.
+- **Cycle 8b** (Claude Opus, against a frozen artifact byte-identical to
+  the one cycle 8 read, run with no knowledge of cycle 8): 23 findings,
+  9 Major. This is the first cycle run as a deliberate replicate rather
+  than as the next pass, and the first pair of cycles this project has
+  ever been able to compute an overlap from. It independently raised the
+  two defects cycle 8 raised that this release's rename turns on.
 
 The cycle is numbered 5 because it continues the four cycles of 0.3.0,
 but it is not comparable to them: those ran against 0.3.0, and a
@@ -488,17 +511,49 @@ run-only-the-shipped-copy rule "supplies no means" to identify that
 copy; the rule supplies the means — resolve relative to PROMPT.md — and
 the scripts implement it. A manifest would still help, and is filed.
 
-**Exit Estimate: ≈8 Major defects remaining**, on cycle 7's per-lens
-yield over a single pass against the artifact as it now stands. Cycle
-6's estimate of ≈6 was low: cycle 7 raised twelve and nine survived
-verification. Capture–recapture still does not apply, and cycle 7
-established why it structurally cannot under this protocol — the
-maintainer fixes each cycle's findings before the next cycle runs, so no
-two cycles ever draw from the same population and the overlap is zero by
-construction. Measuring it requires two independent runs against one
-unchanged artifact, which no release has yet paid for. No cycle has
-converged, no cycle has run against the scripts as they now stand, and
-this release does not claim convergence.
+**One of those corrections was itself wrong, and cycles 8 and 8b both
+proved it.** The paragraph above dismisses TRU-3 by observing that
+`## CHECK` is a substring of PROMPT.md's `### CHECK` heading. That is
+true about the string and false about the defect. The checker demanded
+`## CHECK` as a level-2 heading; PROMPT.md writes `### CHECK` at level
+3; a review written from PROMPT.md and headed the way PROMPT.md heads it
+was rejected. Cycle 8 and cycle 8b each found this independently,
+without access to each other or to cycle 7. The finding was right, the
+verification was wrong, and a verification step that rejects true
+findings is the same failure it exists to prevent — it just fails in the
+direction that is harder to notice, because a rejected finding leaves no
+fixture behind. Both ends are now stated: the checker accepts either
+level, and PROMPT.md says which one to write. The correction above is
+left standing rather than edited, because the record of a wrong call is
+the only thing that makes the next one visible.
+
+**Exit Estimate: at least 5–11 Major defects remaining**, and this is
+the first estimate in this project's history that is derived rather than
+guessed. Cycle 7 established why capture–recapture structurally could
+not apply under the old protocol — the maintainer fixes each cycle's
+findings before the next cycle runs, so no two cycles draw from the same
+population and the overlap is zero by construction. This release paid
+for the missing measurement: cycles 8 and 8b ran against one frozen,
+byte-identical artifact, independently, neither seeing the other's
+findings.
+
+The arithmetic, so it can be checked. Cycle 8 raised 13 Majors, cycle 8b
+raised 9, and 4–5 of them are the same defect stated twice, giving 17–18
+distinct known Majors. The Chapman estimator — `N̂ = (n₁+1)(n₂+1)/(m+1)
+− 1`, the small-sample-corrected form — puts the population at ≈22–27,
+so the residual is ≈5–11.
+
+Three caveats, each of which pushes the same way. Capture–recapture
+assumes independent captures; two runs of the same model on the same
+prompt are correlated, they overlap more than independent reviewers
+would, `m` is inflated, and `N̂` is therefore depressed. The clustering
+of the two runs' findings into "the same defect" is the author's
+judgment and is not graded by anything (issue #26), and the rule for
+when two findings are the same finding is undefined (issue #22) — the
+±5 in the residual is almost entirely that. Read 5–11 as a floor with a
+known bias toward understating, not as a bracket.
+
+No cycle has converged, and this release does not claim convergence.
 
 ## [0.3.0] — 2026-08-29
 
