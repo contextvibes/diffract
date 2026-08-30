@@ -162,6 +162,15 @@ caught it:
       left and why. Naming the recurrence is not fixing it. (Four
       consecutive releases each fixed one instance of a class the
       release notes had already named.)
+- [ ] **A blind finding rejected on verification leaves a fixture
+      too.** An accepted finding gets a before-and-after; a rejected one
+      has cost nothing to be wrong about, and a rejection is a claim
+      about the artifact exactly as much as the finding was. Record what
+      you ran that showed it was not a defect, or record that you argued
+      from reading alone. (A cycle-7 Major was rejected on a substring
+      argument that was true about the string and false about the
+      defect; two independent cycles raised it again a release later,
+      and the rejection had left nothing behind to check it against.)
 - [ ] **A mandated check consumes only artifacts that exist by its
       phase.** (Nothing-Found Verification, in CHECK, shipped ordering a
       count check against the Findings Index, which is built in LEARN.)

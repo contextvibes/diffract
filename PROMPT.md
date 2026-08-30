@@ -284,6 +284,14 @@ Hypotheses blocks below sit under it. Both are output requirements, not just
 working steps: a mandated step that leaves no named trace can be attested to
 but not checked, which is the whole reason the traces exist.
 
+**Head it `## CHECK` in the review**, with any subsections under it at level
+3. `### CHECK` is also accepted, and then its subsections must be level 4 —
+a heading ends at the next heading of its own level or higher, so a level-3
+CHECK followed by level-3 subsections is an empty section. This level was
+enforced by `scripts/check_review.py` and stated in no document until
+blind cycles 8 and 8b each raised it: the level shown above is the
+instrument's own phase heading, and a review that copied it was rejected.
+
 Present ALL findings in a single table:
 
 ```markdown

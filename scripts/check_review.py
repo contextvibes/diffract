@@ -225,12 +225,22 @@ def derived_counts(rows):
 def lens_sections(review, lenses):
     """Map lens name -> section body, for headings that name a lens."""
     found, order = {}, []
+    live = outside_fences(review.split('\n'))
     for m in re.finditer(r'^### (.+?)$\n(.*?)(?=^### |^## |\Z)', review, re.M | re.S):
+        # A quoted template inside a fence is not a lens section (cycle-8 VAR-2).
+        if not live[review.count('\n', 0, m.start())]:
+            continue
         head = plain(m.group(1))
         for name in lenses + ['W5H1']:
             if re.match(r'^[\W\d_]*' + re.escape(name) + r'(?!\w)', head):
-                found[name] = m.group(2)
-                order.append(name)
+                # The done-rule mandates up to 3 PDCA cycles, so a conforming
+                # review repeats every lens once per cycle. Bodies accumulate
+                # and the order records first appearance; keeping only the last
+                # body and appending a duplicate rejected multi-cycle reviews
+                # twice over (cycle-8b VAR-1).
+                found[name] = found.get(name, '') + '\n' + m.group(2)
+                if name not in order:
+                    order.append(name)
                 break
     return found, order
 
@@ -410,30 +420,41 @@ def check_structure(review, rows):
     contained the finding ID and so could never fail (OBS-1).
     """
     lines = review.split('\n')
+    # PROMPT.md heads this phase '### CHECK' and never said what level a
+    # REVIEW must use, while this demanded level 2 — so a review that copied
+    # the instrument's own level could not pass (cycle-8 TRU-2, cycle-8b
+    # BOU-1). Both are accepted here and PROMPT.md now states the rule.
+    # `or` is wrong for the fallback: a section present but empty is falsy.
     check_body = section(review, 'CHECK', level=2)
     if check_body is None:
-        failures.append('no "## CHECK" section')
-        return
+        check_body = section(review, 'CHECK', level=3)
+    if check_body is None:
+        failures.append('no "## CHECK" or "### CHECK" section')
+        return []
     if not re.search(r'^\|.*\|.*\|', check_body, re.M):
         failures.append('CHECK section contains no table')
 
+    checked = []
     for phrase, purpose in MANDATED_TRACES:
+        checked.append(phrase)
         if not stated_at_line_start(lines, phrase):
             failures.append(f'no {phrase!r} section — {purpose}')
 
     low = [r[0] for r in rows if r[7] == 'Low']
     if not low:
-        return
+        return checked
+    checked.append(CONDITIONAL_TRACES[0][0])
     region = hypotheses_region(check_body)
     if region is None:
         failures.append(
             f'{len(low)} Low-Confidence finding(s) but no "Competing Hypotheses" '
             f'block below the CHECK table: {", ".join(low)}')
-        return
+        return checked
     for fid in low:
         if fid not in region:
             failures.append(
                 f'{fid}: Low Confidence, named in no competing-hypotheses block')
+    return checked
 
 
 def requires_quotes(review):
@@ -446,11 +467,26 @@ def requires_quotes(review):
     present are verified either way: an unrequested quote that misquotes the
     artifact is still a fabrication.
     """
-    m = re.search(r'Integrity:(.*(?:\n[ \t]{2,}\S.*)*)', review)
-    if not m:
-        failures.append('no Integrity governor line found')
-        return False
-    return bool(re.search(r'verbatim|quote', m.group(1), re.I))
+    # Anchored at column 0, with no blockquote marker: an unanchored search
+    # took the first 'Integrity:' anywhere in the review, so a line quoted from
+    # the artifact could turn the evidence requirement off for the whole run
+    # (cycle-8 SHI-3). Fences are deliberately NOT skipped — the governors are
+    # declared inside one. The residual limit: a review that reproduces a
+    # governor block at column 0 inside a fence before declaring its own is
+    # still read from the quote.
+    lines = review.split('\n')
+    for i, line in enumerate(lines):
+        m = re.match(r'^(?![ \t>])[^\w>]*\*{0,2}Integrity:\*{0,2}(.*)', line)
+        if not m:
+            continue
+        tail = [m.group(1)]
+        for nxt in lines[i + 1:]:
+            if not re.match(r'^[ \t]{2,}\S', nxt):
+                break
+            tail.append(nxt)
+        return bool(re.search(r'verbatim|quote', '\n'.join(tail), re.I))
+    failures.append('no Integrity governor line found')
+    return False
 
 
 QUOTE_BLOCK = r'((?:^\s+> ?.*$\n?)+)'
@@ -578,7 +614,7 @@ def main():
     rows = index_rows(review)
     check_index_completeness(review, rows, lenses)
     check_scorecard(review, rows, args.prompt)
-    check_structure(review, rows)
+    ran = check_structure(review, rows) or []
     require = requires_quotes(review)
     verified, blocks = check_evidence(review, rows, artifacts, require)
 
@@ -589,10 +625,13 @@ def main():
         for failure in failures:
             print(f'FAIL: {failure}')
         return 1
-    # Built from the same table the checks read, so the claim and the check
-    # cannot drift apart — which is how three mandated sections came to be
-    # reported as checked while nothing looked for them (cycle-7 OBS-1/OBS-2).
-    traces = '; '.join(p for p, _ in MANDATED_TRACES + CONDITIONAL_TRACES)
+    # Built from the phrases check_structure actually looked for on THIS run,
+    # not from the tables it could have looked for. Joining both tables
+    # reported the conditional Competing Hypotheses check as run on reviews
+    # that have no Low-Confidence finding, where it returns before looking —
+    # reintroducing, inside the fix for it, the defect it was named for
+    # (cycle-7 OBS-1, found again as cycle-8 OBS-1 and cycle-8b OBS-1).
+    traces = '; '.join(ran)
     print('checked: lens sections present, in normative order, and agreeing '
           'with the declared scope; cognitive anchoring on nothing-found '
           'lenses; every finding in a lens table carried into the Findings '

@@ -62,8 +62,9 @@ their human inspectors:
 to be honest, not detectors of one that isn't. Most are executed by the reviewer,
 about the reviewer, in the reviewer's own output — a reviewer that misreads the
 artifact will certify a review of what it misread. Four of the thirteen are now
-checkable from outside: `scripts/check_review.py` verifies a review's form —
-its lens sections, its mandated sections, its verdicts and severities, its
+partly checkable from outside — form and fidelity, never judgment:
+`scripts/check_review.py` verifies a review's shape — its lens
+sections, its mandated sections, its verdicts and severities, its
 Scorecard rows and counts, that every finding raised by a lens reaches the
 index, and that every Evidence quote is verbatim in the frozen artifact — and
 it names in its own output both what it checked and what it did not;
