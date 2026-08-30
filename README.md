@@ -120,8 +120,9 @@ Then, before any analysis, agree on scope, calibration, and evidence rules:
 
 ```
 🧭 Compass: "Is this code ready for production?"
-🐍 Cobra:   Production — cautious: fix more, skip less.
+🐍 Cobra:   Production (level tests are normative in PROMPT.md, PLAN)
 ⚖️ Integrity: file:line evidence per lens. Cognitive anchoring required.
+            Every finding quotes the text it cites.
 ```
 
 **Cognitive anchoring** means: on any lens that reports nothing, write down

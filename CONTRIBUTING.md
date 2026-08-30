@@ -133,6 +133,14 @@ caught it:
       untagged circuit-breaker stops; the non-code adaptation remapped
       Integrity but left Cobra code-only; Rule 9 turned self-review into
       a false-finding generator.)
+- [ ] **Every mandated step names the output element that proves it
+      ran**, and every mandated output element names the step it proves.
+      A step whose execution cannot be located in the review document is
+      auditable only by the reviewer claiming to have run it. (The
+      competing-hypotheses step shipped with no mandated location and no
+      Confidence column in the CHECK table; W5H1 shipped mandatory,
+      exempt from every verification applied to lenses, and absent from
+      the Scorecard — so a run that skipped it passed every self-check.)
 - [ ] **A mandated check consumes only artifacts that exist by its
       phase.** (Nothing-Found Verification, in CHECK, shipped ordering a
       count check against the Findings Index, which is built in LEARN.)
