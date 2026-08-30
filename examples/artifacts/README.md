@@ -8,6 +8,26 @@ cite `file:line` against a fixed text.
 Do not edit these files. A change here invalidates every line number, quote and
 hash in the reviews that cite them.
 
+## On reviewing documents we follow
+
+Diffract versions itself with Semantic Versioning. We use these specifications.
+We are not grading them.
+
+Every review in `examples/` runs under an **adoption Compass**: the question is
+where a team implementing against the text has to make a call the text declines
+to make for them. A finding marks a decision point met during adoption. It is
+not a claim that the document is defective, it is not a correction, and it is
+not a request that anything change. We have filed nothing upstream and do not
+intend to.
+
+That careful readers reach different conclusions on some points is true of every
+specification worth adopting. It is what makes one a useful review target rather
+than a flawed one — a document nobody implements leaves no decisions to observe.
+
+These texts are public, frozen and hash-pinned for one reason: a reader can
+check every quote and every line number against the original. The example exists
+to make the **review** verifiable. It is not a verdict on the **artifact**.
+
 ## Contents
 
 | File | Upstream | License | sha256 |
