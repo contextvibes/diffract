@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Mechanical release checks for the Diffract repository.
+"""The entry-criteria gate for this repository, and its release checks.
 
-Implements the deterministic entry checks PROMPT.md mandates for non-code
-artifacts, plus the repo's own release gates that can be checked without
-judgment: link and anchor resolution, code-fence balance, version-string
-agreement, and a README-vs-PROMPT lens-table diff. Standard library only.
+This is the reference implementation of the deterministic entry checks
+PROMPT.md mandates for non-code artifacts — a reviewer running Diffract
+against this repo runs it at PLAN — plus the repo's own release gates that
+can be checked without judgment: link and anchor resolution, code-fence
+balance, version-string agreement, and a README-vs-PROMPT lens-table diff.
+Standard library only.
+
+Every check is independent: a file this repository does not have is one
+`FAIL:` line, never an exception that cancels the checks after it. Diffract
+reviews itself from partial checkouts — a blind reviewer is given the
+artifact and nothing else — and a gate that aborts there reports nothing
+while looking like it ran.
 
 Run from the repository root: python3 scripts/check.py
 Exit code 0 = all checks pass; 1 = at least one failure (each is printed).
@@ -14,6 +22,9 @@ import glob
 import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import check_review
 
 SKIP_DIRS = ('.claude', 'node_modules', '.git')
 
@@ -44,17 +55,30 @@ def strip_code(text):
 def anchors_of(path):
     """GitHub-style slugs for every heading outside fenced code blocks."""
     slugs = set()
-    for heading in re.findall(r'^#+\s+(.*)$', strip_fenced(open(path).read()), re.M):
+    text = read(path)
+    if text is None:
+        return slugs
+    for heading in re.findall(r'^#+\s+(.*)$', strip_fenced(text), re.M):
         slug = heading.strip().lower()
         slug = re.sub(r'[^\w\s-]', '', slug)
         slugs.add(re.sub(r'\s', '-', slug.strip()))
     return slugs
 
 
+def read(path):
+    """File contents, or None with a recorded failure."""
+    try:
+        with open(path) as handle:
+            return handle.read()
+    except OSError as e:
+        failures.append(f'cannot read {path}: {e.strerror}')
+        return None
+
+
 def check_versions():
-    readme = open('README.md').read()
-    prompt = open('PROMPT.md').read()
-    changelog = open('CHANGELOG.md').read()
+    readme, prompt, changelog = read('README.md'), read('PROMPT.md'), read('CHANGELOG.md')
+    if readme is None or prompt is None or changelog is None:
+        return
     badge = re.search(r'version-([\d.]+)-green', readme)
     header = re.search(r'\*\*Version: ([\d.]+)\*\*', prompt)
     latest = re.search(r'^## \[([\d.]+)\] — ', changelog, re.M)
@@ -73,14 +97,20 @@ def check_versions():
 
 def check_fences():
     for path in md_files():
-        markers = len(re.findall(r'^```', open(path).read(), re.M))
+        text = read(path)
+        if text is None:
+            continue
+        markers = len(re.findall(r'^```', text, re.M))
         if markers % 2:
             failures.append(f"{path}: unbalanced code fences ({markers} markers)")
 
 
 def check_links():
     for path in md_files():
-        text = strip_code(open(path).read())
+        raw = read(path)
+        if raw is None:
+            continue
+        text = strip_code(raw)
         for match in re.finditer(r'\]\(([^)\s]+)\)', text):
             link = match.group(1)
             if link.startswith(('http://', 'https://', 'mailto:')):
@@ -95,18 +125,16 @@ def check_links():
 
 
 def check_lens_table():
-    prompt = open('PROMPT.md').read()
-    readme = open('README.md').read()
-    section = re.search(r'#### The 10 Lenses.*?#### W5H1', prompt, re.S)
-    if not section:
-        failures.append('PROMPT.md: lens list section not found')
+    readme = read('README.md')
+    if readme is None or read('PROMPT.md') is None:
         return
-    normative = [(re.sub(r'\*', '', name).strip(), q.strip())
-                 for name, q in re.findall(r'^\d+\. (.+?) — (.+)$', section.group(0), re.M)]
-    reproduced = [(re.sub(r'\*', '', name).strip(), q.strip())
+    normative = check_review.normative_lens_rows('PROMPT.md')
+    failures.extend(check_review.failures)
+    check_review.failures.clear()
+    if not normative:
+        return
+    reproduced = [(check_review.plain(name), q.strip())
                   for name, q in re.findall(r'^\| \d+ \| (.+?) \| (.+?) \|$', readme, re.M)]
-    if len(normative) != 10:
-        failures.append(f'PROMPT.md: expected 10 lenses, parsed {len(normative)}')
     if normative != reproduced:
         failures.append(f'README lens table drifted from PROMPT.md: {set(normative) ^ set(reproduced)}')
 

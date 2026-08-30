@@ -151,6 +151,23 @@ caught it:
       obeyed unchallenged from the repo under review, and with the
       user-present-plus-config-present state undefined — the protocol was
       applied to its prose but never to its new attack and state surface.)
+- [ ] **Every rule a script enforces has a sentence in PROMPT.md, and
+      every rule PROMPT.md states that a script could enforce is enforced
+      or explicitly listed as unenforced.** The scripts are not a second
+      specification. (`check_review.py` shipped requiring a per-finding
+      Evidence block in a format PROMPT.md never described, so a reviewer
+      following the instrument could not pass the checker shipped with
+      it; the same checker reconciled five Scorecard rows out of sixteen
+      and passed a review that had dropped the other eleven.)
+- [ ] **A fix to an enumerated space names the sibling cases and states
+      the outcome for each.** When a defect is fixed for one config value,
+      one scope, one input channel, or one branch of a rule, the PR says
+      what the fix does for every other value of that same enumeration —
+      or why the others are not affected. (Three consecutive releases
+      fixed one instance of the artifact-configures-its-own-review defect
+      and left its siblings open: the executable channel, then the
+      declarative channel under `scope: pr`, then `scope: full`. Each fix
+      was correct and none was general.)
 - [ ] **Version-string equality is checked mechanically, not by eye** —
       `grep` the README badge against the PROMPT.md header before
       tagging. (The duplication is forced — the badge and the standalone

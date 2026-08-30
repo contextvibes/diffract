@@ -42,25 +42,23 @@ import sys
 import check_review
 
 
-def derived_counts(rows):
-    """The Scorecard rows that are a count of index rows and nothing else."""
-    return {
-        'Findings raised': len(rows),
-        'Major findings raised': sum(1 for r in rows if r[4] == 'Major'),
-        'Fix verdicts': sum(1 for r in rows if r[5] == 'Fix'),
-        'Cobra-skipped': sum(1 for r in rows if r[5] == 'Skip:Cobra'),
-        'Compass-skipped': sum(1 for r in rows if r[5] == 'Skip:Compass'),
-        'Integrity-discarded': sum(1 for r in rows if r[5] == 'Discard:Integrity'),
-    }
+# The count arithmetic lives in check_review.derived_counts: this module and
+# the checker must agree about what a Scorecard row means, and when each kept
+# its own copy they had already drifted apart by the time cycle 6 found them.
+derived_counts = check_review.derived_counts
 
 
 def lens_totals(rows):
     """Per-lens row counts. W5H1 is excluded: it is a question set, not a lens.
 
-    It routinely out-raises every lens — 4 findings against a leader of 2 in
-    examples/semver-2.0.0-review.md — so counting it would make it the answer
-    to 'most productive lens' on almost any review, which is wrong and which
-    the reviewers get right unaided.
+    This is PROMPT.md's rule for the `Most productive lens` row, not a policy
+    of this script. It was the script's alone until cycle 6, which is a defect
+    of the kind this module exists to prevent: a hand count and a scripted
+    count could disagree while PROMPT.md claimed they never would.
+
+    The reason for the rule: W5H1 routinely out-raises every lens — 4 findings
+    against a leader of 2 in examples/semver-2.0.0-review.md — so counting it
+    would make it the answer on almost any review.
     """
     totals = {}
     for row in rows:
@@ -89,10 +87,10 @@ def substitute_leading_number(value, want):
     return re.sub(r'\d+', str(want), value, count=1)
 
 
-def render(review):
+def render(review, prompt_path=None):
     rows = check_review.index_rows(review)
     if check_review.failures:
-        return review, [f'index did not parse: {f}' for f in check_review.failures], []
+        return review, [f'index rejected: {f}' for f in check_review.failures], []
     if '### Scorecard' not in review:
         return review, ['no "### Scorecard" section'], []
 
@@ -117,7 +115,8 @@ def render(review):
                 return f'| {match.group(1)} | {substitute_leading_number(value, want)} |'
 
         elif key == 'Lenses run':
-            lenses = check_review.normative_lenses(args.prompt)
+            lenses = check_review.normative_lenses(
+                prompt_path or check_review.default_prompt())
             found, _ = check_review.lens_sections(review, lenses)
             present = sum(1 for name in lenses if name in found)
             if stated and int(stated.group(1)) != present:
@@ -148,7 +147,6 @@ def render(review):
 
 
 def main():
-    global args
     ap = argparse.ArgumentParser()
     ap.add_argument('review')
     ap.add_argument('--prompt', default=check_review.default_prompt())
@@ -157,7 +155,7 @@ def main():
     args = ap.parse_args()
 
     review = open(args.review).read()
-    rendered, changes, notes = render(review)
+    rendered, changes, notes = render(review, args.prompt)
 
     if args.write:
         open(args.review, 'w').write(rendered)

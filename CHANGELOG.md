@@ -98,8 +98,10 @@ numbers already known to be wrong.
 
 ### Fixed
 
-Seven Majors from the blind cycle below, all verified against the files
-before being accepted:
+Twenty Majors from the two blind cycles below, all verified against the
+files before being accepted.
+
+**From cycle 5** (prose only — the reviewer had no `scripts/`):
 
 - **The config could not express the Integrity default** (TRU-1). The
   PLAN default gained a third clause in this release — every finding
@@ -153,6 +155,75 @@ bullets.
 Confidence column, populated from its own Findings Index rather than
 invented, and its Scorecard gains `W5H1 run`.
 
+**From cycle 6** (the same instrument plus the three scripts, run after
+the cycle-5 fixes landed):
+
+- **The checker passed a review that was missing most of what it
+  checks** (SHI-1). A review with no CHECK table, no `Tags` row and no
+  `Fix verdicts` row printed `all checks pass` and exited 0: only five
+  Scorecard rows were reconciled, and the rows a review omitted were
+  exactly the rows that went unchecked. `check_review.py` now requires
+  every mandated Scorecard row, the CHECK table, a competing-hypotheses
+  block for each Low-Confidence finding, and the Gap Analysis and Defect
+  Prevention sections. The row set is read out of PROMPT.md's template
+  rather than hard-coded, so a row added to the instrument is a row the
+  checker requires; reviews declaring a pre-0.4.0 instrument are checked
+  against the set that was normative when they were written.
+- **A reviewer following PROMPT.md could not pass PROMPT.md's own
+  checker** (W5H-1). Under the default Integrity governor the checker
+  demanded a per-finding Evidence block — `- ID — path:line` plus an
+  indented quote — in a format this instrument specified nowhere. The
+  format is now written down in DO, next to the outputs it belongs to,
+  and the checker additionally accepts the `path § Heading` citation
+  form that PROMPT.md tells reviewers to use for non-code artifacts and
+  that it previously rejected outright.
+- **The instrument misdescribed the tool it calls the authority**
+  (TRU-2). PROMPT.md said `render_scorecard.py` rewrites "the per-lens
+  totals"; no such Scorecard row exists and the script writes none.
+- **The scripted and hand counts could disagree while the instrument
+  claimed they never would** (TRU-5). `render_scorecard.py` excludes
+  W5H1 from `Most productive lens` under a rule stated only in its own
+  docstring. On cycle 6's own index the two paths stood one row from
+  disagreeing. The rule is now stated in PROMPT.md, where both paths
+  read it.
+- **The count arithmetic existed twice and had already drifted**
+  (TRU-3). `render_scorecard.derived_counts` and the checker's expected
+  counts were separate copies that no longer agreed. One definition now,
+  in `check_review.py`, used by both. The normative-lens parser had the
+  same problem across `check.py` and `check_review.py` (TRU-4) and now
+  has one implementation.
+- **The entry gate aborted instead of reporting** (VAR-1).
+  `check.py` opened three files unguarded, so a partial checkout raised
+  `FileNotFoundError` and cancelled the fence, link and lens-table
+  checks — silently, with a traceback in place of a result. This is the
+  mode Diffract uses for its own calibration. Every check is now
+  independent and a missing file is one `FAIL:` line.
+- **The gate's reference implementation was undiscoverable** (PRO-1).
+  PROMPT.md mandates the entry checks and named no tool that runs them;
+  `scripts/check.py` appeared in neither PROMPT.md nor README.md. Both
+  now name it, under the same run-only-the-shipped-copy rule as
+  `render_scorecard.py`.
+- **The config-provenance rule covered one scope value out of three**
+  (SHI-3). Cycle 5 found that a diff could configure its own review and
+  this release fixed it — for `scope: pr`. Under `scope: full` the
+  repository is the artifact, `diffract.yaml` is inside it, and there is
+  no base revision to fall back on, so the config governed its own
+  review by the rule's own stated principle. The rule now covers `full`
+  and `path`.
+- **A checker pass named no instrument** (PRO-2, OBS-1). The output
+  hashed every artifact and recorded nothing about the PROMPT.md it
+  enforced, and announced success as an unqualified `all checks pass`.
+  It now prints the instrument path and version, then states each check
+  it ran and, explicitly, what it does not check.
+
+Minors fixed in the same pass: the redundant `max_cycles` sentence
+(SUB-2), three prose lines patched in past the wrap (SIM-2),
+`check.py`'s docstring naming nothing it does (NAM-1), `render()`
+reading a module-global so it raised `NameError` when imported (BOU-1),
+and validation failures reported as parse failures (BOU-2). The
+`README` sentence promising four items and listing two — cycle 5's
+TRU-4, left unfixed at the time — now lists four.
+
 ### Frozen reviews
 
 `examples/semver-2.0.0-review.md` and
@@ -193,17 +264,43 @@ These six are one problem seen from six sides — the measurements that
 compare reviews to each other are not yet valid — and they are the
 proposed 0.5.0 theme rather than a backlog.
 
+Four findings from cycle 6 are deferred as issues rather than fixed
+here, each because a patch would settle by accident a question that
+wants deciding:
+
+- **#40** three entry-criteria outcomes have no test that distinguishes
+  them (SIM-1, Major) — the reviewer hit this on its own run and could
+  not decide which tag its result deserved
+- **#41** nothing states whether the scripts are normative, or which
+  wins when a script and PROMPT.md disagree (W5H-2, Major)
+- **#42** `scope: path` is a permitted config value that cannot name a
+  path (VAR-2, Major)
+- **#43** the cycle-6 Minors, grouped: pipe-character parsing, script
+  version coupling, regex Markdown parsing, anchor re-parsing, and the
+  mandated-versus-measured step asymmetry
+
+Also carried forward: **#39**, vocabulary drift from PROMPT.md checked
+by eye. Cycle 6 supplied its fourth recorded instance — PROMPT.md
+describing a Scorecard row the renderer does not write.
+
 ### Validation
 
-One blind cycle ran before release — a fresh-context reviewer (Claude
-Opus) executing this instrument version against `README.md` +
-`PROMPT.md`, one-shot, review-only, in a directory containing only those
-two files. Blindness is procedural, as `calibration/README.md` defines
-it: no repository access, no network, no `scripts/`.
+Two blind cycles ran before release — a fresh-context reviewer (Claude
+Opus) executing this instrument version, one-shot and review-only, in a
+directory containing only the artifact. Blindness is procedural, as
+`calibration/README.md` defines it: no repository access, no network.
 
-- **Cycle 5** (Claude Opus, against 0.4.0): 23 findings, 7 Major, 17 Fix
-  verdicts. All seven Majors were verified against the files by the
-  maintainer before being accepted, and all seven are fixed above.
+- **Cycle 5** (Claude Opus, against `README.md` + `PROMPT.md`): 23
+  findings, 7 Major, 17 Fix verdicts. All seven Majors were verified
+  against the files by the maintainer before being accepted, and all
+  seven are fixed above.
+- **Cycle 6** (Claude Opus, against `README.md` + `PROMPT.md` +
+  `scripts/`, run after the cycle-5 fixes landed): 27 findings, 13
+  Major, 23 Fix verdicts. The reviewer was permitted to run the scripts
+  and did, including against its own review. All thirteen Majors were
+  verified by the maintainer before being accepted; nine are fixed
+  above, two were reproduced independently first, three were corrected
+  (see below), and four are deferred as issues.
 
 The cycle is numbered 5 because it continues the four cycles of 0.3.0,
 but it is not comparable to them: those ran against 0.3.0, and a
@@ -226,17 +323,46 @@ being added and not the channel the same reasoning implicated —
 declarative input felt safe because only executable input feels
 dangerous. Governors are as load-bearing as code.
 
-**Not covered by this cycle:** the reviewer had no `scripts/`, so it
-took the manual counting path and never exercised the renderer — the
-main thing 0.4.0 adds. It also recorded a 0% Integrity-discard rate
-against itself as a possible sign of a lax evidence bar.
+**What cycle 5 could not see** was the reason cycle 6 was run: with no
+`scripts/`, cycle 5 took the manual counting path and never exercised
+the renderer — the main thing 0.4.0 adds. Cycle 5's Exit Estimate of ≈4
+was therefore an estimate about the prose alone, and cycle 6 raised 13
+Majors, nearly all of them in the scripts or in prose describing them.
+Read it as a first measurement of a surface no cycle had looked at, not
+as a failed prediction.
 
-**Exit Estimate: ≈4 Major defects remaining** — the reviewer's own
-estimate, on a basis it states: cycle 1 yielded 7 Majors from 11
-sections, concentrated in cross-section consistency and in enumerated
-input spaces, both classes that persist after one pass.
-Capture–recapture does not apply to a single run. One cycle is not
-convergence, and this release does not claim it.
+**Cycle 6 found that the release's headline claim was not yet true.**
+"The review becomes checkable" requires a checker that fails
+non-conforming reviews and passes conforming ones, and it did neither:
+SHI-1 showed it passing a review with its CHECK table cut out, W5H-1
+showed it failing any review written from PROMPT.md alone. Both are
+fixed above. The release was held rather than tagged on cycle 5's
+result, which is the only reason these were caught before publication
+rather than after.
+
+**Three of cycle 6's Majors were corrected on verification**, and the
+corrections are recorded because a calibration record that only keeps
+the reviewer's hits overstates it. TRU-1 (a stale line citation) and
+SHI-2 (the `--prompt` override) are Minors: both are real, neither
+affects fitness for purpose, and SHI-2's default already resolves to
+the shipped PROMPT.md. W5H-2 rests on one of its two examples — the
+Evidence-block claim holds, the closer-sentence claim does not, as
+`"No findings matching this pattern."` is in PROMPT.md's Output B
+template.
+
+**The recurrence worth naming.** 0.3.0's Shield pass covered the
+executable input channel; cycle 5 found the declarative one; the fix
+covered `scope: pr`; cycle 6 found `scope: full`. Three releases, one
+defect class, each fix correct and none of them general. The gate added
+below asks for the sibling cases by name.
+
+**Exit Estimate: ≈6 Major defects remaining** — cycle 6's own estimate
+on the basis it states, per-lens yield over a single pass. Two
+independent runs now exist but capture–recapture does not apply to
+them: they reviewed different artifact sets, so the overlap is not a
+measurement. Neither cycle converged, no cycle has yet run against the
+scripts as they now stand, and this release does not claim
+convergence.
 
 ## [0.3.0] — 2026-08-29
 
