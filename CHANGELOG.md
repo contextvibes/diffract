@@ -96,6 +96,63 @@ numbers already known to be wrong.
   review's own ACT section already read "All 13 Fix verdicts applied in
   one pass".
 
+### Fixed
+
+Seven Majors from the blind cycle below, all verified against the files
+before being accepted:
+
+- **The config could not express the Integrity default** (TRU-1). The
+  PLAN default gained a third clause in this release — every finding
+  quotes the text it cites — and `diffract.yaml`'s vocabulary was left
+  at `file-line-with-anchoring`. A config-driven run therefore applied a
+  weaker evidence bar than an interactive one on the same artifact, with
+  nothing recording the difference. The vocabulary now carries the third
+  bar, and a config naming a weaker one is applied but reported.
+- **`diffract.yaml` had no revision rule** (SHI-1). It is read from the
+  repo root under review, so under `scope: pr` a diff could set the
+  governors of its own review — `cobra: prototype`, `max_cycles: 1`, a
+  Compass narrow enough to filter the lenses out. The existing mitigation
+  challenged only a *trivially* narrow Compass; a plausible weakening was
+  obeyed silently. The base revision now governs, and a diff that edits
+  its own config is reported as a Shield finding.
+- **The entry gate had no outcome for partial access** (VAR-1). Checks
+  that have targets but cannot be run for lack of access fell between
+  "cannot be run" and "nothing to run against", forcing a reviewer to
+  either overstate or understate what it verified. New outcome, tagged
+  `[entry partial: <checks not run>]`.
+- **A failing entry check voided a one-shot review with no
+  proportionality** (VAR-2). One rotted external URL — a link the author
+  does not control — produced a failure report instead of a review, in
+  the mode this instrument uses for its own calibration. Failures wholly
+  outside the artifact's control now waive, tagged.
+- **The competing-hypotheses step left no trace in the output** (OBS-1).
+  It is mandatory for Low-Confidence findings, and the CHECK table had no
+  Confidence column, so neither which rows owed the step nor whether it
+  ran was visible. The table now carries Confidence, and the weighing has
+  a mandated location below it.
+- **W5H1 was exempt from every verification applied to lenses** (OBS-2).
+  Mandatory, carrying the same anchoring duty, and named in neither the
+  form check nor Nothing-Found Verification, with no Scorecard row — so a
+  run that skipped it entirely passed every self-check. This is the
+  failure mode `PROMPT.md`'s own RQ5 note already records for lenses, one
+  step over. Now verified like a lens, with a `W5H1 run` row.
+- **The README restated a Cobra level** (TRU-3), against `PROMPT.md`'s
+  explicit "other files may reference them but never restate them" — and
+  restated it as a disposition ("fix more, skip less") where the
+  normative rule is a condition. It now points at PROMPT.md, the form the
+  README already used 60 lines later.
+
+Two smaller defects fixed in passing because the same edits reached them:
+the README governor block had dropped the verbatim-quote clause (TRU-2),
+and `max_cycles` had no lower bound, so `0` and negative integers were in
+range by the written rule (VAR-3). Removing the typed numeral from "Four
+outcomes:" resolved TRU-5, where the count had already drifted from five
+bullets.
+
+`examples/web-service.md` re-syncs again: its CHECK table gains the
+Confidence column, populated from its own Findings Index rather than
+invented, and its Scorecard gains `W5H1 run`.
+
 ### Frozen reviews
 
 `examples/semver-2.0.0-review.md` and
@@ -138,17 +195,48 @@ proposed 0.5.0 theme rather than a backlog.
 
 ### Validation
 
-**No blind validation cycles were run for this release.** 0.3.0 ran
-four; this release ran none, and that is a real difference in evidence
-that the reader should weigh. What was verified instead is mechanical
-and exhaustive rather than judgmental: the renderer is output-identical
-at exit 0 on all three published reviews, catches five injected count
-errors, and CI executes all four checks on every push — verified by
-reading the job log, not the pass badge.
+One blind cycle ran before release — a fresh-context reviewer (Claude
+Opus) executing this instrument version against `README.md` +
+`PROMPT.md`, one-shot, review-only, in a directory containing only those
+two files. Blindness is procedural, as `calibration/README.md` defines
+it: no repository access, no network, no `scripts/`.
 
-The judgment-level changes in this release — the split row, the W5H1
-exclusion, the Integrity default, the limits section — have not been
-reviewed by a fresh-context reviewer. **Exit Estimate: not computed.**
+- **Cycle 5** (Claude Opus, against 0.4.0): 23 findings, 7 Major, 17 Fix
+  verdicts. All seven Majors were verified against the files by the
+  maintainer before being accepted, and all seven are fixed above.
+
+The cycle is numbered 5 because it continues the four cycles of 0.3.0,
+but it is not comparable to them: those ran against 0.3.0, and a
+reviewer configuration change already made cycles 1 and 2–4 two series
+rather than one. Treat it as a first measurement of 0.4.0, not as a
+fifth point on a trend.
+
+**Three of the seven Majors were introduced by this release** — the
+Integrity vocabulary gap, the README's dropped clause, and the
+unenumerated "four of the thirteen". Two more, the entry-gate defects,
+were found the hard way: the reviewer hit the uncovered partial-access
+case during its own run and could not tag its own entry result, because
+no defined outcome fit what had happened to it.
+
+The one that matters most for how this release was built is the config
+provenance gap. This release fixed exactly that defect class for the
+`render_scorecard.py` path, under a release gate requiring a written
+Shield pass over any new input channel. The pass covered the channel
+being added and not the channel the same reasoning implicated —
+declarative input felt safe because only executable input feels
+dangerous. Governors are as load-bearing as code.
+
+**Not covered by this cycle:** the reviewer had no `scripts/`, so it
+took the manual counting path and never exercised the renderer — the
+main thing 0.4.0 adds. It also recorded a 0% Integrity-discard rate
+against itself as a possible sign of a lax evidence bar.
+
+**Exit Estimate: ≈4 Major defects remaining** — the reviewer's own
+estimate, on a basis it states: cycle 1 yielded 7 Majors from 11
+sections, concentrated in cross-section consistency and in enumerated
+input spaces, both classes that persist after one pass.
+Capture–recapture does not apply to a single run. One cycle is not
+convergence, and this release does not claim it.
 
 ## [0.3.0] — 2026-08-29
 

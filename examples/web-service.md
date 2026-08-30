@@ -109,23 +109,23 @@ No findings matching this pattern.
 
 ## CHECK
 
-| Finding | ⚖️ Integrity | 🧭 Compass | 🐍 Cobra | Verdict |
-|---------|-------------|-----------|---------|---------|
-| SUB-1: Dead middleware | grep confirms zero references | Dead code blocks clean extraction | Removal is safe | Fix |
-| SUB-2: Unused field | grep confirms never read/written | Same | Removal is safe | Fix |
-| NAM-1: Stale comment | Read line 12; package name differs | Wrong docs mislead library users | None | Fix |
-| TRU-1: Duplicated ID | Read both sites; values can diverge | Data-integrity risk for consumers | None | Fix |
-| TRU-2: Duplicated timeouts | Read both binaries; values identical today | In scope | Binaries serve different workloads; values may legitimately diverge — unifying couples them | Skip:Cobra |
-| BOU-1: Email client boundary | Import graph verified | Central to extraction goal | Composition layer contains the change | Fix |
-| SHI-1: PII in logs | Read log call; fields named | Violates invariant 1 | None | Fix |
-| SHI-2: Cookie no expiry | Read cookie construction; no MaxAge | Violates invariant 3 | 4-hour MaxAge is uncontroversial | Fix |
-| SHI-3: No rate limiting | Confirmed no limiter in serve path | Deployment/edge concern — outside "extractable library" goal | — | Skip:Compass |
-| VAR-1: No 503 handling | Read switch; 503 hits default | Library consumers need retryable errors | Additive sentinel error | Fix |
-| OBS-1: Swallowed error | Read call site; err discarded | Violates invariant 2 | None | Fix |
-| OBS-2: No context in recovery | Read handler; logs message only | Debuggability for consumers | Additive | Fix |
-| OBS-3: No correlation ID | Confirmed no request ID anywhere | Tracing expected of a service library | Additive middleware | Fix |
-| W5H-1: Timeout comment | Read line; constant uncommented | Rationale must travel with the library | None | Fix |
-| W5H-2: Fallback comment | Read line; fallback uncommented | Same | None | Fix |
+| Finding | Confidence | ⚖️ Integrity | 🧭 Compass | 🐍 Cobra | Verdict |
+|---------|-----------|-------------|-----------|---------|---------|
+| SUB-1: Dead middleware | High | grep confirms zero references | Dead code blocks clean extraction | Removal is safe | Fix |
+| SUB-2: Unused field | High | grep confirms never read/written | Same | Removal is safe | Fix |
+| NAM-1: Stale comment | High | Read line 12; package name differs | Wrong docs mislead library users | None | Fix |
+| TRU-1: Duplicated ID | High | Read both sites; values can diverge | Data-integrity risk for consumers | None | Fix |
+| TRU-2: Duplicated timeouts | High | Read both binaries; values identical today | In scope | Binaries serve different workloads; values may legitimately diverge — unifying couples them | Skip:Cobra |
+| BOU-1: Email client boundary | High | Import graph verified | Central to extraction goal | Composition layer contains the change | Fix |
+| SHI-1: PII in logs | High | Read log call; fields named | Violates invariant 1 | None | Fix |
+| SHI-2: Cookie no expiry | High | Read cookie construction; no MaxAge | Violates invariant 3 | 4-hour MaxAge is uncontroversial | Fix |
+| SHI-3: No rate limiting | High | Confirmed no limiter in serve path | Deployment/edge concern — outside "extractable library" goal | — | Skip:Compass |
+| VAR-1: No 503 handling | High | Read switch; 503 hits default | Library consumers need retryable errors | Additive sentinel error | Fix |
+| OBS-1: Swallowed error | High | Read call site; err discarded | Violates invariant 2 | None | Fix |
+| OBS-2: No context in recovery | High | Read handler; logs message only | Debuggability for consumers | Additive | Fix |
+| OBS-3: No correlation ID | High | Confirmed no request ID anywhere | Tracing expected of a service library | Additive middleware | Fix |
+| W5H-1: Timeout comment | Medium | Read line; constant uncommented | Rationale must travel with the library | None | Fix |
+| W5H-2: Fallback comment | Medium | Read line; fallback uncommented | Same | None | Fix |
 
 ### Scope and Nothing-Found Verification
 
@@ -219,6 +219,7 @@ Counts below are derived from the [FINDINGS INDEX](#findings-index).
 | Integrity-discarded | 0 |
 | PDCA cycles run | 2 — converged: yes |
 | Lenses run | 10 of 10 — none omitted |
+| W5H1 run | yes |
 | Most productive lens | 🔍 Observability and 🛡️ Shield (3 findings each) |
 | Estimated remaining Majors | ≈1 — basis: historical per-lens yield (Observability has yielded one further Major on re-review in comparable services) |
 | Calibration | not tested |
