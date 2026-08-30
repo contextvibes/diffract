@@ -11,6 +11,145 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+## [0.4.0] — 2026-08-30
+
+The review becomes checkable from outside. Every previous release asked
+the reviewer to verify its own arithmetic, its own quotes and its own
+coverage — the same self-attestation defect the Confidence column had
+before 0.3.0, one level up. This release moves four of the thirteen
+anti-dishonesty mechanisms out of the reviewer's own output and into a
+script anyone can run, splits the one Scorecard row that made a correct
+review impossible to state, and writes down what the remaining nine
+still do not detect.
+
+The `PROMPT.md` batching rule was overridden deliberately. The rule
+exists to pay the tier-staleness cost once per release, but the tiers it
+protects are already invalid: #23 shows all six pairings fail Success
+Criteria condition 1 while all four configurations saturate at tier 4,
+and #22 shows the clustering that produces tiers is undefined. Batching
+on coherence beat batching on a staling cost that is charged against
+numbers already known to be wrong.
+
+### Added
+
+- **`scripts/render_scorecard.py`** — derives every derivable Scorecard
+  count from the Findings Index and rewrites the rows that disagree.
+  Output-identical by construction: it produces the document the
+  reviewer would have produced with the arithmetic correct, never a
+  different format. `--write` applies; without it the run is a diff.
+  Exit 0 when the counts already agreed, 1 when any were corrected.
+  Verified output-identical at exit 0 against all three published
+  reviews, and verified to catch five separately injected count errors
+  with exactly one line changed each.
+- **Two Scorecard counts are documented as not derivable.** `Fixes
+  applied` depends on what happened to the artifact, not on the index.
+  `PDCA cycles run` cannot be derived at all: a final cycle that raises
+  nothing is what convergence *is*, so it leaves no row behind. An
+  early draft of the renderer derived it from the highest `Cycle` value
+  and "corrected" `examples/web-service.md` from 2 to 1 — a correct
+  review, made wrong by a check. Both exclusions are now stated in
+  `PROMPT.md`, in the script, and in `check_review.py`.
+- **`docs/anti-dishonesty.md` gains "What these mechanisms can and
+  cannot detect"** — every mechanism is run by the reviewer, about the
+  reviewer, in the reviewer's own output. They do not detect an
+  incompetent reviewer and they do not detect an adversarial one. The
+  Summary Table gains a **Checked by** column: four mechanisms are now
+  externally checkable, one ships nothing, and the remaining nine stay
+  self-attested — including the decision to run the checker at all.
+- **`README.md` states the same limit** where the mechanisms are first
+  claimed, rather than leaving it to a document a reader may not reach.
+- **CI runs the checks it documents.** `.github/workflows/check.yml`
+  gains named steps for the published example review, the calibration
+  fixture review, and Scorecard arithmetic across all three reviews.
+
+### Changed
+
+- **`| Fixed |` splits into `| Fix verdicts |` and `| Fixes applied |`**
+  (#33). The single row conflated a verdict with an outcome, which made
+  a review-only run impossible to state correctly — both published
+  semver reviews had already hand-patched the row with "listed, not
+  applied" to say what the template would not let them say.
+- **W5H1 is excluded from `Most productive lens`.** It is a question
+  set, not a lens, and it out-raises every lens on most reviews — 4
+  against a leader's 2 on the semver review, which states the point in
+  its own prose.
+- **Integrity carries a default** (#21): file:line per lens, cognitive
+  anchoring, and a verbatim quote of the text each finding cites.
+- **The renderer instruction is scoped to the instrument, not the
+  artifact.** Telling a reviewer to run `scripts/render_scorecard.py` by
+  bare relative path meant that a repository under review shipping its
+  own file at that path would have it executed, by the reviewer, on the
+  instrument's own instruction — the artifact running code during its
+  own review. `PROMPT.md` now resolves the script relative to itself,
+  says the artifact's copy is input rather than instrument, and falls
+  back to counting by hand when the two cannot be told apart. Found by
+  the release gate that requires a written Shield + Variety pass over
+  any new input channel, which exists because agentic mode's
+  `diffract.yaml` shipped with the same defect one channel over.
+- **`scripts/check_review.py`** resolves `PROMPT.md` from the repository
+  root rather than the working directory, and reconciles `Fix verdicts`
+  when a review states it while accepting legacy `Fixed` unchecked, so
+  0.3.0 reviews keep passing while 0.4.0 reviews are held to the new row.
+- **`examples/web-service.md`** re-synced to the 0.4.0 templates and
+  version strings. Its `Fixed | 13` became `Fix verdicts | 13` +
+  `Fixes applied | 13` — a pure row split with no factual change; the
+  review's own ACT section already read "All 13 Fix verdicts applied in
+  one pass".
+
+### Frozen reviews
+
+`examples/semver-2.0.0-review.md` and
+`calibration/semver-2.0.0-seeded-review.md` are **not** re-synced, and
+remain at `Instrument | Diffract 0.3.0`. This is an exception to the
+"template changes re-sync `examples/`" gate, and `CONTRIBUTING.md` now
+states it: those two reviews are hash-pinned against a frozen artifact
+and quote-checkable line by line — they are evidence of what 0.3.0
+produced, and editing them to match a newer template destroys exactly
+the property that makes them worth publishing. `examples/web-service.md`
+is anonymized, carries no hash, and exists to demonstrate the current
+output format, so it re-syncs as it did in #27 and in the 0.3.0 release.
+
+### Staleness
+
+`PROMPT.md` changed, so all measured reviewer tiers are stale
+(`docs/calibration.md`). The practical cost is lower than usual: #22 and
+#23 establish that the tier numbers were not measuring what they claim
+to measure before this release either.
+
+### Deferred
+
+Research blockers carried forward, per the release gate. None are fixed
+here and none block the release:
+
+- **#22** claim equivalence is undefined, and it decides both tiers and
+  pairings (RQ3, RQ5)
+- **#23** Success Criteria condition 1 punishes coverage, not
+  miscalibration (RQ5)
+- **#24** Mechanism 5 is 0 for 4 — add a nearest-miss quote, or retire
+  it (RQ3)
+- **#26** Diffract's research is author-graded
+- **#29** residual defect estimate for v0.2.4
+- **#31** Golden Hammer: reviewers grade the instrument against canon,
+  not against its written definitions
+
+These six are one problem seen from six sides — the measurements that
+compare reviews to each other are not yet valid — and they are the
+proposed 0.5.0 theme rather than a backlog.
+
+### Validation
+
+**No blind validation cycles were run for this release.** 0.3.0 ran
+four; this release ran none, and that is a real difference in evidence
+that the reader should weigh. What was verified instead is mechanical
+and exhaustive rather than judgmental: the renderer is output-identical
+at exit 0 on all three published reviews, catches five injected count
+errors, and CI executes all four checks on every push — verified by
+reading the job log, not the pass badge.
+
+The judgment-level changes in this release — the split row, the W5H1
+exclusion, the Integrity default, the limits section — have not been
+reviewed by a fresh-context reviewer. **Exit Estimate: not computed.**
+
 ## [0.3.0] — 2026-08-29
 
 This release closes the loop on the `Confidence` column. Since its

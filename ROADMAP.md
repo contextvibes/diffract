@@ -70,20 +70,36 @@ only judgment can assess.
       trigger, a precedence rule over boundary kinds, fresh-context hand-off,
       and a deduplication procedure at CHECK. A draft was rejected in review
       on all four counts
+- [x] External checks for the anti-dishonesty mechanisms (shipped in
+      0.4.0) — `scripts/check_review.py` and `scripts/render_scorecard.py`
+      move 4 of the 13 mechanisms out of the reviewer's own attestation
+      and into CI. The remaining nine, and the decision to run the checks
+      at all, stay self-attested; `docs/anti-dishonesty.md` says which is
+      which
 - [ ] Reference artifact set carrying independently verified defects at
       **graded difficulty** — required to assign reviewer tiers on demand
       (`docs/calibration.md`) and to populate tiers 2 and 3, which RQ3
       defined but left empty. RQ5 showed a single easy defect saturates the
       recall criterion: four configurations ranging from 3 to more than 11
       stable claims each all measured tier 4 against one two-line
-      contradiction
-- [ ] Seeded-error variant of Nothing-Found Verification — a real defect
-      planted by a third party, per RQ2's blind-seeding designs. RQ3 showed
-      the current self-check cannot detect its own misses. Complemented
-      since 0.2.4 by capture–recapture estimation in `docs/calibration.md`
-      (Lincoln–Petersen; Eick et al.; Gilb & Graham), which attacks the same
-      gap from the other side: estimation says *how many* defects remain,
-      seeding says *which one* was missed
+      contradiction. **Substrate landed in 0.4.0**: `calibration/` holds one
+      fixture with four seeds and a published scored run. The seeds are not
+      difficulty-graded and one fixture is not a set, so tiers 2 and 3 are
+      still empty
+- [~] Seeded-error variant of Nothing-Found Verification — **partially
+      shipped in 0.4.0.** `calibration/` plants known defects in a frozen
+      public artifact and scores a blind run against them, which is what
+      RQ2's designs asked for and answers RQ3's finding that the self-check
+      cannot detect its own misses. Two gaps remain before this is closed:
+      the seeds are planted by the maintainer rather than a third party, so
+      the author-graded problem (#26) applies to the fixture too; and it is
+      a separate procedure run against a fixture, not a variant of the
+      in-review Nothing-Found Verification mechanism, which is still
+      self-attested. Complemented since 0.2.4 by capture–recapture
+      estimation in `docs/calibration.md` (Lincoln–Petersen; Eick et al.;
+      Gilb & Graham), which attacks the same gap from the other side:
+      estimation says *how many* defects remain, seeding says *which one*
+      was missed
 - [ ] IDE extension: highlight findings inline with lens icons
 - [ ] Auto-generate PLAN from project context (language, CI config)
 

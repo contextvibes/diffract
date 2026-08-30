@@ -1,6 +1,6 @@
 # Example: Web Service Review
 
-> Written against [Diffract v0.3.0](../PROMPT.md).
+> Written against [Diffract v0.4.0](../PROMPT.md).
 
 This is an anonymized example of a full Diffract cycle applied to a
 production web service (Go) with vendor API integrations, email
@@ -15,7 +15,7 @@ Entry checks ran first: `go build ./...`, `go test ./...`, `go vet ./...`
 — all pass.
 
 ```
-Diffract: 0.3.0
+Diffract: 0.4.0
 🧭 Compass: "Is this code ready to be extracted as a reusable library?"
 🐍 Cobra:   Cautious — library-grade bar; skip only where fixing breaks a published contract.
 ⚖️ Integrity: file:line evidence per lens. Cognitive anchoring required.
@@ -207,12 +207,13 @@ Counts below are derived from the [FINDINGS INDEX](#findings-index).
 |--------|-------|
 | Reviewer | anonymized (AI reviewer; configuration withheld with the project details) |
 | Artifact | anonymized web service repository (identifying details withheld; no public hash) |
-| Instrument | Diffract 0.3.0 |
+| Instrument | Diffract 0.4.0 |
 | Governors | 🧭 "Is this code ready to be extracted as a reusable library?" · 🐍 Library/Framework · ⚖️ file:line + anchoring |
 | Entry checks | `go build ./...`, `go test ./...`, `go vet ./...` — all pass |
 | Findings raised | 15 |
 | Major findings raised | 8 |
-| Fixed | 13 |
+| Fix verdicts | 13 |
+| Fixes applied | 13 |
 | Cobra-skipped | 1 |
 | Compass-skipped | 1 |
 | Integrity-discarded | 0 |
