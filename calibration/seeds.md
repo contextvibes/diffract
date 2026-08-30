@@ -11,12 +11,12 @@ Line numbers below are identical in the seeded file and the base artifact: the
 seeds edit within existing lines, and the fixture's modification notice sits at
 the end of the file precisely so the body's numbering is unaffected by it.
 
-## S1 — line 9 · expects 📌 Truth
+## S1 — line 9 · predicted lens 📌 Truth
 
 | | |
 |---|---|
 | Was | `1. MAJOR version when you make incompatible API changes` |
-| Now | `1. MAJOR version when you add functionality in a backward compatible` |
+| Now | `1. MAJOR version when you add functionality in a backward compatible manner` |
 
 The summary at the head of the document now gives MAJOR the MINOR condition, so
 it says the same thing as the line below it and contradicts the normative clause
@@ -26,7 +26,12 @@ following the summary versions every breaking change as a minor release.
 Expected to be the easiest seed: the contradiction is with a clause most readers
 already know, and the duplicated wording is visible without cross-referencing.
 
-## S2 — line 206 · expects 🛡️ Shield
+The first version of this seed ended at "backward compatible", borrowing the
+wrapped line below without its continuation. A reviewer spotted the dangling
+wrap and used it as a tell, which made the seed detectable as a formatting
+artifact rather than as a contradiction. The sentence is now complete.
+
+## S2 — line 206 · predicted lens 🛡️ Shield
 
 | | |
 |---|---|
@@ -42,7 +47,7 @@ produces one that rejects conforming input.
 Expected to be the hardest seed: finding it requires enumerating a 52-element
 production rather than reading it.
 
-## S3 — line 153 · expects 🎯 Variety
+## S3 — line 153 · predicted lens 🎯 Variety
 
 | | |
 |---|---|
@@ -55,7 +60,7 @@ ungrammatical, although the document presents such a version as valid elsewhere.
 The duplicate is what makes this hard: nothing is obviously missing, and the
 production still looks complete.
 
-## S4 — line 331 · expects 🧱 Boundary
+## S4 — line 331 · predicted lens 🧱 Boundary
 
 | | |
 |---|---|
@@ -66,6 +71,13 @@ The FAQ answer is reversed. It contradicts the grammar, which requires a version
 core to begin with a numeric identifier, and it contradicts the rest of its own
 paragraph, which goes on to call `"v1.2.3"` a tag name and `"1.2.3"` the
 semantic version. A reviewer that reads the paragraph to its end cannot miss it.
+
+## A note on predicted lenses
+
+The lens named on each seed is a prediction, not a scoring criterion. A seed is
+found or not found; the lens that finds it is an observation about the
+instrument, not a requirement on the reviewer. In the first scored run three of
+four seeds were found by a lens other than the predicted one.
 
 ## Disjointness
 

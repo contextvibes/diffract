@@ -13,6 +13,8 @@ definitely there were actually found**.
 |---------|---------------|-------|------------|
 | [`artifacts/semver-2.0.0-seeded.md`](artifacts/semver-2.0.0-seeded.md) | Semantic Versioning 2.0.0 | 4 | [`seeds.md`](seeds.md) — **opening it spoils the fixture** |
 
+Scored runs are recorded in [`results.md`](results.md).
+
 ## Blindness is procedural, not secret
 
 The answer key sits in the same public repository as the fixture. Anyone can
