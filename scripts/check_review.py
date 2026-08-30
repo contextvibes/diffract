@@ -134,7 +134,23 @@ def check_scorecard(review, rows):
             failures.append(f'Scorecard {key} = {m.group(1)}, index says {want}')
 
 
-def check_evidence(review, rows, artifacts):
+def requires_quotes(review):
+    """Whether this run's Integrity governor demands a quote block per finding.
+
+    PROMPT.md:92 makes evidence rules a per-run parameter the requester sets,
+    not a fixed rule of the instrument, so the requirement is read from the
+    review's own declared governors rather than assumed. Quotes that are
+    present are verified either way: an unrequested quote that misquotes the
+    artifact is still a fabrication.
+    """
+    m = re.search(r'Integrity:(.*(?:\n[ \t]{2,}\S.*)*)', review)
+    if not m:
+        failures.append('no Integrity governor line found')
+        return False
+    return bool(re.search(r'verbatim|quote', m.group(1), re.I))
+
+
+def check_evidence(review, rows, artifacts, require):
     ids = {r[0] for r in rows}
     seen = set()
     verified = 0
@@ -164,11 +180,10 @@ def check_evidence(review, rows, artifacts):
                 f'       actual: {(window[0][:64] if window else "")!r}')
             continue
         verified += 1
-    high = [r[0] for r in rows if r[7] == 'High']
-    for fid in high:
-        if fid not in seen:
-            failures.append(f'{fid}: High Confidence with no Evidence block')
-    return verified, len(blocks), len(high)
+    if require:
+        for fid in sorted(ids - seen):
+            failures.append(f'{fid}: Integrity requires a quote block, none found')
+    return verified, len(blocks)
 
 
 def main():
@@ -191,10 +206,11 @@ def main():
     check_lenses(review, lenses)
     rows = index_rows(review)
     check_scorecard(review, rows)
-    verified, blocks, high = check_evidence(review, rows, artifacts)
+    require = requires_quotes(review)
+    verified, blocks = check_evidence(review, rows, artifacts, require)
 
-    print(f'index rows {len(rows)} | evidence blocks {blocks} '
-          f'| quotes verified {verified} | High findings {high}')
+    print(f'index rows {len(rows)} | quote blocks {blocks} '
+          f'(required: {"yes" if require else "no"}) | verified verbatim {verified}')
     print()
     if failures:
         for failure in failures:
