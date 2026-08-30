@@ -413,9 +413,10 @@ run with repository access is void, not low-scoring.
   before-and-after it can be checked against.
 - **Cycle 8** (Claude Opus, against the same five files as cycle 7, run
   after the cycle-7 fixes landed): 25 findings, 13 Major. Four Majors
-  were verified by reading the code and are fixed above; the rest are
-  either filed or recorded below. Cycle 8 falsified this release's
-  original headline claim — see below.
+  were verified by reading the code and are fixed above; two more were
+  verified and filed rather than patched (#49, #50), and the class
+  underneath them is filed as a 0.5.0 design problem (#51). Cycle 8
+  falsified this release's original headline claim — see below.
 - **Cycle 8b** (Claude Opus, against a frozen artifact byte-identical to
   the one cycle 8 read, run with no knowledge of cycle 8): 23 findings,
   9 Major. This is the first cycle run as a deliberate replicate rather
