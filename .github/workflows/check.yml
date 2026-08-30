@@ -27,3 +27,13 @@ jobs:
         run: |
           python3 scripts/check_review.py calibration/semver-2.0.0-seeded-review.md \
             --artifact calibration/artifacts/semver-2.0.0-seeded.md
+
+      # The Scorecard must already agree with the index it restates:
+      # render_scorecard.py exits non-zero if it had to correct anything.
+      - name: Scorecard arithmetic
+        run: |
+          for review in examples/web-service.md \
+                        examples/semver-2.0.0-review.md \
+                        calibration/semver-2.0.0-seeded-review.md; do
+            python3 scripts/render_scorecard.py "$review" > /dev/null
+          done

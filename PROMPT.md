@@ -89,7 +89,8 @@ Then propose governors and **wait for agreement**:
 Diffract: [version]
 🧭 Compass: [one sentence — what is the goal of this review?]
 🐍 Cobra:   [how cautious? prototype | production | library/framework — levels defined below]
-⚖️ Integrity: [evidence rules — default: file:line per lens, cognitive anchoring required]
+⚖️ Integrity: [evidence rules — default: file:line per lens, cognitive anchoring
+            required, every finding carries a verbatim quote of the text it cites]
 ```
 
 **Cobra levels** — these definitions are normative; other files may
@@ -364,6 +365,15 @@ Scorecard restates that table and cannot disagree with it. Confirm every
 count stated anywhere in the review matches the index row count; a review
 whose Scorecard contradicts its own index is recounted, not verified.
 
+**If you can run a script, do not count by hand.** `scripts/render_scorecard.py`
+reads the finished review and rewrites the derived rows — the counts, the
+per-lens totals and `Most productive lens` — from the index itself. It produces
+the same document you would have produced with the arithmetic done correctly,
+so a run that uses it and a run that does not are comparable. Where it runs, it
+is the authority. The instruction above remains the path for a reviewer with no
+tool access; arithmetic is not judgment, and neither path decides anything the
+other would decide differently.
+
 ```markdown
 ### Scorecard
 | Metric | Value |
@@ -375,7 +385,8 @@ whose Scorecard contradicts its own index is recounted, not verified.
 | Entry checks | [each deterministic check run and its result — or the waiver tag] |
 | Findings raised | X |
 | Major findings raised | X |
-| Fixed | X |
+| Fix verdicts | X |
+| Fixes applied | X — or `0 (review-only run)` |
 | Cobra-skipped | X |
 | Compass-skipped | X |
 | Integrity-discarded | X |
@@ -453,8 +464,16 @@ Confidence.
 **Raised** means the finding has a row here. **Survived** means raised and not
 `Discard:Integrity` — a governor skip still counts, because verdict
 disagreement between reviewers is expected while failing the evidence bar is
-not. **Fixed** means the verdict is `Fix`. State which of the three any count
-refers to.
+not. **Fix verdicts** means the rows whose verdict is `Fix`. **Fixes applied**
+means the fixes actually made to the artifact. State which of the four any
+count refers to.
+
+The last two are not the same number and must not share a row. They coincide
+only when the reviewer can modify the artifact and does; in a **review-only**
+run — how Diffract reviews anything that is not the reviewer's to change,
+including its own frozen examples — every fix verdict is a recommendation and
+`Fixes applied` is 0. Reporting one number for both states that defects were
+repaired in a run that changed nothing.
 
 Reviews that count findings by different rules are not comparable, and
 comparing runs is the whole point of calibration: in RQ5
@@ -470,6 +489,19 @@ level up.
 review — Scorecard, prose summary, per-lens totals — is derived by counting
 rows here. If a stated count disagrees with the table, the table is right and
 the count is wrong: recount before finishing.
+
+Two counts are not derivable and are named here so the rule stays true, because
+a check that derives them corrupts a correct review:
+
+- `Fixes applied` depends on what happened to the artifact, which no row
+  records.
+- `PDCA cycles run` is **not** the highest `Cycle` value. A final cycle that
+  raises nothing is what convergence is, and it leaves no row behind:
+  `examples/web-service.md` correctly reports 2 cycles with every finding in
+  cycle 1.
+
+Both are the reviewer's to state. Every other count in the Scorecard is a count
+of rows in this table.
 
 #### Calibration Test (optional but recommended)
 

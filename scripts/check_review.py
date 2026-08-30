@@ -37,6 +37,12 @@ def plain(text):
     return re.sub(r'[*`]', '', text).strip()
 
 
+def default_prompt():
+    """PROMPT.md next to this script's repository root."""
+    return os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'PROMPT.md')
+
+
 def normative_lenses(prompt_path):
     """The ten lens names, in order, as PROMPT.md defines them."""
     prompt = open(prompt_path).read()
@@ -107,8 +113,11 @@ def index_rows(review):
 def check_scorecard(review, rows):
     """Every derived Scorecard count must equal a count of index rows.
 
-    'Fixed' is deliberately not checked: PROMPT.md defines it as verdict Fix,
-    but a review-only run correctly reports 0 applied. See issue #33.
+    Three rows are deliberately not reconciled. 'Fixes applied' and 'PDCA
+    cycles run' are not derivable from the index at all — see the counting
+    policy in PROMPT.md. Pre-0.4.0 'Fixed' conflated verdict Fix with fixes
+    applied (issue #33), so it is accepted unchecked; a review that states the
+    0.4.0 'Fix verdicts' row instead has it reconciled.
     """
     if '### Scorecard' not in review:
         failures.append('no "### Scorecard" section')
@@ -123,6 +132,8 @@ def check_scorecard(review, rows):
         'Compass-skipped': sum(1 for r in rows if r[5] == 'Skip:Compass'),
         'Integrity-discarded': sum(1 for r in rows if r[5] == 'Discard:Integrity'),
     }
+    if 'Fix verdicts' in card:
+        expected['Fix verdicts'] = sum(1 for r in rows if r[5] == 'Fix')
     for key, want in expected.items():
         if key not in card:
             failures.append(f'Scorecard has no {key!r} row')
@@ -190,8 +201,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('review')
     ap.add_argument('--artifact', action='append', default=[], required=True)
-    ap.add_argument('--prompt', default=os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'PROMPT.md'))
+    ap.add_argument('--prompt', default=default_prompt())
     args = ap.parse_args()
 
     review = open(args.review).read()
