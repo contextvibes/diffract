@@ -141,6 +141,27 @@ caught it:
       Confidence column in the CHECK table; W5H1 shipped mandatory,
       exempt from every verification applied to lenses, and absent from
       the Scorecard — so a run that skipped it passed every self-check.)
+- [ ] **Every requirement lives at both ends, held there by a gate, not
+      by review.** A section `check_review.py` demands of a review is in
+      `MANDATED_TRACES`, which `check.py` diffs against PROMPT.md; a
+      normative list a script enforces is parsed out of PROMPT.md rather
+      than restated. Adding a requirement to only one end must fail the
+      release, not merely be noticed. (Three mandated steps shipped
+      checked by nothing while the checker's own pass message reported
+      them as checked; the previous release named this pattern in its
+      CHANGELOG and still shipped an instance-level fix for it.)
+- [ ] **No parser locates a section by splitting on its literal
+      heading text.** The Integrity rule requires a review of a document
+      to quote that document verbatim, so any reserved string is a
+      string some conforming review must contain. Match at line start,
+      at the expected level, outside fences. (A review of Diffract could
+      not pass Diffract's checker; cycle 7 wrote its review around three
+      strings it was forbidden to reproduce.)
+- [ ] **A defect found in a script is fixed at the class its
+      description names**, or the CHANGELOG says which siblings were
+      left and why. Naming the recurrence is not fixing it. (Four
+      consecutive releases each fixed one instance of a class the
+      release notes had already named.)
 - [ ] **A mandated check consumes only artifacts that exist by its
       phase.** (Nothing-Found Verification, in CHECK, shipped ordering a
       count check against the Findings Index, which is built in LEARN.)

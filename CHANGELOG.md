@@ -98,8 +98,8 @@ numbers already known to be wrong.
 
 ### Fixed
 
-Twenty Majors from the two blind cycles below, all verified against the
-files before being accepted.
+Twenty-nine Majors from the three blind cycles below, all verified
+against the files before being accepted.
 
 **From cycle 5** (prose only — the reviewer had no `scripts/`):
 
@@ -224,6 +224,85 @@ and validation failures reported as parse failures (BOU-2). The
 `README` sentence promising four items and listing two — cycle 5's
 TRU-4, left unfixed at the time — now lists four.
 
+**From cycle 7** (the same five files as cycle 6, run after the cycle-6
+fixes landed):
+
+- **Three mandated steps were checked by nothing** (OBS-2). PROMPT.md
+  requires a Cold-Start Calibration before the lenses, a Scope and
+  Nothing-Found Verification, and a Stockholm & Hammer audit. A review
+  with all three deleted printed `all checks pass`. The checker now
+  reads a single `MANDATED_TRACES` table, requires each phrase at the
+  start of a heading or bold label outside a fence, and builds its own
+  pass message from that same table — so the claim and the check cannot
+  drift apart. `check.py` gains a release gate that fails when a phrase
+  the checker demands of a review is not mandated in PROMPT.md, which
+  is the class-level form of the defect the last three releases each
+  fixed one instance of.
+- **The competing-hypotheses check could not fail** (OBS-1). It searched
+  the whole `## CHECK` section for each Low-Confidence finding's ID —
+  and that section contains the CHECK table, which lists every ID. A
+  review whose block was cut to a heading and one sentence passed, while
+  the pass message reported competing-hypotheses blocks as checked. The
+  search is now bounded to the hypothesis blocks themselves.
+- **Nothing reconciled the lens tables against the index** (OBS-3). The
+  index is authoritative for every count in the review, so a Major
+  present in its lens table and in no index row vanished from the
+  Scorecard, the Exit Estimate and the done-rule at once — and passed.
+  Every finding raised by a lens must now reach the index, and every
+  index row must have been raised by a lens.
+- **A review of Diffract could not pass Diffract's checker** (SHI-1).
+  Sections were located by `str.split()` on their literal heading text,
+  so a review quoting `## CHECK`, `### Scorecard` or `## FINDINGS INDEX`
+  inside an Evidence block was parsed from the quote. The Integrity rule
+  requires a self-review to quote verbatim, so the instrument's own
+  calibration mode was the mode that could not conform: cycle 7 wrote
+  its review around three strings it was not allowed to reproduce, and
+  said so. One level-aware, fence-skipping heading locator now serves
+  every section lookup in both scripts. A fixture quoting all three
+  strings ahead of their real sections produced 137 failures before the
+  fix and passes after it. The same locator removes the ambiguity of a
+  `§ Heading` citation resolving to a template copy inside a fence.
+- **The one documented way to narrow a review was the one way to fail
+  the checker** (VAR-3). Rule 6 permits a narrowed scope and PROMPT.md's
+  Scope verification says so in as many words; the checker required all
+  ten lenses unconditionally. It now reads the declared scope from the
+  Scorecard's `Lenses run` row. W5H1 stays mandatory at every scope.
+- **The counting policy disagreed with the script that implements it**
+  (TRU-1). PROMPT.md named two Scorecard rows as not derivable from the
+  index and called every other one "a count of rows in this table".
+  `Lenses run` is a count of the review's lens sections, which is where
+  `render_scorecard.py` gets it, and `Estimated remaining Majors` is a
+  forecast. Both are now named — the same defect the rule exists to
+  prevent, one level up.
+- **README overstated what the checker verifies** (TRU-2). "Its mandated
+  output elements" was true of some of them; the sentence now lists what
+  is checked, and points at the checker's own account of what is not.
+- **PROMPT.md named `check.py` the reference implementation of a
+  superset** (NAM-1). It also runs release gates that are not entry
+  criteria, and those gates are what fail a partial checkout. PROMPT.md
+  now says so and says how to read the difference.
+- **The entry criteria had no outcome for a declared subset** (VAR-1).
+  Every blind run this instrument calibrates itself with is a subset of
+  a repository, and every check that reaches for an absent file fails.
+  Read strictly, the case analysis returned `[stopped: entry criteria
+  failed]` and no review — voiding the one mode Diffract is measured in.
+  Cycle 7 hit this on its own run, took the nearest defined tag and
+  named the deviation. There is now a bucket for it.
+
+Minors fixed in the same pass: `check_versions` cancelling the whole
+comparison when any one file was absent, inside the file whose docstring
+promises every check is independent (VAR-2); five ad-hoc section
+extractions replaced by the one locator (SIM-1, VAR-6); a heading
+containing a lens word captured as that lens's section (VAR-4); an
+`Instrument | Diffract v0.4.0` row read as absent (VAR-5); `render()`
+inheriting a previous call's failures through a shared module global
+(BOU-1); `--write` unmentioned where PROMPT.md describes the renderer as
+rewriting the review (W5H-1); `check.py` globbing Markdown recursively
+from wherever it was invoked, with no check that it was at a root
+(EFF-1); and anchors re-parsed once per link (EFF-2). The checker's `not
+checked:` line now also names the cycle bound, the done-rule and the
+Exit Estimate's basis as unenforced (W5H-3).
+
 ### Frozen reviews
 
 `examples/semver-2.0.0-review.md` and
@@ -281,11 +360,23 @@ wants deciding:
 
 Also carried forward: **#39**, vocabulary drift from PROMPT.md checked
 by eye. Cycle 6 supplied its fourth recorded instance — PROMPT.md
-describing a Scorecard row the renderer does not write.
+describing a Scorecard row the renderer does not write. Cycle 7's
+`check_enforced_strings` gate closes the mandated-section half of it:
+a section the checker demands and PROMPT.md does not mandate now fails
+the release.
+
+Cycle 7 leaves two Minors unfixed, both filed rather than patched: the
+scripts carry no version marker or manifest, so "run only the copy that
+ships with this file" is followed by resolving a path and nothing else
+(PRO-1, downgraded from Major on verification); and `failures` remains a
+shared mutable module global that `check.py` drains by hand (BOU-1's
+residue). One finding is `Skip:Cobra` and stays: `PRE_040_ROWS` is
+scaffolding for a format no current review uses, and deleting it would
+stop checking the two frozen 0.3.0 reviews.
 
 ### Validation
 
-Two blind cycles ran before release — a fresh-context reviewer (Claude
+Three blind cycles ran before release — a fresh-context reviewer (Claude
 Opus) executing this instrument version, one-shot and review-only, in a
 directory containing only the artifact. Blindness is procedural, as
 `calibration/README.md` defines it: no repository access, no network.
@@ -301,6 +392,13 @@ directory containing only the artifact. Blindness is procedural, as
   verified by the maintainer before being accepted; nine are fixed
   above, two were reproduced independently first, three were corrected
   (see below), and four are deferred as issues.
+- **Cycle 7** (Claude Opus, against the same five files as cycle 6, run
+  after the cycle-6 fixes landed): 23 findings, 12 Major, 20 Fix
+  verdicts. Nine Majors were accepted and are fixed above; three were
+  corrected on verification. Five of the accepted nine were reproduced
+  as fixtures before being accepted and re-run as fixtures after the
+  fix, which is the first cycle where every decisive finding has a
+  before-and-after it can be checked against.
 
 The cycle is numbered 5 because it continues the four cycles of 0.3.0,
 but it is not comparable to them: those ran against 0.3.0, and a
@@ -356,13 +454,51 @@ covered `scope: pr`; cycle 6 found `scope: full`. Three releases, one
 defect class, each fix correct and none of them general. The gate added
 below asks for the sibling cases by name.
 
-**Exit Estimate: ≈6 Major defects remaining** — cycle 6's own estimate
-on the basis it states, per-lens yield over a single pass. Two
-independent runs now exist but capture–recapture does not apply to
-them: they reviewed different artifact sets, so the overlap is not a
-measurement. Neither cycle converged, no cycle has yet run against the
-scripts as they now stand, and this release does not claim
-convergence.
+**Cycle 7 was the fourth turn of it, and this time in the fix itself.**
+Cycle 6 found the checker passing a review that omitted mandated
+elements and failing one written from PROMPT.md alone; both were fixed,
+and the paragraph above was written naming the pattern. The fix was
+still instance-level. Cycle 7 found three more omissions the checker
+passed — a deleted Cold-Start Calibration, a hollowed-out
+competing-hypotheses block, a Major dropped between its lens table and
+the index — and two more conforming shapes it failed. Naming a pattern
+is not fixing it. The cycle-7 fixes are the first class-level ones: one
+table of mandated traces that the pass message is generated from, one
+release gate that fails when the checker requires what PROMPT.md does
+not mandate, one section locator shared by every lookup in both scripts.
+
+**Cycle 7 found the release's headline claim still overstated.** "The
+review becomes checkable" survived cycle 6's two counterexamples and not
+cycle 7's five. Every one of the five was reproduced as a fixture before
+being accepted and re-run after the fix; a review quoting the three
+strings the checker split on went from 137 failures to a clean pass, and
+the three that used to pass now fail with named reasons. The three
+published reviews and cycle 7's own review still pass unchanged, and
+`render_scorecard.py` still round-trips all three byte-identically.
+
+**Three of cycle 7's Majors were corrected on verification.** TRU-3
+claimed the checker enforced two strings that appear nowhere in
+PROMPT.md; both appear — `## CHECK` is a substring of PROMPT.md's own
+`### CHECK` heading, and `#### Competing Hypotheses` is a heading in the
+file. The residue, that neither was stated in words as an output
+requirement, is real and Minor, and is now stated. VAR-5's mechanism is
+backwards: an unparsed `Instrument` row selects the *strictest* row set
+and fails loudly, it does not silently downgrade. PRO-1 says the
+run-only-the-shipped-copy rule "supplies no means" to identify that
+copy; the rule supplies the means — resolve relative to PROMPT.md — and
+the scripts implement it. A manifest would still help, and is filed.
+
+**Exit Estimate: ≈8 Major defects remaining**, on cycle 7's per-lens
+yield over a single pass against the artifact as it now stands. Cycle
+6's estimate of ≈6 was low: cycle 7 raised twelve and nine survived
+verification. Capture–recapture still does not apply, and cycle 7
+established why it structurally cannot under this protocol — the
+maintainer fixes each cycle's findings before the next cycle runs, so no
+two cycles ever draw from the same population and the overlap is zero by
+construction. Measuring it requires two independent runs against one
+unchanged artifact, which no release has yet paid for. No cycle has
+converged, no cycle has run against the scripts as they now stand, and
+this release does not claim convergence.
 
 ## [0.3.0] — 2026-08-29
 
