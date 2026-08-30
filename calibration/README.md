@@ -51,8 +51,17 @@ them, so a seeded line number is stable as seeds are added or retired.
 
 Copy `PROMPT.md` and the seeded artifact into an empty directory. Nothing else
 goes in it — in particular no review of the same base artifact, published or
-otherwise. Run the reviewer there with no repository access, no git and no
-network, then check the form of what comes back:
+otherwise.
+
+**Strip the trailing modification notice from the copy.** It states that the
+file has been altered for calibration, which primes a reviewer to hunt for
+planted defects and inflates the score. The notice exists to mark the
+distributed derivative as CC BY requires; a scratch copy used for one run is
+not distributed. It sits at the end of the file so removing it leaves every
+line number unchanged.
+
+Run the reviewer there with no repository access, no git and no network, then
+check the form of what comes back:
 
 ```
 python3 scripts/check_review.py REVIEW.md --artifact calibration/artifacts/semver-2.0.0-seeded.md

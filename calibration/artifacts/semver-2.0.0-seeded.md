@@ -1,15 +1,3 @@
-<!--
-  MODIFIED COPY — NOT THE SEMANTIC VERSIONING SPECIFICATION.
-
-  This file is Semantic Versioning 2.0.0 by Tom Preston-Werner (CC BY 3.0)
-  with deliberate defects introduced for calibration testing. It is a
-  derivative work and is marked as modified as that license requires.
-
-  Do not cite it, implement against it, or read it as the standard. The
-  unmodified specification is at examples/artifacts/semver-2.0.0.md.
-  See calibration/README.md.
--->
-
 Semantic Versioning 2.0.0
 ==============================
 
@@ -383,3 +371,20 @@ License
 -------
 
 [Creative Commons ― CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
+
+<!--
+  MODIFIED COPY — NOT THE SEMANTIC VERSIONING SPECIFICATION.
+
+  This file is Semantic Versioning 2.0.0 by Tom Preston-Werner (CC BY 3.0)
+  with deliberate defects introduced for calibration testing. It is a
+  derivative work and is marked as modified as that license requires.
+
+  Do not cite it, implement against it, or read it as the standard. The
+  unmodified specification is at examples/artifacts/semver-2.0.0.md.
+  See calibration/README.md.
+
+  This notice is at the END of the file on purpose: a calibration run strips
+  it, and keeping it here means the body's line numbers are identical with and
+  without it. Anything at the head would both shift every citation and tell the
+  reviewer the file has been tampered with.
+-->

@@ -7,10 +7,11 @@
 Base artifact: `examples/artifacts/semver-2.0.0.md`
 (sha256 `33ebae1a97845991d0b916f3295a88b499e2ec71a6c1fe84c12429077b19ce08`)
 
-Line numbers below are the **seeded file's** numbering, which is offset by 12
-lines from the base artifact by the modification notice at its head.
+Line numbers below are identical in the seeded file and the base artifact: the
+seeds edit within existing lines, and the fixture's modification notice sits at
+the end of the file precisely so the body's numbering is unaffected by it.
 
-## S1 — seeded line 21 · expects 📌 Truth
+## S1 — line 9 · expects 📌 Truth
 
 | | |
 |---|---|
@@ -25,7 +26,7 @@ following the summary versions every breaking change as a minor release.
 Expected to be the easiest seed: the contradiction is with a clause most readers
 already know, and the duplicated wording is visible without cross-referencing.
 
-## S2 — seeded line 218 · expects 🛡️ Shield
+## S2 — line 206 · expects 🛡️ Shield
 
 | | |
 |---|---|
@@ -41,7 +42,7 @@ produces one that rejects conforming input.
 Expected to be the hardest seed: finding it requires enumerating a 52-element
 production rather than reading it.
 
-## S3 — seeded line 164 · expects 🎯 Variety
+## S3 — line 153 · expects 🎯 Variety
 
 | | |
 |---|---|
@@ -54,7 +55,7 @@ ungrammatical, although the document presents such a version as valid elsewhere.
 The duplicate is what makes this hard: nothing is obviously missing, and the
 production still looks complete.
 
-## S4 — seeded line 343 · expects 🧱 Boundary
+## S4 — line 331 · expects 🧱 Boundary
 
 | | |
 |---|---|
