@@ -6,6 +6,42 @@ and social dynamics. The framework makes dishonesty structurally difficult
 through 13 concrete mechanisms, each adapted from a high-stakes industry
 where inspection failures have life-or-death consequences.
 
+## What these mechanisms can and cannot detect
+
+Every mechanism below is run **by the reviewer, about the reviewer, in the
+reviewer's own output.** That is the shape of self-attestation, and it bounds
+what the set can do. These are honesty aids for a reviewer that is trying to be
+honest — they raise the cost of drifting into a false claim. They do not detect
+an incompetent reviewer, and they do not detect an adversarial one.
+
+The defect record is explicit about this, and every entry in it was caught from
+outside the review, never by the review:
+
+- A reviewer wrote the planted defect into its own cognitive-anchoring example
+  and then reported the lens clean — 4 of 4 runs (mechanism 5).
+- A reviewer raised a `Fix` at High confidence about a sentence that exists only
+  in `PROMPT.md` and never in the artifact, and its own Context Fidelity check
+  affirmed it (mechanism 9).
+- Three runs stated Scorecard counts contradicting their own findings index,
+  including two `Discard:Integrity` verdicts appearing in no row.
+
+As of v0.4.0, four of the thirteen are no longer purely self-attested:
+
+- **Mechanisms 1, 2 and 9** can be checked from outside by
+  [`scripts/check_review.py`](../scripts/check_review.py) — lens coverage,
+  anchoring form, count reconciliation against the findings index, and whether
+  quoted text appears verbatim at the line it is cited to. It checks **form and
+  fidelity, not judgment.** It can prove a quote is real; it cannot tell you the
+  finding was worth raising, and it cannot tell you what the reviewer missed.
+- **Mechanism 5** has a real seeded variant in [`calibration/`](../calibration/):
+  defects planted in a frozen artifact and a reviewer scored against an answer
+  key it has not seen. That measures recall directly instead of asking the
+  reviewer whether it thinks it would have noticed.
+
+The other nine remain self-attested. So does the decision to run the checker at
+all: a reviewer that never runs it, or runs it and ignores the result, is
+governed by nothing on this page.
+
 ## The Mechanisms
 
 ### 1. Evidence (Proof of Observation)
@@ -16,6 +52,11 @@ at the inspection site before a task can be signed off.
 **In Diffract:** Every lens must produce `file:line` evidence or an explicit
 list of what was checked. A claim of "all clean" without evidence is invalid.
 
+Invalid by enforcement, not only by instruction: `check_review.py` requires a
+`Checked:` line on every lens, and — when the run's ⚖️ Integrity governor asks
+for verbatim quotes — matches each quote against the cited artifact at the cited
+line range.
+
 ### 2. Cognitive Anchoring (Shisa Kanko)
 
 **Source:** Japanese railways and nuclear control rooms — operators must
@@ -24,8 +65,7 @@ engages motor, visual, auditory, and verbal processing simultaneously,
 breaking the "looking without seeing" failure mode.
 
 **In Diffract:** When a lens produces no findings, the reviewer must describe
-what a finding **would** look like. This proves they understand the lens and
-actually examined the code, not just waved at it.
+what a finding **would** look like.
 
 ```markdown
 ### 🎯 Variety
@@ -35,7 +75,17 @@ that should have explicit handling (e.g., 503 for retry logic).
 No findings matching this pattern.
 ```
 
-**"No findings" without cognitive anchoring is not allowed.**
+**"No findings" without cognitive anchoring is not allowed.** This is checkable
+and now checked: `check_review.py` fails a review whose nothing-found lens omits
+the anchoring line or its closing sentence.
+
+What it demonstrates is narrower than it looks. Across 22 runs every
+nothing-found lens carried its anchor — 48 of 48, with one reviewer going from 0
+of 12 to 17 of 17 — and recall did not move. Many anchors are generic templates
+reusable on any document. Anchoring is evidence that the reviewer engaged the
+lens; it is not evidence that the artifact was read, and mechanism 5 records a
+case where writing the anchor fixed the reviewer's error as the standard of
+correctness. See issue #24.
 
 ### 3. Falsifiability
 
@@ -114,10 +164,21 @@ system can detect. The mechanism therefore cannot fail its own audit: it
 verifies that the reviewer *believes* it looked, not that looking would have
 found anything. Read it as a self-attestation.
 
-Until a real seeded-error variant exists — see the Calibration Challenge
-(mechanism 12), also unshipped — this mechanism does not do what its source
-domains do, and the "(Blind Seeding)" in its title describes the source, not
-the implementation.
+As shipped in `PROMPT.md`, this mechanism does not do what its source domains
+do, and the "(Blind Seeding)" in its title describes the source, not the
+implementation.
+
+**A real seeded variant now exists alongside it.** [`calibration/`](../calibration/)
+holds a frozen artifact with defects planted in it, an answer key the reviewer
+never sees, and `scripts/score_seeds.py` to match findings against it — the UXO
+grid, not the reviewer's opinion of the grid. The first run scored 4 of 4, with
+the review of the *clean* copy of the same artifact scoring 0 of 4 as a negative
+control.
+
+Two things it does not fix. It is a **separate procedure**, not a repair of the
+in-review question above: a reviewer working from `PROMPT.md` alone still grades
+its own process. And one fixture at one difficulty is not a calibration curve —
+`calibration/results.md` records what the run does not say.
 
 ### 6. Challenge-Response
 
@@ -167,7 +228,16 @@ tested. The certificate is tied to the batch, not a template.
 contains what you claim. If you cannot re-read (no tool access), flag the
 finding as `[unverified]`.
 
-**Prevents:** Tool hallucination, stale context, confabulated evidence.
+**Known limitation — self-verification has failed this test.** A reviewer raised
+a `Fix` at High confidence about the sentence *"This file is self-contained"*,
+which appears nowhere in the artifact and only in `PROMPT.md` itself. Its own
+Context Fidelity check then affirmed the fabrication. The faculty that re-reads
+is the faculty that misread. Checking a quote against the artifact is mechanical
+work and now runs mechanically: `check_review.py` verifies that quoted text
+appears verbatim at the line it is cited to. See issue #21.
+
+**Prevents:** Tool hallucination, stale context, confabulated evidence — when
+the quote check is run. Unrun, it prevents none of them.
 
 ### 10. Chunked Attestation (Anti-Degradation)
 
@@ -237,18 +307,18 @@ Any finding based purely on "best practice" dogmatism without a universal system
 
 ## Summary Table
 
-| # | Mechanism | Source Industry | What It Prevents |
-|---|-----------|----------------|-----------------|
-| 1 | Evidence | Aviation (RFID) | Claims without observation |
-| 2 | Cognitive Anchoring | Railways (shisa kanko) | Looking without seeing |
-| 3 | Falsifiability | Philosophy (Popper) | Opinion disguised as fact |
-| 4 | Calibration | Metrology + Radiology (dual-reading) | Reviewer-dependent outcomes |
-| 5 | Nothing-Found Verification | UXO / Radiology / Law | Unexamined "nothing found" claims — **not** false negatives; see the limitation under mechanism 5 |
-| 6 | Challenge-Response | Aviation (CRM) | Passive agreement |
-| 7 | Finder/Decider Separation | Aviation (RII) | Conflict of interest |
-| 8 | Retro | Manufacturing (Deming) | Framework stagnation |
-| 9 | Context Fidelity | Pharma (CoA) | Tool hallucination, confabulated evidence |
-| 10 | Chunked Attestation | Aviation (duty limits) | Nothing — no executable form ships; see mechanism 10 |
-| 11 | Tool Verification | Legal (chain of custody) | Hallucinated tool output |
-| 12 | Adversarial Decoupling | Medicine (Double-Blind) + Cyber (Red Team) | Algorithmic Stockholm Syndrome (Cognitive Captivity) |
-| 13 | Golden Hammer Neutralization | Systems Biology + Thermodynamics | Tech Stack Bias, over-abstraction, framework dogmatism |
+| # | Mechanism | Source Industry | What It Prevents | Checked by |
+|---|-----------|----------------|-----------------|-----------|
+| 1 | Evidence | Aviation (RFID) | Claims without observation | External — `check_review.py` |
+| 2 | Cognitive Anchoring | Railways (shisa kanko) | Looking without seeing | External — `check_review.py` |
+| 3 | Falsifiability | Philosophy (Popper) | Opinion disguised as fact | Self-attested |
+| 4 | Calibration | Metrology + Radiology (dual-reading) | Reviewer-dependent outcomes | Self-attested |
+| 5 | Nothing-Found Verification | UXO / Radiology / Law | Unexamined "nothing found" claims — **not** false negatives; see the limitation under mechanism 5 | External — `calibration/` |
+| 6 | Challenge-Response | Aviation (CRM) | Passive agreement | Self-attested |
+| 7 | Finder/Decider Separation | Aviation (RII) | Conflict of interest | Self-attested |
+| 8 | Retro | Manufacturing (Deming) | Framework stagnation | Self-attested |
+| 9 | Context Fidelity | Pharma (CoA) | Tool hallucination, confabulated evidence | External — `check_review.py` |
+| 10 | Chunked Attestation | Aviation (duty limits) | Nothing — no executable form ships; see mechanism 10 | Nothing ships |
+| 11 | Tool Verification | Legal (chain of custody) | Hallucinated tool output | Self-attested |
+| 12 | Adversarial Decoupling | Medicine (Double-Blind) + Cyber (Red Team) | Algorithmic Stockholm Syndrome (Cognitive Captivity) | Self-attested |
+| 13 | Golden Hammer Neutralization | Systems Biology + Thermodynamics | Tech Stack Bias, over-abstraction, framework dogmatism | Self-attested |

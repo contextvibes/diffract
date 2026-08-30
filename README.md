@@ -58,6 +58,15 @@ their human inspectors:
 - [Anti-manipulation mechanisms](docs/anti-dishonesty.md) borrowed from
   aviation, medicine, and other high-stakes industries
 
+**What these mechanisms do not do.** They are aids for a reviewer that is trying
+to be honest, not detectors of one that isn't. Most are executed by the reviewer,
+about the reviewer, in the reviewer's own output — a reviewer that misreads the
+artifact will certify a review of what it misread. Four of the thirteen are now
+checkable from outside: `scripts/check_review.py` verifies a review's form and
+its quotes against the frozen artifact, and `calibration/` scores a reviewer
+against defects it was not told about. The rest are
+[self-attested](docs/anti-dishonesty.md#what-these-mechanisms-can-and-cannot-detect).
+
 **Your most important role:** Don't just approve the PLAN and wait. Challenge
 the agent during every phase. The most valuable findings in Diffract's own
 development came from human interruptions, not from the lenses. The lenses
