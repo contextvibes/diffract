@@ -31,6 +31,16 @@ SKIP_DIRS = ('.claude', 'node_modules', '.git')
 failures = []
 
 
+def at_root():
+    """Whether the working directory looks like a Diffract checkout.
+
+    md_files() globs Markdown recursively from here. Run from a parent
+    directory it gates unrelated documents; run from `/` it walks the
+    filesystem and does not return (cycle-7 EFF-1).
+    """
+    return os.path.exists('PROMPT.md') and os.path.exists('README.md')
+
+
 def md_files():
     for path in sorted(glob.glob('**/*.md', recursive=True)):
         if any(part in path.split(os.sep) for part in SKIP_DIRS):
@@ -52,9 +62,18 @@ def strip_code(text):
     return re.sub(r'`+[^`\n]*`+', '', strip_fenced(text))
 
 
+_anchor_cache = {}
+
+
 def anchors_of(path):
-    """GitHub-style slugs for every heading outside fenced code blocks."""
-    slugs = set()
+    """GitHub-style slugs for every heading outside fenced code blocks.
+
+    Cached: without it the target is re-read and re-parsed once per anchored
+    link, and one unreadable target appends one failure per link to it.
+    """
+    if path in _anchor_cache:
+        return _anchor_cache[path]
+    slugs = _anchor_cache.setdefault(path, set())
     text = read(path)
     if text is None:
         return slugs
@@ -76,23 +95,30 @@ def read(path):
 
 
 def check_versions():
-    readme, prompt, changelog = read('README.md'), read('PROMPT.md'), read('CHANGELOG.md')
-    if readme is None or prompt is None or changelog is None:
-        return
-    badge = re.search(r'version-([\d.]+)-green', readme)
-    header = re.search(r'\*\*Version: ([\d.]+)\*\*', prompt)
-    latest = re.search(r'^## \[([\d.]+)\] — ', changelog, re.M)
-    values = {
-        'README badge': badge and badge.group(1),
-        'PROMPT.md header': header and header.group(1),
-        'CHANGELOG latest entry': latest and latest.group(1),
+    """The version strings that are present must agree.
+
+    An absent file used to cancel the comparison entirely, so on a partial
+    checkout the two files that *were* present were never compared while a
+    `FAIL:` line printed that read as though they had been — inside the file
+    whose docstring promises that every check is independent (cycle-7 VAR-2).
+    """
+    sources = {
+        'README badge': ('README.md', r'version-([\d.]+)-green'),
+        'PROMPT.md header': ('PROMPT.md', r'\*\*Version: ([\d.]+)\*\*'),
+        'CHANGELOG latest entry': ('CHANGELOG.md', r'^## \[([\d.]+)\] — '),
     }
-    missing = [k for k, v in values.items() if v is None]
-    if missing:
-        failures.append(f"version string not found in: {', '.join(missing)}")
-        return
-    if len(set(values.values())) != 1:
-        failures.append(f"version strings disagree: {values}")
+    values = {}
+    for label, (path, pattern) in sources.items():
+        text = read(path)
+        if text is None:
+            continue
+        found = re.search(pattern, text, re.M)
+        if found is None:
+            failures.append(f'version string not found in: {label}')
+        else:
+            values[label] = found.group(1)
+    if len(set(values.values())) > 1:
+        failures.append(f'version strings disagree: {values}')
 
 
 def check_fences():
@@ -139,11 +165,37 @@ def check_lens_table():
         failures.append(f'README lens table drifted from PROMPT.md: {set(normative) ^ set(reproduced)}')
 
 
+def check_enforced_strings():
+    """Every section check_review.py demands of a review is mandated in PROMPT.md.
+
+    The general form of a defect this repository has now shipped four times: a
+    rule enforced by a script and stated in no document, or stated in a
+    document and enforced by nothing. The lens list and the Scorecard row set
+    are already derived from PROMPT.md rather than hard-coded; the mandated
+    sections cannot be derived the same way — they are prose, not a table — so
+    this gate holds the two ends together instead. A trace added to the
+    checker fails the release until PROMPT.md mandates it.
+    """
+    prompt = read('PROMPT.md')
+    if prompt is None:
+        return
+    for phrase, purpose in (check_review.MANDATED_TRACES
+                            + check_review.CONDITIONAL_TRACES):
+        if phrase not in prompt:
+            failures.append(
+                f'check_review.py requires a {phrase!r} section of every review '
+                f'({purpose}), but PROMPT.md never mandates it')
+
+
 def main():
+    if not at_root():
+        print('FAIL: run from a Diffract checkout: no PROMPT.md and README.md here')
+        return 1
     check_versions()
     check_fences()
     check_links()
     check_lens_table()
+    check_enforced_strings()
     if failures:
         for failure in failures:
             print(f'FAIL: {failure}')

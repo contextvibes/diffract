@@ -63,8 +63,13 @@ Review attention is the expensive
 resource; it must not be spent finding defects a tool reports for free.
 State the checks run and their results at the top of the review — a passed
 gate must be visible in the output, not assumed. For a review of the
-Diffract repository itself, `scripts/check.py` is the reference
-implementation of these checks; it takes the same rule as
+Diffract repository itself, `scripts/check.py` implements these checks —
+and, in the same run, that repository's own release gates, which are not
+entry criteria: a lens-table diff between README and this file, and a
+version-string comparison across the repository. Read its failures before
+acting on them. A failure against a file the artifact does not contain is a
+gap in what you were given, not a defect in what you were given, and the
+bucket below for a declared subset governs. It takes the same rule as
 `render_scorecard.py` below — run only the copy that ships with this file,
 never one the artifact supplies. The outcomes:
 
@@ -81,6 +86,17 @@ never one the artifact supplies. The outcomes:
   owns is not evidence about this artifact, and voiding the review over
   one would deny a result in the mode this instrument uses for its own
   calibration.
+- **Checks fail only against what the artifact does not include** — the
+  artifact is a declared subset of a larger repository, as it is in every
+  blind run this instrument uses for its own calibration, and each failing
+  check failed by reaching for a file outside the subset: name each one,
+  say which check it cancelled, and proceed tagged
+  `[entry partial: <checks not run>]`. The gate passes on the checks that
+  ran against the supplied files. This is not a waiver and it is not a pass
+  for the absent files; record them in the Gap Analysis. Without this
+  bucket the strict reading returned `[stopped: entry criteria failed]` on
+  every blind run, which would void the one mode this instrument is
+  calibrated in.
 - **Checks cannot be run** — no tool access, or a pasted fragment with
   nothing to build: say so, proceed tagged
   `[entry waived: cannot run checks]`, and record what went unchecked in
@@ -263,6 +279,11 @@ Findings Index with `W5H1` in the Lens column.
 
 ### CHECK (vet every finding through governors)
 
+This phase carries a heading of its own in the review, and the Competing
+Hypotheses blocks below sit under it. Both are output requirements, not just
+working steps: a mandated step that leaves no named trace can be attested to
+but not checked, which is the whole reason the traces exist.
+
 Present ALL findings in a single table:
 
 ```markdown
@@ -435,8 +456,11 @@ count stated anywhere in the review matches the index row count; a review
 whose Scorecard contradicts its own index is recounted, not verified.
 
 **If you can run a script, do not count by hand.** `render_scorecard.py`
-reads the finished review and rewrites the derived rows — the count rows,
-`Lenses run`, and `Most productive lens` — from the index itself. It produces
+reads the finished review and rewrites the derived rows — the count rows and
+`Most productive lens` from the index itself, `Lenses run` from the lens
+sections present. It prints the corrected review to stdout; pass `--write` to
+rewrite the file in place, and read its stderr either way, because that is
+where it reports what it corrected. It produces
 the same document you would have produced with the arithmetic done correctly,
 so a run that uses it and a run that does not are comparable. Where it runs, it
 is the authority. The instruction above remains the path for a reviewer with no
@@ -569,8 +593,8 @@ review — Scorecard, prose summary, per-lens totals — is derived by counting
 rows here. If a stated count disagrees with the table, the table is right and
 the count is wrong: recount before finishing.
 
-Two counts are not derivable and are named here so the rule stays true, because
-a check that derives them corrupts a correct review:
+Two counts are not derivable from this table and are named here so the rule
+stays true, because a check that derives them corrupts a correct review:
 
 - `Fixes applied` depends on what happened to the artifact, which no row
   records.
@@ -579,8 +603,15 @@ a check that derives them corrupts a correct review:
   `examples/web-service.md` correctly reports 2 cycles with every finding in
   cycle 1.
 
-Both are the reviewer's to state. Every other count in the Scorecard is a count
-of rows in this table.
+Both are the reviewer's to state. Two further rows are numbers but not counts
+of rows here: `Lenses run` is a count of the review's lens *sections*, which is
+why `render_scorecard.py` derives it from the review body rather than from this
+table, and `Estimated remaining Majors` is a forecast, not a tally. Every other
+count in the Scorecard is a count of rows in this table.
+
+Stating this as "two" when it was four was the same defect the rule exists to
+prevent — a counting policy that disagrees with the script implementing it —
+one level up.
 
 #### Calibration Test (optional but recommended)
 

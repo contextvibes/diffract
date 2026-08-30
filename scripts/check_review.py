@@ -38,12 +38,101 @@ SEVERITIES = {'Major', 'Minor'}
 ANCHOR = 'A finding would look like:'
 CLOSER = 'No findings matching this pattern.'
 
+# Every mandated step whose only proof of having run is a trace in the output.
+# Each phrase is required in the review and, by scripts/check.py's release
+# gate, in PROMPT.md too — so a requirement can never live only in this file.
+# Before cycle 7 three of these were mandated by PROMPT.md and checked by
+# nothing, and a review with all three deleted printed `all checks pass`.
+MANDATED_TRACES = [
+    ('Cold-Start Calibration', 'the invariants written down before the lenses'),
+    ('Scope and Nothing-Found Verification', 'the form and anchoring check'),
+    ('Stockholm & Hammer', 'the audit of adopted explanations and reached-for tools'),
+    ('Gap Analysis', 'what the review could not reach'),
+    ('Defect Prevention', 'the upstream cause of each Major'),
+]
+
+# Required only when the review has a Low-Confidence finding to weigh.
+CONDITIONAL_TRACES = [
+    ('Competing Hypotheses', 'the rival explanations weighed for a Low finding'),
+]
+
+HYPOTHESES = re.compile(r'^(?:#+\s+|\*\*)[^\n]*Competing Hypotheses', re.I)
+
+
+
 failures = []
 
 
 def plain(text):
     """Strip markdown emphasis so cell values compare as literal strings."""
     return re.sub(r'[*`]', '', text).strip()
+
+
+def outside_fences(lines):
+    """Per line, whether it sits outside a ``` fenced block."""
+    inside, live = False, []
+    for line in lines:
+        if re.match(r'^\s*```', line):
+            live.append(False)
+            inside = not inside
+        else:
+            live.append(not inside)
+    return live
+
+
+def heading_span(lines, name, level=None, prefix=False):
+    """(start, end) line indices of the named heading's section, or None.
+
+    The one section locator in this file. A heading matches only at the start
+    of a line, only outside a fenced block, and — where a level is given —
+    only at that level; the section runs to the next heading of the same or
+    higher level.
+
+    Every section lookup here used to be `str.split()` on the literal heading
+    text. That reads a heading quoted inside an Evidence block as the section
+    itself, and the Integrity rule requires a review of Diffract to quote
+    Diffract's own headings verbatim, so a conforming self-review could not
+    pass this checker (cycle-7 SHI-1). The same substring matching made a
+    `§ Heading` citation resolve to a template copy inside a fence (VAR-6).
+    """
+    want = re.sub(r'\s+', ' ', plain(name)).strip().lower()
+    live = outside_fences(lines)
+    for i, line in enumerate(lines):
+        m = re.match(r'^(#+)\s+(.*)$', line)
+        if not (live[i] and m):
+            continue
+        if level is not None and len(m.group(1)) != level:
+            continue
+        head = re.sub(r'\s+', ' ', plain(m.group(2))).strip().lower()
+        if head != want and not (prefix and head.startswith(want)):
+            continue
+        depth = len(m.group(1))
+        for j in range(i + 1, len(lines)):
+            n = re.match(r'^(#+)\s+', lines[j])
+            if n and live[j] and len(n.group(1)) <= depth:
+                return i, j
+        return i, len(lines)
+    return None
+
+
+def section(review, name, level=None):
+    """The named section's body text, or None. Heading line excluded."""
+    lines = review.split('\n')
+    span = heading_span(lines, name, level=level, prefix=True)
+    return None if span is None else '\n'.join(lines[span[0] + 1:span[1]])
+
+
+def stated_at_line_start(lines, phrase):
+    """Whether a heading or bold label outside a fence carries this phrase.
+
+    Presence, not parsing: a step's trace may be a heading at any level or a
+    bold label, and reviews use both. Requiring line start and excluding
+    fences keeps a review that merely *quotes* the phrase from satisfying it.
+    """
+    live = outside_fences(lines)
+    pattern = re.compile(r'^(?:#+\s+|\*\*)[^\n]*' + re.escape(phrase), re.I)
+    return any(live[i] and pattern.match(line) for i, line in enumerate(lines))
+
 
 
 def default_prompt():
@@ -110,7 +199,7 @@ def normative_scorecard_rows(prompt_path):
 
 def instrument_version(review):
     """(major, minor) of the instrument the review declares, or None."""
-    m = re.search(r'^\| Instrument \| Diffract (\d+)\.(\d+)', review, re.M)
+    m = re.search(r'^\| Instrument \| Diffract v?(\d+)\.(\d+)', review, re.M)
     return (int(m.group(1)), int(m.group(2))) if m else None
 
 
@@ -139,21 +228,50 @@ def lens_sections(review, lenses):
     for m in re.finditer(r'^### (.+?)$\n(.*?)(?=^### |^## |\Z)', review, re.M | re.S):
         head = plain(m.group(1))
         for name in lenses + ['W5H1']:
-            if re.search(r'(?:^|\s)' + re.escape(name) + r'(?:\s|$|—)', head):
+            if re.match(r'^[\W\d_]*' + re.escape(name) + r'(?!\w)', head):
                 found[name] = m.group(2)
                 order.append(name)
                 break
     return found, order
 
 
-def check_lenses(review, lenses):
+def declared_scope(review):
+    """How many lenses the Scorecard says were run, or None if it does not say.
+
+    Rule 6 lets a review narrow its scope, and PROMPT.md's Scope verification
+    says so in as many words: a section is required for every lens "in the
+    run's declared scope (all ten, unless narrowed under Rule 6)". This
+    checker required all ten unconditionally until cycle 7, which made the one
+    documented way to narrow a review the one way to fail this check.
+    """
+    body = section(review, 'Scorecard', level=3)
+    if body is None:
+        return None
+    m = re.search(r'^\| Lenses run \|\s*(\d+)\s*(?:of|/)', body, re.M)
+    return int(m.group(1)) if m else None
+
+
+def check_lenses(review, lenses, scope=None):
     found, order = lens_sections(review, lenses)
-    expected = lenses + ['W5H1']
-    missing = [n for n in expected if n not in found]
-    if missing:
-        failures.append(f"no section for: {', '.join(missing)}")
-    if order != expected and not missing:
+    present = [n for n in lenses if n in found]
+
+    if 'W5H1' not in found:
+        # W5H1 is mandatory at every scope: PROMPT.md makes it not a lens but
+        # not exempt either, and Rule 6 narrows lenses, not W5H1.
+        failures.append('no section for: W5H1')
+    if scope is None or scope >= len(lenses):
+        missing = [n for n in lenses if n not in found]
+        if missing:
+            failures.append(f"no section for: {', '.join(missing)}")
+    elif len(present) != scope:
+        failures.append(
+            f'Scorecard declares {scope} of {len(lenses)} lenses run, but '
+            f'{len(present)} lens sections are present: {", ".join(present)}')
+
+    expected = present + (['W5H1'] if 'W5H1' in found else [])
+    if order != expected:
         failures.append(f'lens sections out of normative order: {order}')
+
     for name, body in found.items():
         if 'Checked:' not in body:
             failures.append(f"{name}: no 'Checked:' line")
@@ -165,11 +283,34 @@ def check_lenses(review, lenses):
             failures.append(f'{name}: nothing-found lens without "{CLOSER}"')
 
 
+def check_index_completeness(review, rows, lenses):
+    """Every finding raised in a lens table is in the index, and vice versa.
+
+    PROMPT.md makes the index authoritative for every count in the review, so
+    a finding that exists in its lens table and nowhere else is absent from
+    the Scorecard, the Exit Estimate and the done-rule at once — and until
+    cycle 7 nothing here noticed. A Major could be dropped between DO and the
+    index and the checker would still print `all checks pass` (cycle-7 OBS-3).
+    """
+    found, _ = lens_sections(review, lenses)
+    order = [n for n in lenses if n in found] + (['W5H1'] if 'W5H1' in found else [])
+    raised = {}
+    for name in order:
+        for fid in re.findall(r'^\|\s*([A-Z0-9]{2,4}-\d+)\s*\|', found[name], re.M):
+            raised.setdefault(fid, name)
+    indexed = {r[0] for r in rows}
+    for fid, name in sorted(raised.items()):
+        if fid not in indexed:
+            failures.append(f'{fid}: raised in the {name} lens table, no index row')
+    for fid in sorted(indexed - set(raised)):
+        failures.append(f'{fid}: in the Findings Index, raised in no lens table')
+
+
 def index_rows(review):
-    if '## FINDINGS INDEX' not in review:
+    body = section(review, 'FINDINGS INDEX', level=2)
+    if body is None:
         failures.append('no "## FINDINGS INDEX" section')
         return []
-    body = review.split('## FINDINGS INDEX')[1]
     rows = []
     for line in re.findall(r'^\|(.+)\|\s*$', body, re.M):
         if re.match(r'^[\s|:-]+$', line) or line.strip().startswith('ID '):
@@ -200,10 +341,10 @@ def check_scorecard(review, rows, prompt_path):
     applied (issue #33), so it is accepted unchecked; a review that states the
     0.4.0 'Fix verdicts' row instead has it reconciled.
     """
-    if '### Scorecard' not in review:
+    table = section(review, 'Scorecard', level=3)
+    if table is None:
         failures.append('no "### Scorecard" section')
         return
-    table = re.split(r'^### ', review.split('### Scorecard')[1], maxsplit=1, flags=re.M)[0]
     card = {plain(k): v.strip() for k, v in
             re.findall(r'^\| ([^|]+?) \| ([^|]*?) \|\s*$', table, re.M)}
 
@@ -228,33 +369,71 @@ def check_scorecard(review, rows, prompt_path):
             failures.append(f'Scorecard {key} = {m.group(1)}, index says {want}')
 
 
+def hypotheses_region(check_body):
+    """The competing-hypotheses blocks of a CHECK section, joined, or None.
+
+    Bounded deliberately. The per-finding check used to search the whole CHECK
+    section — which contains the CHECK table, which lists every finding ID — so
+    it passed on any ID whatever was written beneath the table, while the pass
+    message reported competing-hypotheses blocks as checked (cycle-7 OBS-1).
+    """
+    lines = check_body.split('\n')
+    live = outside_fences(lines)
+    starts = [i for i, line in enumerate(lines) if live[i] and HYPOTHESES.match(line)]
+    if not starts:
+        return None
+    region = []
+    for i in starts:
+        head = re.match(r'^(#+)\s', lines[i])
+        depth = len(head.group(1)) if head else 6
+        j = i + 1
+        while j < len(lines):
+            nxt = re.match(r'^(#+)\s', lines[j])
+            if (nxt and live[j] and len(nxt.group(1)) <= depth
+                    and not HYPOTHESES.match(lines[j])):
+                break
+            j += 1
+        region.extend(lines[i:j])
+    return '\n'.join(region)
+
+
 def check_structure(review, rows):
     """The mandated output elements that prove a mandated step ran.
 
-    PROMPT.md mandates the CHECK table, a competing-hypotheses block below it
-    for every Low-Confidence finding, and the three LEARN sections. Each
-    exists so a step leaves a trace in the output; a checker that does not
-    look for the trace leaves the step on the reviewer's word, which is what
-    the trace was introduced to stop.
+    A step whose only evidence is the reviewer's word is not checkable, so
+    PROMPT.md mandates that each leaves a trace in the output. This looks for
+    every trace in MANDATED_TRACES, and — where a Low-Confidence finding
+    exists — for a competing-hypotheses block that actually names it.
+
+    Both halves failed before cycle 7: three mandated traces were unlisted
+    (OBS-2), and the per-finding hypotheses check searched a region that always
+    contained the finding ID and so could never fail (OBS-1).
     """
-    if '## CHECK' not in review:
+    lines = review.split('\n')
+    check_body = section(review, 'CHECK', level=2)
+    if check_body is None:
         failures.append('no "## CHECK" section')
         return
-    body = review.split('## CHECK')[1].split('\n## ')[0]
-    if not re.search(r'^\|.*\|.*\|', body, re.M):
+    if not re.search(r'^\|.*\|.*\|', check_body, re.M):
         failures.append('CHECK section contains no table')
+
+    for phrase, purpose in MANDATED_TRACES:
+        if not stated_at_line_start(lines, phrase):
+            failures.append(f'no {phrase!r} section — {purpose}')
+
     low = [r[0] for r in rows if r[7] == 'Low']
-    if low and 'Competing Hypotheses' not in body:
+    if not low:
+        return
+    region = hypotheses_region(check_body)
+    if region is None:
         failures.append(
             f'{len(low)} Low-Confidence finding(s) but no "Competing Hypotheses" '
             f'block below the CHECK table: {", ".join(low)}')
-    else:
-        for fid in low:
-            if fid not in body:
-                failures.append(f'{fid}: Low Confidence with no competing-hypotheses block')
-    for section in ('### Scorecard', 'Gap Analysis', 'Defect Prevention'):
-        if section not in review:
-            failures.append(f'no {section!r} section')
+        return
+    for fid in low:
+        if fid not in region:
+            failures.append(
+                f'{fid}: Low Confidence, named in no competing-hypotheses block')
 
 
 def requires_quotes(review):
@@ -288,19 +467,9 @@ def squash(lines):
 
 
 def heading_body(lines, heading):
-    """Lines under the named heading, to the next heading of the same or higher level."""
-    want = re.sub(r'\s+', ' ', plain(heading)).strip().lower()
-    for i, line in enumerate(lines):
-        m = re.match(r'^(#+)\s+(.*)$', line)
-        if not m or re.sub(r'\s+', ' ', plain(m.group(2))).strip().lower() != want:
-            continue
-        level = len(m.group(1))
-        for j in range(i + 1, len(lines)):
-            n = re.match(r'^(#+)\s+', lines[j])
-            if n and len(n.group(1)) <= level:
-                return lines[i:j]
-        return lines[i:]
-    return None
+    """Lines of the named heading's section, heading line included, or None."""
+    span = heading_span(lines, heading)
+    return None if span is None else lines[span[0]:span[1]]
 
 
 def check_evidence(review, rows, artifacts, require):
@@ -405,8 +574,9 @@ def main():
           f'version {prompt_version.group(1) if prompt_version else "unknown"}')
 
     lenses = normative_lenses(args.prompt)
-    check_lenses(review, lenses)
+    check_lenses(review, lenses, declared_scope(review))
     rows = index_rows(review)
+    check_index_completeness(review, rows, lenses)
     check_scorecard(review, rows, args.prompt)
     check_structure(review, rows)
     require = requires_quotes(review)
@@ -419,14 +589,21 @@ def main():
         for failure in failures:
             print(f'FAIL: {failure}')
         return 1
-    print('checked: lens sections present and in normative order; cognitive '
-          'anchoring on nothing-found lenses; CHECK table; competing-hypotheses '
-          'blocks for Low-Confidence findings; Gap Analysis and Defect '
-          'Prevention present; index verdicts and severities legal; every '
-          'mandated Scorecard row present and every derived count equal to the '
-          'index; every Evidence quote verbatim at its citation.')
+    # Built from the same table the checks read, so the claim and the check
+    # cannot drift apart — which is how three mandated sections came to be
+    # reported as checked while nothing looked for them (cycle-7 OBS-1/OBS-2).
+    traces = '; '.join(p for p, _ in MANDATED_TRACES + CONDITIONAL_TRACES)
+    print('checked: lens sections present, in normative order, and agreeing '
+          'with the declared scope; cognitive anchoring on nothing-found '
+          'lenses; every finding in a lens table carried into the Findings '
+          'Index and every index row raised by a lens; the CHECK table; index '
+          'verdicts and severities legal; every mandated Scorecard row present '
+          'and every derived count equal to the index; every Evidence quote '
+          f'verbatim at its citation; and these mandated sections: {traces}.')
     print('not checked: whether any finding is real, whether a severity is '
-          'right, or whether a lens was applied well.')
+          'right, whether a lens was applied well, whether the cycle bound or '
+          'the done-rule was respected, or whether the Exit Estimate has a '
+          'basis.')
     print('all checks pass')
     return 0
 

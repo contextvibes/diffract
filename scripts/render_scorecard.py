@@ -88,14 +88,23 @@ def substitute_leading_number(value, want):
 
 
 def render(review, prompt_path=None):
+    # The failure list is a module global shared with check_review; a second
+    # call in one process used to inherit the first call's failures and reject
+    # a sound index (cycle-7 BOU-1).
+    check_review.failures.clear()
     rows = check_review.index_rows(review)
     if check_review.failures:
         return review, [f'index rejected: {f}' for f in check_review.failures], []
-    if '### Scorecard' not in review:
-        return review, ['no "### Scorecard" section'], []
 
-    head, _, rest = review.partition('### Scorecard')
-    table, sep, tail = rest.partition('\n### ')
+    # Located by heading level and line start, not by splitting on the literal
+    # text: a review that quotes '### Scorecard' inside an Evidence block —
+    # which a review of Diffract must — was rewritten at the quote (SHI-1).
+    lines = review.split('\n')
+    span = check_review.heading_span(lines, 'Scorecard', level=3, prefix=True)
+    if span is None:
+        return review, ['no "### Scorecard" section'], []
+    prefix, suffix = lines[:span[0] + 1], lines[span[1]:]
+    table = '\n'.join(lines[span[0] + 1:span[1]])
 
     counts = derived_counts(rows)
     lead, lead_n, tied = leading_lens(rows)
@@ -143,7 +152,7 @@ def render(review, prompt_path=None):
         return match.group(0)
 
     table = re.sub(r'^\| ([^|]+?) \| ([^|]*?) \|\s*$', fix_row, table, flags=re.M)
-    return head + '### Scorecard' + table + sep + tail, changes, notes
+    return '\n'.join(prefix + table.split('\n') + suffix), changes, notes
 
 
 def main():
