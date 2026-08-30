@@ -62,8 +62,11 @@ their human inspectors:
 to be honest, not detectors of one that isn't. Most are executed by the reviewer,
 about the reviewer, in the reviewer's own output — a reviewer that misreads the
 artifact will certify a review of what it misread. Four of the thirteen are now
-checkable from outside: `scripts/check_review.py` verifies a review's form and
-its quotes against the frozen artifact, and `calibration/` scores a reviewer
+checkable from outside: `scripts/check_review.py` verifies a review's form,
+its mandated output elements, and its quotes against the frozen artifact;
+`scripts/render_scorecard.py` derives the Scorecard counts from the review's
+own index instead of trusting them; `scripts/check.py` runs the entry gate
+the review claims to have passed; and `calibration/` scores a reviewer
 against defects it was not told about. The rest are
 [self-attested](docs/anti-dishonesty.md#what-these-mechanisms-can-and-cannot-detect).
 
