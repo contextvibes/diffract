@@ -110,7 +110,12 @@ caught it:
 - [ ] **Version strings agree** — the README badge and the PROMPT.md
       header. (0.2.3 shipped with the header still reading 0.2.2.)
 - [ ] **Template changes re-sync `examples/`** — the checklist above,
-      in the same PR.
+      in the same PR. **Exception: a review that is hash-pinned and
+      quote-checkable is frozen at the instrument version that produced
+      it** and is never re-synced; editing it destroys the property that
+      makes it evidence. A release that leaves such a review behind says
+      so in its CHANGELOG entry and states why. Illustrative examples
+      carrying no hash re-sync as normal.
 - [ ] **Prose that cites an example's metrics is diffed against that
       example's FINDINGS INDEX** whenever either file changes. (README
       shipped claiming "3 PDCA cycles" and the wrong most-productive
