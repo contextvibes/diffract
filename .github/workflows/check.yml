@@ -9,8 +9,21 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.x'
-      - run: python3 scripts/check.py
+
+      - name: Repository checks
+        run: python3 scripts/check.py
+
+      # Every review this repo publishes must pass the checker this repo ships.
+      - name: Published example review
+        run: |
+          python3 scripts/check_review.py examples/semver-2.0.0-review.md \
+            --artifact examples/artifacts/semver-2.0.0.md
+
+      - name: Calibration fixture review
+        run: |
+          python3 scripts/check_review.py calibration/semver-2.0.0-seeded-review.md \
+            --artifact calibration/artifacts/semver-2.0.0-seeded.md
