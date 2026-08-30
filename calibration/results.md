@@ -5,7 +5,9 @@ here only if it met the conditions in [`README.md`](README.md): the reviewer saw
 only `PROMPT.md` and the seeded artifact, with no repository access, no git and
 no network.
 
-## 2026-08-30 — `semver-2.0.0-seeded.md`, fixture as of `d8cf812`
+## 2026-08-30 — `semver-2.0.0-seeded.md`
+
+Fixture sha256 `3f17407b3e34e16296ae9680284079f3ce96599b0bf2c35589ab808f7ace5bd6`
 
 | | |
 |---|---|
@@ -17,6 +19,7 @@ no network.
 | Findings raised | 24 (15 Major) |
 | **Seeds found** | **4 of 4** |
 | Form check | 24/24 quote blocks verbatim at cited lines |
+| Review | [`semver-2.0.0-seeded-review.md`](semver-2.0.0-seeded-review.md) |
 
 Identical governors to the published review in
 [`examples/semver-2.0.0-review.md`](../examples/semver-2.0.0-review.md), which

@@ -16,7 +16,7 @@ the end of the file precisely so the body's numbering is unaffected by it.
 | | |
 |---|---|
 | Was | `1. MAJOR version when you make incompatible API changes` |
-| Now | `1. MAJOR version when you add functionality in a backward compatible manner` |
+| Now | `1. MAJOR version when you add functionality in a backward compatible` |
 
 The summary at the head of the document now gives MAJOR the MINOR condition, so
 it says the same thing as the line below it and contradicts the normative clause
@@ -26,10 +26,14 @@ following the summary versions every breaking change as a minor release.
 Expected to be the easiest seed: the contradiction is with a clause most readers
 already know, and the duplicated wording is visible without cross-referencing.
 
-The first version of this seed ended at "backward compatible", borrowing the
-wrapped line below without its continuation. A reviewer spotted the dangling
-wrap and used it as a tell, which made the seed detectable as a formatting
-artifact rather than as a contradiction. The sentence is now complete.
+**Known weakness.** The seeded sentence borrows the wrapped line below it
+without its continuation, so line 9 dangles where the original did not. The
+first scored run spotted that dangling wrap and used it as a tell, which means
+S1 is partly detectable as a formatting artifact rather than as a
+contradiction. It has deliberately **not** been corrected in place: this
+fixture has been scored, and editing it would invalidate the citations of the
+review published against it. A completed sentence belongs in a future fixture
+version, scored separately.
 
 ## S2 — line 206 · predicted lens 🛡️ Shield
 

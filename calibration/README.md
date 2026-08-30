@@ -13,6 +13,11 @@ definitely there were actually found**.
 |---------|---------------|-------|------------|
 | [`artifacts/semver-2.0.0-seeded.md`](artifacts/semver-2.0.0-seeded.md) | Semantic Versioning 2.0.0 | 4 | [`seeds.md`](seeds.md) — **opening it spoils the fixture** |
 
+The review that fixture has been scored against is
+[`semver-2.0.0-seeded-review.md`](semver-2.0.0-seeded-review.md). It reports
+four defects that were planted, so it is not commentary on Semantic Versioning
+and says so at the top.
+
 Scored runs are recorded in [`results.md`](results.md).
 
 ## Blindness is procedural, not secret
@@ -48,6 +53,17 @@ legal seeds.
 
 **Line-preserving.** Seeds edit within existing lines and never add or remove
 them, so a seeded line number is stable as seeds are added or retired.
+
+## A scored fixture is frozen
+
+Once a run has been scored against a fixture, that file does not change — the
+same rule `examples/artifacts/` applies to upstream texts, for the same reason.
+Any edit invalidates every line number and quote in the reviews that cite it,
+including the citations a published review is checked by.
+
+Weaknesses found in a seed are therefore recorded in `seeds.md` and fixed in a
+**new fixture version**, scored separately, never by editing a fixture that
+already has results against it.
 
 ## Running one
 

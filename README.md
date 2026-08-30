@@ -215,6 +215,7 @@ number can be verified against the original text.
 | [Example Review: SemVer 2.0.0](examples/semver-2.0.0-review.md) | Blind adoption review of a public, hash-pinned artifact; every quote machine-verified |
 | [Review Artifacts](examples/artifacts/README.md) | Frozen third-party review targets: provenance, licenses, hashes, and the posture these reviews take |
 | [Calibration Fixtures](calibration/README.md) | Public documents with known defects planted in them, for measuring what a reviewer actually finds |
+| [Calibration Results](calibration/results.md) | Scored runs against those fixtures, and what each score does and does not show |
 | [Research: First Principles](docs/research/rq1-first-principles.md) | DeepThink analysis validating the lens set |
 | [Research: High-Stakes Review](docs/research/rq2-high-stakes-review.md) | Patterns from aviation, nuclear, medicine, law |
 | [Research: Calibration Reproducibility](docs/research/rq3-calibration-reproducibility.md) | 10 reviews of one frozen artifact across 4 models |
