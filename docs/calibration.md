@@ -23,7 +23,8 @@ claim must be testable.
    other's
 5. Within each reviewer, cluster equivalent claims across runs. A claim is
    **stable** for a reviewer when it recurs in a majority of that reviewer's
-   runs
+   runs. Equivalence and the clustering procedure are defined under
+   Clustering Claims, below
 6. Compare **stable claims**, not single runs:
    - **Overlap:** Both reviewers' stable claims match → framework is calibrated
    - **Stable for A, absent in all of B's runs:** B's process failed →
@@ -46,6 +47,33 @@ across runs measures the reviewer. See
 **Important:** Calibration tests stop at CHECK. Do not proceed to LEARN (fix).
 Fixing changes the artifact, which invalidates the comparison. Both reviewers
 must see the exact same artifact in the exact same state.
+
+### Clustering Claims
+
+Stability, tiers and Success Criteria condition 1 all turn on whether two
+claims are *the same claim*. Before 0.5.0 nothing here said when they were,
+and an analysis that clustered without a written rule did it inconsistently
+in both directions, each time in the direction of its own predictions
+(issue #22). From 0.5.0 on, this rule applies:
+
+> Two claims are **equivalent** iff (a) their cited lines overlap or cite
+> the same section, and (b) they assert the same defect predicate about that
+> text — the same thing wrong, not the same remedy. Wording, lens assignment,
+> and verdict differences do not separate claims; a different predicate at
+> the same lines does. Rows with any verdict count toward clustering,
+> `Discard:Integrity` included.
+
+Clustering is done **blind**: pool all rows from all runs of both reviewers,
+strip them of reviewer and run labels, cluster, then unblind. A reviewer that
+clusters its own runs is attesting to itself, and an analyst who can see the
+labels can cluster toward what they expect, as the analysis above did. For 0.5.0, the clustering is done by
+an **independent analyst** — someone who did not write the instrument version
+under test and is not a reviewer in the test.
+
+Results from before 0.5.0 — RQ3's and RQ5's clusters, stability counts,
+tiers and pairing results — were produced under no written rule. They are
+left as published and are records of method only: no one can reproduce them,
+and they are not re-derived under this rule.
 
 ## When to Run
 
@@ -358,8 +386,9 @@ review under test.
 [RQ3](research/rq3-calibration-reproducibility.md) placed two reviewers and
 left two unplaced, bound to `PROMPT.md` @ `bd780e4`.
 [RQ5](research/rq5-reviewer-tiering.md) placed four at tier 4, bound to
-`PROMPT.md` v0.2.1 @ `9cb9cf2` and to `README.md` @ `22926ec`. Both sets are
-**stale**: this release changed `PROMPT.md` again. Every tier on this page
+`PROMPT.md` v0.2.1 @ `9cb9cf2` and to `README.md` @ `22926ec`. Both sets were
+clustered under no written equivalence rule and are records of method only
+(see Clustering Claims). Both are also **stale**: this release changed `PROMPT.md` again. Every tier on this page
 must be re-measured before it is relied on — which is the rule in the
 definition above doing its job, not an oversight.
 
@@ -379,6 +408,8 @@ Document calibration results in your retro:
 - Findings per run: A [n₁, n₂, …] / B [n₁, n₂, …]
 - Stable claims (majority of runs): A [X] / B [Y]
 - Cluster map: [cluster → the run-local finding IDs it groups, per reviewer]
+- Clustered by: [analyst] — blind: [yes/no] — independent of the instrument's
+  author and of both reviewers: [yes/no]
 - Stable-claim overlap: [count]
 - Stable claims of A absent from all B runs: [count]
 - Stable claims of B absent from all A runs: [count]
