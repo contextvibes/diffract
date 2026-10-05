@@ -278,6 +278,12 @@ W5H1 findings use the same Output A row format, severity rules, and
 anchoring duty as lens findings, with IDs `W5H-<n>`; they appear in the
 Findings Index with `W5H1` in the Lens column.
 
+**Known deviation — your prior says otherwise.** The name echoes
+journalism's 5W1H, but W5H1 asks four of the six on purpose (above).
+Independent reviewers have repeatedly raised the name as a defect, and each
+time it was ruled deliberate (issue #31). A finding against it needs
+evidence beyond the mismatch with 5W1H.
+
 ### CHECK (vet every finding through governors)
 
 This phase carries a heading of its own in the review, and the Competing
@@ -319,6 +325,13 @@ finding that fails Integrity is `Discard:Integrity` and is never tested
 against Compass or Cobra; one that clears Integrity but fails Compass is
 `Skip:Compass` and is never tested against Cobra. Reviewers applying the
 governors in another order return different verdicts on the same finding.
+
+**Grade against the artifact's definitions, not canon's.** Where the
+artifact defines a concept itself, a finding that it misuses that concept
+quotes the artifact's own definition. A finding graded against a textbook
+version the artifact has deliberately replaced has not established its
+premise: `Discard:Integrity`. Where the artifact gives no definition of its
+own, canon is the standard — a misattribution is still a finding.
 
 #### Competing Hypotheses (Low Confidence only)
 
@@ -387,7 +400,9 @@ Treat a ✓ as a prompt to look at that lens again, not as evidence it is clean.
 **Stockholm & Hammer Audit:** Ask yourself: *"Did I let any issues pass
 because I empathized with the author's explanation (Stockholm)? Did I
 accept over-engineering because it matches a familiar pattern (Golden
-Hammer)?"*
+Hammer)? Did I grade anything against the canonical version of a concept
+rather than the definition written here (Golden Hammer, turned on the
+reviewer)?"*
 
 #### User Override
 

@@ -196,6 +196,30 @@ self-check cannot detect its own misses — from opposite sides: estimation
 says *how many* defects remain, ground truth says *which one* was missed.
 Neither substitutes for the other.
 
+## Where Diffract Deviates from Canon
+
+Every component of Diffract is well represented in model training data, so a
+reviewer arrives with the canonical version of each concept already in mind.
+Wherever the instrument deliberately departs from canon, that prior pulls the
+other way, and reviewers grade the instrument against the concept they know
+instead of the definition written in it (issue #31). These are the known
+departures. Expect finding-noise to cluster at them when clustering
+calibration claims. Each definition is normative where the last column
+points, and is not restated here.
+
+| Concept | Canon | Diffract | Defined in |
+|---------|-------|----------|------------|
+| W5H1 | Journalism's 5W1H asks six questions | Asks four; What and Where are left to the 🏷️ Name and 🧱 Boundary lenses | `PROMPT.md`, DO (W5H1) |
+| *Survived* | Read as "passed vetting" or "was fixed" | Not the same as a `Fix` verdict | `PROMPT.md`, Findings Index |
+| Convergence | A pass that finds nothing new | Counts Major `Fix` outcomes only | `PROMPT.md`, LEARN (done-rule) |
+| Capture–recapture | Lincoln–Petersen over two samples of one closed population | Valid only across independent runs on a frozen artifact, never across cycles with fixes in between: each fix changes the population | `PROMPT.md`, LEARN; this page, Estimating What Both Reviewers Missed |
+| Confidence probabilities | A forecast's stated probability | The bins' canonical probabilities are initial priors, not measurements | `PROMPT.md`, Findings Index |
+
+`PROMPT.md` carries a point-of-use warning only where reviewers have
+repeatedly collided with the prior and the finding was rejected each time
+(currently the W5H1 name). This table is for human readers and calibration
+analysis.
+
 ## Scoring Confidence (Brier)
 
 The Findings Index's `Confidence` column is a forecast: each bin carries a
