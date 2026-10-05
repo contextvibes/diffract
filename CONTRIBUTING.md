@@ -198,6 +198,12 @@ caught it:
       and left its siblings open: the executable channel, then the
       declarative channel under `scope: pr`, then `scope: full`. Each fix
       was correct and none was general.)
+- [ ] **A PR that changes a file in `scripts/` regenerates
+      `scripts/MANIFEST`** with `python3 scripts/check.py --write-manifest`;
+      `check.py` fails on any script whose hash disagrees with it, and on
+      any file missing from either side. (The scripts carried no version
+      marker, so a blind reviewer handed `scripts/` could not name the
+      implementation it reviewed or tell whether its copy was complete.)
 - [ ] **Version-string equality is checked mechanically, not by eye** —
       `grep` the README badge against the PROMPT.md header before
       tagging. (The duplication is forced — the badge and the standalone

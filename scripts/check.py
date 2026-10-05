@@ -16,9 +16,13 @@ while looking like it ran.
 
 Run from the repository root: python3 scripts/check.py
 Exit code 0 = all checks pass; 1 = at least one failure (each is printed).
+
+`python3 scripts/check.py --write-manifest` regenerates scripts/MANIFEST after
+a script changes; the check then holds the scripts to it.
 """
 
 import glob
+import hashlib
 import os
 import re
 import sys
@@ -187,15 +191,73 @@ def check_enforced_strings():
                 f'({purpose}), but PROMPT.md never mandates it')
 
 
+MANIFEST = os.path.join('scripts', 'MANIFEST')
+
+
+def script_files():
+    """Every file the manifest covers: scripts/ itself, minus the manifest."""
+    return sorted(name for name in os.listdir('scripts')
+                  if name != 'MANIFEST' and not name.startswith('.')
+                  and os.path.isfile(os.path.join('scripts', name)))
+
+
+def sha256_of(path):
+    with open(path, 'rb') as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+
+
+def write_manifest():
+    with open(MANIFEST, 'w') as handle:
+        for name in script_files():
+            handle.write(f'{sha256_of(os.path.join("scripts", name))}  {name}\n')
+
+
+def check_manifest():
+    """Every script matches its scripts/MANIFEST hash, and the set is complete.
+
+    The scripts carried no version marker, so a blind reviewer handed
+    `scripts/` could not say which implementation it reviewed, nor whether the
+    checkout it was given was complete (issue #46). The manifest is in
+    `sha256sum -c` format, so it can be verified without this script.
+    """
+    text = read(MANIFEST)
+    if text is None:
+        return
+    listed = {}
+    for number, line in enumerate(text.splitlines(), 1):
+        m = re.match(r'^([0-9a-f]{64})  (\S+)$', line)
+        if not m:
+            failures.append(f'{MANIFEST}:{number}: not "<sha256>  <file>": {line!r}')
+            continue
+        listed[m.group(2)] = m.group(1)
+    present = set(script_files())
+    for name, digest in sorted(listed.items()):
+        if name not in present:
+            failures.append(f'{MANIFEST} lists {name}, which is not in scripts/')
+        elif sha256_of(os.path.join('scripts', name)) != digest:
+            failures.append(f'scripts/{name} does not match its {MANIFEST} hash; '
+                            f'regenerate with --write-manifest if the change is intended')
+    for name in sorted(present - set(listed)):
+        failures.append(f'scripts/{name} is not in {MANIFEST}')
+
+
 def main():
     if not at_root():
         print('FAIL: run from a Diffract checkout: no PROMPT.md and README.md here')
         return 1
+    if sys.argv[1:] == ['--write-manifest']:
+        write_manifest()
+        print(f'wrote {MANIFEST}')
+        return 0
+    if sys.argv[1:]:
+        print('usage: check.py [--write-manifest]')
+        return 2
     check_versions()
     check_fences()
     check_links()
     check_lens_table()
     check_enforced_strings()
+    check_manifest()
     if failures:
         for failure in failures:
             print(f'FAIL: {failure}')

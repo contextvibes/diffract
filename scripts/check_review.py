@@ -624,6 +624,29 @@ def check_evidence(review, rows, artifacts, require):
     return verified, blocks
 
 
+def implementation():
+    """One line naming the checker that ran: its hash, and the manifest's.
+
+    A pass names the instrument it enforced; it must name the implementation
+    too, or a run against one revision of this file is indistinguishable from
+    a run against the next (issue #46). scripts/check.py holds the scripts to
+    scripts/MANIFEST; this only reports whether this file agrees with it.
+    """
+    here = os.path.abspath(__file__)
+    with open(here, 'rb') as handle:
+        mine = hashlib.sha256(handle.read()).hexdigest()
+    manifest = os.path.join(os.path.dirname(here), 'MANIFEST')
+    try:
+        with open(manifest, 'rb') as handle:
+            data = handle.read()
+    except OSError:
+        return f'checker sha256 {mine} (no scripts/MANIFEST beside it)'
+    listed = re.search(r'^([0-9a-f]{64})  check_review\.py$', data.decode(), re.M)
+    agrees = 'matches' if listed and listed.group(1) == mine else 'does NOT match'
+    return (f'checker sha256 {mine}, {agrees} scripts/MANIFEST '
+            f'(sha256 {hashlib.sha256(data).hexdigest()})')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('review')
@@ -657,6 +680,7 @@ def main():
     prompt_version = re.search(r'\*\*Version: ([\d.]+)\*\*', open(args.prompt).read())
     print(f'instrument {args.prompt} '
           f'version {prompt_version.group(1) if prompt_version else "unknown"}')
+    print(implementation())
 
     lenses = normative_lenses(args.prompt)
     check_lenses(review, lenses, declared_scope(review))

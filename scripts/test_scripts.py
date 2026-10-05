@@ -15,6 +15,7 @@ Exit code 0 = every fixture behaves as expected. Standard library only.
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -149,6 +150,39 @@ class Fixtures(unittest.TestCase):
                         '--artifact', twin)
         self.assertEqual(code, 1, out)
         self.assertIn('names more than one supplied artifact', out)
+
+    # -- issue #46: the scripts are held to scripts/MANIFEST ---------------
+
+    def copy_of_repo(self):
+        """A copy of the files check.py reads, scripts/ and its manifest included."""
+        root = os.path.join(self.tmp.name, 'repo')
+        shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns('.git', '__pycache__'))
+        return root
+
+    def manifest_failures(self, root):
+        done = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'check.py')],
+                              cwd=root, capture_output=True, text=True)
+        return done.returncode, [l for l in done.stdout.splitlines() if 'MANIFEST' in l]
+
+    def test_46_an_edited_script_fails_the_manifest(self):
+        root = self.copy_of_repo()
+        self.assertEqual(self.manifest_failures(root), (0, []))
+        with open(os.path.join(root, 'scripts', 'score_seeds.py'), 'a') as handle:
+            handle.write('# edited\n')
+        code, lines = self.manifest_failures(root)
+        self.assertEqual(code, 1)
+        self.assertIn('score_seeds.py does not match its scripts/MANIFEST hash', ' '.join(lines))
+
+    def test_46_a_missing_or_unlisted_script_fails_the_manifest(self):
+        root = self.copy_of_repo()
+        os.remove(os.path.join(root, 'scripts', 'score_seeds.py'))
+        with open(os.path.join(root, 'scripts', 'extra.py'), 'w') as handle:
+            handle.write('')
+        code, lines = self.manifest_failures(root)
+        self.assertEqual(code, 1)
+        joined = ' '.join(lines)
+        self.assertIn('lists score_seeds.py, which is not in scripts/', joined)
+        self.assertIn('scripts/extra.py is not in scripts/MANIFEST', joined)
 
 
 if __name__ == '__main__':
