@@ -32,8 +32,6 @@ import check_review
 
 SKIP_DIRS = ('.claude', 'node_modules', '.git')
 
-failures = []
-
 
 def at_root():
     """Whether the working directory looks like a Diffract checkout.
@@ -66,19 +64,18 @@ def strip_code(text):
     return re.sub(r'`+[^`\n]*`+', '', strip_fenced(text))
 
 
-_anchor_cache = {}
-
-
-def anchors_of(path):
+def anchors_of(path, cache, failures):
     """GitHub-style slugs for every heading outside fenced code blocks.
 
     Cached: without it the target is re-read and re-parsed once per anchored
-    link, and one unreadable target appends one failure per link to it.
+    link, and one unreadable target appends one failure per link to it. The
+    cache belongs to one run of check_links(), not to the module, for the
+    reason the failure list does (issue #47).
     """
-    if path in _anchor_cache:
-        return _anchor_cache[path]
-    slugs = _anchor_cache.setdefault(path, set())
-    text = read(path)
+    if path in cache:
+        return cache[path]
+    slugs = cache.setdefault(path, set())
+    text = read(path, failures)
     if text is None:
         return slugs
     for heading in re.findall(r'^#+\s+(.*)$', strip_fenced(text), re.M):
@@ -88,7 +85,7 @@ def anchors_of(path):
     return slugs
 
 
-def read(path):
+def read(path, failures):
     """File contents, or None with a recorded failure."""
     try:
         with open(path) as handle:
@@ -98,7 +95,7 @@ def read(path):
         return None
 
 
-def check_versions():
+def check_versions(failures):
     """The version strings that are present must agree.
 
     An absent file used to cancel the comparison entirely, so on a partial
@@ -113,7 +110,7 @@ def check_versions():
     }
     values = {}
     for label, (path, pattern) in sources.items():
-        text = read(path)
+        text = read(path, failures)
         if text is None:
             continue
         found = re.search(pattern, text, re.M)
@@ -125,9 +122,9 @@ def check_versions():
         failures.append(f'version strings disagree: {values}')
 
 
-def check_fences():
+def check_fences(failures):
     for path in md_files():
-        text = read(path)
+        text = read(path, failures)
         if text is None:
             continue
         markers = len(re.findall(r'^```', text, re.M))
@@ -135,9 +132,10 @@ def check_fences():
             failures.append(f"{path}: unbalanced code fences ({markers} markers)")
 
 
-def check_links():
+def check_links(failures):
+    anchors = {}
     for path in md_files():
-        raw = read(path)
+        raw = read(path, failures)
         if raw is None:
             continue
         text = strip_code(raw)
@@ -150,17 +148,16 @@ def check_links():
             target = os.path.normpath(os.path.join(base, target_path)) if target_path else path
             if target_path and not os.path.exists(target):
                 failures.append(f"{path}: broken link {link}")
-            elif anchor and target.endswith('.md') and anchor not in anchors_of(target):
+            elif (anchor and target.endswith('.md')
+                  and anchor not in anchors_of(target, anchors, failures)):
                 failures.append(f"{path}: broken anchor {link}")
 
 
-def check_lens_table():
-    readme = read('README.md')
-    if readme is None or read('PROMPT.md') is None:
+def check_lens_table(failures):
+    readme = read('README.md', failures)
+    if readme is None or read('PROMPT.md', failures) is None:
         return
-    normative = check_review.normative_lens_rows('PROMPT.md')
-    failures.extend(check_review.failures)
-    check_review.failures.clear()
+    normative = check_review.normative_lens_rows('PROMPT.md', failures)
     if not normative:
         return
     # Escape-aware, like every other table parse here (cycle-6 VAR-3).
@@ -171,7 +168,7 @@ def check_lens_table():
         failures.append(f'README lens table drifted from PROMPT.md: {set(normative) ^ set(reproduced)}')
 
 
-def check_enforced_strings():
+def check_enforced_strings(failures):
     """Every section check_review.py demands of a review is mandated in PROMPT.md.
 
     The general form of a defect this repository has now shipped four times: a
@@ -182,7 +179,7 @@ def check_enforced_strings():
     this gate holds the two ends together instead. A trace added to the
     checker fails the release until PROMPT.md mandates it.
     """
-    prompt = read('PROMPT.md')
+    prompt = read('PROMPT.md', failures)
     if prompt is None:
         return
     for phrase, purpose in (check_review.MANDATED_TRACES
@@ -214,7 +211,7 @@ def write_manifest():
             handle.write(f'{sha256_of(os.path.join("scripts", name))}  {name}\n')
 
 
-def check_manifest():
+def check_manifest(failures):
     """Every script matches its scripts/MANIFEST hash, and the set is complete.
 
     The scripts carried no version marker, so a blind reviewer handed
@@ -222,7 +219,7 @@ def check_manifest():
     checkout it was given was complete (issue #46). The manifest is in
     `sha256sum -c` format, so it can be verified without this script.
     """
-    text = read(MANIFEST)
+    text = read(MANIFEST, failures)
     if text is None:
         return
     listed = {}
@@ -254,12 +251,14 @@ def main():
     if sys.argv[1:]:
         print('usage: check.py [--write-manifest]')
         return 2
-    check_versions()
-    check_fences()
-    check_links()
-    check_lens_table()
-    check_enforced_strings()
-    check_manifest()
+    # Passed to every check rather than held at module level (issue #47).
+    failures = []
+    check_versions(failures)
+    check_fences(failures)
+    check_links(failures)
+    check_lens_table(failures)
+    check_enforced_strings(failures)
+    check_manifest(failures)
     if failures:
         for failure in failures:
             print(f'FAIL: {failure}')

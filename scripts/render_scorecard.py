@@ -95,13 +95,13 @@ def substitute_leading_number(value, want):
 
 
 def render(review, prompt_path=None):
-    # The failure list is a module global shared with check_review; a second
-    # call in one process used to inherit the first call's failures and reject
-    # a sound index (cycle-7 BOU-1).
-    check_review.failures.clear()
-    rows = check_review.index_rows(review)
-    if check_review.failures:
-        return review, [], [], [f'index rejected: {f}' for f in check_review.failures]
+    # A fresh list per call. It used to be a module global in check_review,
+    # cleared here by hand; a second call that forgot inherited the first
+    # call's failures and rejected a sound index (cycle-7 BOU-1, issue #47).
+    failures = []
+    rows = check_review.index_rows(review, failures)
+    if failures:
+        return review, [], [], [f'index rejected: {f}' for f in failures]
 
     # Located by heading level and line start, not by splitting on the literal
     # text: a review that quotes '### Scorecard' inside an Evidence block —
@@ -138,7 +138,7 @@ def render(review, prompt_path=None):
 
         elif key == 'Lenses run':
             lenses = check_review.normative_lenses(
-                prompt_path or check_review.default_prompt())
+                prompt_path or check_review.default_prompt(), failures)
             found, _ = check_review.lens_sections(review, lenses)
             present = sum(1 for name in lenses if name in found)
             if stated and int(stated.group(1)) < present:
@@ -177,6 +177,7 @@ def render(review, prompt_path=None):
         return line
 
     table = '\n'.join(fix_row(line) for line in table.split('\n'))
+    refused.extend(f'instrument rejected: {f}' for f in failures)
     return '\n'.join(prefix + table.split('\n') + suffix), changes, notes, refused
 
 

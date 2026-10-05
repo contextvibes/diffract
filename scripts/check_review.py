@@ -60,9 +60,6 @@ HYPOTHESES = re.compile(r'^(?:#+\s+|\*\*)[^\n]*Competing Hypotheses', re.I)
 
 
 
-failures = []
-
-
 def plain(text):
     """Strip markdown emphasis so cell values compare as literal strings."""
     return re.sub(r'[*`]', '', text).strip()
@@ -176,7 +173,7 @@ def default_prompt():
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'PROMPT.md')
 
 
-def normative_lens_rows(prompt_path):
+def normative_lens_rows(prompt_path, failures):
     """(name, question) per lens, in order, verbatim from PROMPT.md's list.
 
     The one parser for the normative lens list. `scripts/check.py` diffs
@@ -196,9 +193,9 @@ def normative_lens_rows(prompt_path):
     return rows
 
 
-def normative_lenses(prompt_path):
+def normative_lenses(prompt_path, failures):
     """The ten lens names, in order, without their icons."""
-    names = [n for n, _ in normative_lens_rows(prompt_path)]
+    names = [n for n, _ in normative_lens_rows(prompt_path, failures)]
     return [n.split(None, 1)[-1] if ' ' in n else n for n in names]
 
 
@@ -214,7 +211,7 @@ PRE_040_ROWS = [
 ]
 
 
-def normative_scorecard_rows(prompt_path):
+def normative_scorecard_rows(prompt_path, failures):
     """The Scorecard rows, in order, as PROMPT.md's template defines them.
 
     Read rather than hard-coded for the same reason the lens list is: a row
@@ -309,7 +306,7 @@ def scorecard_cells(table):
             for cells in table_rows(table) if len(cells) == 2}
 
 
-def check_lenses(review, lenses, scope=None):
+def check_lenses(review, lenses, scope, failures):
     found, order = lens_sections(review, lenses)
     present = [n for n in lenses if n in found]
 
@@ -353,7 +350,7 @@ def check_lenses(review, lenses, scope=None):
             failures.append(f'{name}: nothing-found lens without "{CLOSER}"')
 
 
-def check_index_completeness(review, rows, lenses):
+def check_index_completeness(review, rows, lenses, failures):
     """Every finding raised in a lens table is in the index, and vice versa.
 
     PROMPT.md makes the index authoritative for every count in the review, so
@@ -376,7 +373,7 @@ def check_index_completeness(review, rows, lenses):
         failures.append(f'{fid}: in the Findings Index, raised in no lens table')
 
 
-def index_rows(review):
+def index_rows(review, failures):
     body = section(review, 'FINDINGS INDEX', level=2)
     if body is None:
         failures.append('no "## FINDINGS INDEX" section')
@@ -394,7 +391,7 @@ def index_rows(review):
     return [r for r in rows if len(r) == 8]
 
 
-def check_scorecard(review, rows, prompt_path):
+def check_scorecard(review, rows, prompt_path, failures):
     """Every mandated Scorecard row is present, and every derived count is right.
 
     Presence and arithmetic are separate failures. Before cycle 6 only the
@@ -417,9 +414,9 @@ def check_scorecard(review, rows, prompt_path):
     version = instrument_version(review)
     if version is None:
         failures.append('Scorecard states no "Instrument | Diffract X.Y" row')
-        required = normative_scorecard_rows(prompt_path)
+        required = normative_scorecard_rows(prompt_path, failures)
     elif version >= (0, 4):
-        required = normative_scorecard_rows(prompt_path)
+        required = normative_scorecard_rows(prompt_path, failures)
     else:
         required = PRE_040_ROWS
     for key in required:
@@ -463,7 +460,7 @@ def hypotheses_region(check_body):
     return '\n'.join(region)
 
 
-def check_structure(review, rows):
+def check_structure(review, rows, failures):
     """The mandated output elements that prove a mandated step ran.
 
     A step whose only evidence is the reviewer's word is not checkable, so
@@ -513,7 +510,7 @@ def check_structure(review, rows):
     return checked
 
 
-def requires_quotes(review):
+def requires_quotes(review, failures):
     """Whether this run's Integrity governor demands a quote block per finding.
 
     The Integrity governor (PROMPT.md, PLAN) makes evidence rules a per-run
@@ -596,7 +593,7 @@ def resolve_citation(path, artifacts):
                   f'{", ".join(n for n, _ in hits)}')
 
 
-def check_evidence(review, rows, artifacts, require):
+def check_evidence(review, rows, artifacts, require, failures):
     """Every Evidence quote must appear verbatim where it says it does.
 
     Two citation forms, both specified in PROMPT.md: `path:line` for code and
@@ -720,14 +717,18 @@ def main():
           f'version {prompt_version.group(1) if prompt_version else "unknown"}')
     print(implementation())
 
-    lenses = normative_lenses(args.prompt)
-    check_lenses(review, lenses, declared_scope(review))
-    rows = index_rows(review)
-    check_index_completeness(review, rows, lenses)
-    check_scorecard(review, rows, args.prompt)
-    ran = check_structure(review, rows) or []
-    require = requires_quotes(review)
-    verified, blocks = check_evidence(review, rows, artifacts, require)
+    # Collected here and passed to every check, never held at module level:
+    # a module-global list leaked one call's failures into the next, and each
+    # caller had to remember to clear it by hand (cycle-7 BOU-1, issue #47).
+    failures = []
+    lenses = normative_lenses(args.prompt, failures)
+    check_lenses(review, lenses, declared_scope(review), failures)
+    rows = index_rows(review, failures)
+    check_index_completeness(review, rows, lenses, failures)
+    check_scorecard(review, rows, args.prompt, failures)
+    ran = check_structure(review, rows, failures) or []
+    require = requires_quotes(review, failures)
+    verified, blocks = check_evidence(review, rows, artifacts, require, failures)
 
     print(f'index rows {len(rows)} | quote blocks {blocks} '
           f'(required: {"yes" if require else "no"}) | verified verbatim {verified}')

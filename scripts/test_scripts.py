@@ -214,6 +214,26 @@ class Fixtures(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn('index row is 10 columns, expected 8', out)
 
+    # -- issue #47: no failure state survives between calls ----------------
+
+    def test_47_no_module_level_failure_list(self):
+        sys.path.insert(0, SCRIPTS)
+        try:
+            import check
+            import check_review
+            import render_scorecard
+        finally:
+            sys.path.remove(SCRIPTS)
+        self.assertFalse(hasattr(check_review, 'failures'))
+        self.assertFalse(hasattr(check, 'failures'))
+        broken = read(SEEDED).replace('| Major | Fix |', '| Major | Fixx |', 1)
+        self.assertNotEqual(broken, read(SEEDED))
+        _, _, _, refused = render_scorecard.render(broken)
+        self.assertTrue(refused)
+        rendered, changes, _, refused = render_scorecard.render(read(SEEDED))
+        self.assertEqual((changes, refused), ([], []))
+        self.assertEqual(rendered, read(SEEDED))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
