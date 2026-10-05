@@ -115,6 +115,42 @@ the narrowed lens set as partial coverage (PROMPT.md, Rule 6). An agent
 executing PROMPT.md runs all 10 unless the user narrows the set; no
 `diffract.yaml` key selects lenses.
 
+### What the output looks like
+
+A review comment is only as useful as it is checkable. Compare a typical
+comment:
+
+> "The session handling looks a bit risky — maybe worth another look?"
+
+with a finding row from the [web-service example](examples/web-service.md),
+raised by the 🛡️ Shield lens:
+
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| SHI-2 | internal/session/session.go | Session cookie has no expiry — lives until browser closes | 54 | Major | High |
+
+and, from the same review, a lens that found nothing:
+
+```
+### ✂️ Simplify
+Checked: all function signatures, interface definitions, configuration layers.
+A finding would look like: a function doing two things that could be split,
+an interface with a single implementation that a concrete type would serve,
+or a config layer that only forwards values unchanged.
+No findings matching this pattern.
+```
+
+What makes these useful:
+
+- **Located.** A file and a line: anyone can open it and check.
+- **Testable.** "Has no expiry" is true or false of the code, not a matter
+  of taste.
+- **Owned and graded.** One lens raised it, with a severity and a
+  confidence a later step can vet it against.
+- **Empty lenses show their scope.** "Nothing found" says what was checked
+  and what a finding would have looked like, so the scope can be
+  challenged. It is not proof the artifact was read.
+
 ## The Protocol at a Glance
 
 [PROMPT.md](PROMPT.md) is the normative protocol. Everything this README
