@@ -1,5 +1,12 @@
 # Calibration
 
+> **Author-graded.** Every measurement this page cites — RQ3, RQ5, the Brier
+> worked example and the `calibration/` fixture run — was designed, run and
+> graded by the party that authored the instrument under test. The
+> judgment-dependent results (which claims are the same claim, stability,
+> tiers, condition-1 witnesses, which vetting outcomes resolved true) have
+> not been checked by anyone independent of that party (issue #26).
+
 Calibration is how Diffract validates itself. The framework claims that
 the same code + same lenses + different reviewer = same findings. This
 claim must be testable.

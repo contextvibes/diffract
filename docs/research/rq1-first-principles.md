@@ -1,5 +1,10 @@
 # Research: First Principles Validation (RQ1)
 
+> **Author-graded.** The research was produced by an AI research model. Which
+> of its findings Diffract adopted, and how they map onto lenses, was judged by
+> the party that authored the instrument. No independent analyst has checked
+> that mapping (issue #26).
+
 ## Research Question
 
 > What is the minimal complete set of first principles needed to evaluate

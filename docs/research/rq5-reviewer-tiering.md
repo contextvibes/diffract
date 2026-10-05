@@ -1,5 +1,10 @@
 # Research: Reviewer Tiering (RQ5)
 
+> **Author-graded.** Designed, run and analysed by the party that authored the
+> instrument under test. The judgment-dependent results — claim clusters,
+> stability, tier assignments, the pairing results — have not been checked by
+> anyone independent of that party (issue #26).
+
 ## Research Question
 
 Do the reviewer tiers defined in [calibration](../calibration.md) separate

@@ -1,5 +1,10 @@
 # Research: Calibration Reproducibility (RQ3)
 
+> **Author-graded.** Designed, run and analysed by the party that authored the
+> instrument under test. The judgment-dependent results — claim clusters,
+> stability, tier assignments — have not been checked by anyone independent of
+> that party (issue #26).
+
 ## Research Question
 
 > Diffract claims that same artifact + same lenses + different reviewer =
