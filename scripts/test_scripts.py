@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Regression fixtures for the scripts in this directory.
+
+Each fixture is a mutation of a review this repository publishes, written to a
+temporary file and run through the real scripts by their command lines: the
+published reviews are the positive fixtures, and each mutation reproduces one
+defect a blind cycle or an issue found, so the script that let it through
+fails here if it ever lets it through again. Mutations rather than stored
+copies, because a stored copy of a review is one more file that drifts from
+the review it was copied from.
+
+Run from anywhere:  python3 scripts/test_scripts.py
+Exit code 0 = every fixture behaves as expected. Standard library only.
+"""
+
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import unittest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPTS = os.path.join(ROOT, 'scripts')
+
+EXAMPLE = os.path.join(ROOT, 'examples', 'semver-2.0.0-review.md')
+EXAMPLE_ARTIFACT = os.path.join(ROOT, 'examples', 'artifacts', 'semver-2.0.0.md')
+SEEDED = os.path.join(ROOT, 'calibration', 'semver-2.0.0-seeded-review.md')
+SEEDED_ARTIFACT = os.path.join(ROOT, 'calibration', 'artifacts', 'semver-2.0.0-seeded.md')
+WEB = os.path.join(ROOT, 'examples', 'web-service.md')
+
+
+def run(script, *args, cwd=ROOT):
+    """(exit code, stdout + stderr) of one script run."""
+    done = subprocess.run([sys.executable, os.path.join(SCRIPTS, script), *args],
+                          cwd=cwd, capture_output=True, text=True)
+    return done.returncode, done.stdout + done.stderr
+
+
+def read(path):
+    with open(path) as handle:
+        return handle.read()
+
+
+class Fixtures(unittest.TestCase):
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def write(self, name, text):
+        path = os.path.join(self.tmp.name, name)
+        with open(path, 'w') as handle:
+            handle.write(text)
+        return path
+
+    def check(self, review, artifact):
+        return run('check_review.py', review, '--artifact', artifact)
+
+    # -- positive fixtures: everything this repository publishes passes ----
+
+    def test_repository_checks_pass(self):
+        code, out = run('check.py')
+        self.assertEqual(code, 0, out)
+
+    def test_published_reviews_pass(self):
+        for review, artifact in ((EXAMPLE, EXAMPLE_ARTIFACT), (SEEDED, SEEDED_ARTIFACT)):
+            code, out = self.check(review, artifact)
+            self.assertEqual(code, 0, f'{review}\n{out}')
+            self.assertIn('all checks pass', out)
+
+    def test_published_scorecards_agree(self):
+        for review in (WEB, EXAMPLE, SEEDED):
+            code, out = run('render_scorecard.py', review)
+            self.assertEqual(code, 0, f'{review}\n{out}')
+
+    # -- issue #50: a skipped lens is never corrected away -----------------
+
+    def without_efficiency(self):
+        text = read(SEEDED)
+        cut = re.sub(r'^### ⚡ Efficiency.*?(?=^### )', '', text, count=1, flags=re.M | re.S)
+        self.assertNotEqual(cut, text)
+        return cut
+
+    def test_50_render_refuses_a_high_lenses_run(self):
+        review = self.write('no-efficiency.md', self.without_efficiency())
+        code, out = run('render_scorecard.py', review, '--write')
+        self.assertEqual(code, 2, out)
+        self.assertIn('REFUSED: Lenses run states 10', out)
+        self.assertNotIn('CORRECTED: Lenses run', out)
+        self.assertIn('| Lenses run | 10 of 10', read(review))
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn('no section for: Efficiency', out)
+
+    def test_50_check_rejects_a_hand_laundered_lenses_run(self):
+        text = self.without_efficiency().replace(
+            '| Lenses run | 10 of 10', '| Lenses run | 9 of 10', 1)
+        review = self.write('laundered.md', text)
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn('does not name the omitted: Efficiency', out)
+
+    def test_50_a_declared_narrowing_still_passes(self):
+        text = self.without_efficiency().replace(
+            '| Lenses run | 10 of 10 — none omitted',
+            '| Lenses run | 9 of 10 — Efficiency omitted by the requester', 1)
+        review = self.write('narrowed.md', text)
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 0, out)
+
+    def test_50_a_low_lenses_run_is_still_corrected(self):
+        text = read(SEEDED).replace('| Lenses run | 10 of 10', '| Lenses run | 8 of 10', 1)
+        review = self.write('low.md', text)
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 1, out)
+        self.assertIn('CORRECTED: Lenses run: 8 -> 10', out)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

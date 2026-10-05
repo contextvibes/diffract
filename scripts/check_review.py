@@ -254,11 +254,17 @@ def declared_scope(review):
     checker required all ten unconditionally until cycle 7, which made the one
     documented way to narrow a review the one way to fail this check.
     """
+    stated = lenses_run_row(review)
+    return None if stated is None else stated[0]
+
+
+def lenses_run_row(review):
+    """(number, full value) of the Scorecard's `Lenses run` row, or None."""
     body = section(review, 'Scorecard', level=3)
     if body is None:
         return None
-    m = re.search(r'^\| Lenses run \|\s*(\d+)\s*(?:of|/)', body, re.M)
-    return int(m.group(1)) if m else None
+    m = re.search(r'^\| Lenses run \|\s*((\d+)\s*(?:of|/).*?)\|\s*$', body, re.M)
+    return (int(m.group(2)), m.group(1)) if m else None
 
 
 def check_lenses(review, lenses, scope=None):
@@ -277,6 +283,18 @@ def check_lenses(review, lenses, scope=None):
         failures.append(
             f'Scorecard declares {scope} of {len(lenses)} lenses run, but '
             f'{len(present)} lens sections are present: {", ".join(present)}')
+    else:
+        # A narrowed scope is declared, not inferred: PROMPT.md's template
+        # makes the row "name any omitted". A row reading "9 of 10 — none
+        # omitted" over nine sections is a skipped lens with its count edited
+        # to match, which is how render_scorecard.py used to launder one
+        # (issue #50).
+        stated = (lenses_run_row(review) or (None, ''))[1].lower()
+        unnamed = [n for n in lenses if n not in found and n.lower() not in stated]
+        if unnamed:
+            failures.append(
+                f'Scorecard declares {scope} of {len(lenses)} lenses run but its '
+                f'Lenses run row does not name the omitted: {", ".join(unnamed)}')
 
     expected = present + (['W5H1'] if 'W5H1' in found else [])
     if order != expected:

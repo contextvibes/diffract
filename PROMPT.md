@@ -482,9 +482,14 @@ whose Scorecard contradicts its own index is recounted, not verified.
 **If you can run a script, do not count by hand.** `render_scorecard.py`
 reads the finished review and rewrites the derived rows — the count rows and
 `Most productive lens` from the index itself, `Lenses run` from the lens
-sections present. It prints the corrected review to stdout; pass `--write` to
-rewrite the file in place, and read its stderr either way, because that is
-where it reports what it corrected. It produces
+sections present. `Lenses run` is corrected in one direction only: a number
+lower than the sections present is a counting slip and is raised to match;
+a number higher is a coverage claim the review contradicts, and the script
+refuses it rather than lowering it — a skipped lens fails and is never
+corrected away. A narrowed `Lenses run` row names every omitted lens. It
+prints the corrected review to stdout; pass `--write` to rewrite the file in
+place, and read its stderr either way, because that is where it reports what
+it corrected and what it refused. It produces
 the same document you would have produced with the arithmetic done correctly,
 so a run that uses it and a run that does not are comparable. Where it runs, it
 is the authority. The instruction above remains the path for a reviewer with no
@@ -630,8 +635,10 @@ stays true, because a check that derives them corrupts a correct review:
 Both are the reviewer's to state. Two further rows are numbers but not counts
 of rows here: `Lenses run` is a count of the review's lens *sections*, which is
 why `render_scorecard.py` derives it from the review body rather than from this
-table, and `Estimated remaining Majors` is a forecast, not a tally. Every other
-count in the Scorecard is a count of rows in this table.
+table — and corrects it only when it is lower than the sections present, since
+a higher one claims a lens that was not run — and `Estimated remaining Majors`
+is a forecast, not a tally. Every other count in the Scorecard is a count of
+rows in this table.
 
 Stating this as "two" when it was four was the same defect the rule exists to
 prevent — a counting policy that disagrees with the script implementing it —

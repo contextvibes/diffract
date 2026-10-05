@@ -37,3 +37,8 @@ jobs:
                         calibration/semver-2.0.0-seeded-review.md; do
             python3 scripts/render_scorecard.py "$review" > /dev/null
           done
+
+      # Regression fixtures: each mutates a published review to reproduce a
+      # defect an issue found, and fails if a script lets it through again.
+      - name: Script regression fixtures
+        run: python3 scripts/test_scripts.py

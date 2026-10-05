@@ -32,7 +32,14 @@ change, not arithmetic.
 Run from the repository root:
     python3 scripts/render_scorecard.py REVIEW.md           # print to stdout
     python3 scripts/render_scorecard.py REVIEW.md --write   # rewrite in place
-Exit 0 if the review's counts already agreed, 1 if any were corrected.
+Exit 0 if the review's counts already agreed, 1 if any were corrected, 2 if
+something was refused rather than corrected — an index the checker rejects, no
+Scorecard, or a `Lenses run` claim higher than the lens sections present.
+
+`Lenses run` is corrected in one direction only. A number lower than the
+sections present is a counting slip and is corrected like any count. A number
+higher is a coverage claim the review body contradicts: a skipped lens fails,
+and is never corrected away (issue #50).
 """
 
 import argparse
@@ -94,7 +101,7 @@ def render(review, prompt_path=None):
     check_review.failures.clear()
     rows = check_review.index_rows(review)
     if check_review.failures:
-        return review, [f'index rejected: {f}' for f in check_review.failures], []
+        return review, [], [], [f'index rejected: {f}' for f in check_review.failures]
 
     # Located by heading level and line start, not by splitting on the literal
     # text: a review that quotes '### Scorecard' inside an Evidence block —
@@ -102,13 +109,13 @@ def render(review, prompt_path=None):
     lines = review.split('\n')
     span = check_review.heading_span(lines, 'Scorecard', level=3, prefix=True)
     if span is None:
-        return review, ['no "### Scorecard" section'], []
+        return review, [], [], ['no "### Scorecard" section']
     prefix, suffix = lines[:span[0] + 1], lines[span[1]:]
     table = '\n'.join(lines[span[0] + 1:span[1]])
 
     counts = derived_counts(rows)
     lead, lead_n, tied = leading_lens(rows)
-    changes, notes = [], []
+    changes, notes, refused = [], [], []
 
     def fix_row(match):
         key, value = check_review.plain(match.group(1)), match.group(2).strip()
@@ -128,9 +135,21 @@ def render(review, prompt_path=None):
                 prompt_path or check_review.default_prompt())
             found, _ = check_review.lens_sections(review, lenses)
             present = sum(1 for name in lenses if name in found)
-            if stated and int(stated.group(1)) != present:
+            if stated and int(stated.group(1)) < present:
+                # A low claim is a counting slip: the sections are there.
                 changes.append(f'Lenses run: {stated.group(1)} -> {present}')
                 return f'| {match.group(1)} | {substitute_leading_number(value, present)} |'
+            if stated and int(stated.group(1)) > present:
+                # A high claim is a coverage claim, and the missing sections
+                # are the evidence against it. Correcting it down rewrote a
+                # review that skipped a lens into one that declared skipping
+                # it, and check_review.py then passed it (issue #50).
+                missing = [n for n in lenses if n not in found]
+                refused.append(
+                    f'Lenses run states {stated.group(1)}, but only {present} '
+                    f'lens sections are present (missing: {", ".join(missing)}); '
+                    f'a skipped lens is never corrected away — run it, or narrow '
+                    f'the scope and name it')
 
         elif key == 'Most productive lens' and lead:
             # Corrected only on contradiction: this row often carries the
@@ -152,7 +171,7 @@ def render(review, prompt_path=None):
         return match.group(0)
 
     table = re.sub(r'^\| ([^|]+?) \| ([^|]*?) \|\s*$', fix_row, table, flags=re.M)
-    return '\n'.join(prefix + table.split('\n') + suffix), changes, notes
+    return '\n'.join(prefix + table.split('\n') + suffix), changes, notes, refused
 
 
 def main():
@@ -164,7 +183,7 @@ def main():
     args = ap.parse_args()
 
     review = open(args.review).read()
-    rendered, changes, notes = render(review, args.prompt)
+    rendered, changes, notes, refused = render(review, args.prompt)
 
     if args.write:
         open(args.review, 'w').write(rendered)
@@ -175,6 +194,10 @@ def main():
         print(f'NOTE: {note}', file=sys.stderr)
     for change in changes:
         print(f'CORRECTED: {change}', file=sys.stderr)
+    for refusal in refused:
+        print(f'REFUSED: {refusal}', file=sys.stderr)
+    if refused:
+        return 2
     if not changes:
         print('scorecard already agrees with the index', file=sys.stderr)
     return 1 if changes else 0
