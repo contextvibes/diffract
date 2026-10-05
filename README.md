@@ -71,8 +71,9 @@ it names in its own output both what it checked and what it did not;
 `scripts/render_scorecard.py` derives the Scorecard counts from the review's
 own index instead of trusting them; `scripts/check.py` runs the entry gate
 the review claims to have passed; and `calibration/` scores a reviewer
-against defects it was not told about. The rest are
-[self-attested](docs/anti-dishonesty.md#what-these-mechanisms-can-and-cannot-detect).
+against defects it was not told about. Eight of the remaining nine are
+[self-attested](docs/anti-dishonesty.md#what-these-mechanisms-can-and-cannot-detect);
+the ninth (Chunked Attestation) ships no executable form at all.
 
 **Your most important role:** Don't just approve the PLAN and wait. Challenge
 the agent during every phase. The most valuable findings in Diffract's own
@@ -85,7 +86,9 @@ find what's wrong. You find what's missing.
 
 1. Open your preferred AI assistant (Claude, Gemini, ChatGPT, or any LLM)
 2. Paste the contents of [`PROMPT.md`](PROMPT.md) into the chat
-3. Paste the artifact you want to review (code, documentation, design)
+3. Paste the artifact you want to review (code, documentation, design).
+   This sends it to whichever AI service you chose, under that service's
+   terms. Do not paste anything you are not permitted to share with it.
 4. The AI runs the deterministic entry checks it can (or tags the review
    `[entry waived: cannot run checks]`), then proposes governors (PLAN)
    and waits for your confirmation
@@ -243,7 +246,7 @@ number can be verified against the original text.
 
 Diffract was developed through a collaboration between a human engineer
 and AI assistants during a code review session in February 2026. The
-protocol started as 8 review lenses, was challenged against independent
+protocol started as 7 review lenses, was challenged against independent
 first-principles research (DeepThink), cross-validated against high-stakes
 industry practices (DeepResearch), and refined through multiple PDCA
 cycles — including applying the protocol to itself.
@@ -272,6 +275,13 @@ same artifact, same lenses, different intent — each producing unique findings:
 | "Does it guide AI to use tools first?" | No per-lens tooling table |
 | "Is it language-neutral?" | Go-specific tools in automation table |
 | "Is every sentence clear and kind?" | "Refuse" → "Pause", added kindness rule |
+
+> Every finding in this table has since been addressed; it is kept as a
+> worked example of what changing the Compass surfaces, not as an open
+> issue list. The terminology row resolved into a deliberate distinction
+> rather than a rename: Rule 4 requires findings to be *testable*, and
+> *falsifiability* names the Popper principle behind it (see
+> `docs/lenses.md`, "Rules Make Findings Citeable").
 
 The Compass is the most powerful lever in the protocol.
 

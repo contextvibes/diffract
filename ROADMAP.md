@@ -8,18 +8,9 @@ only judgment can assess.
 
 ## Automation Potential
 
-| Lens | Deterministic? | Tool Opportunity |
-|------|---------------|-----------------|
-| 🗑️ **Subtract** | Partially | Dead code detectors (`deadcode`, `vulture`, `ts-prune`) |
-| ✂️ **Simplify** | No | Requires judgment — what is "unnecessary" complexity? |
-| 🏷️ **Name** | No | Requires domain understanding |
-| 📌 **Truth** | Partially | Duplication detectors (`jscpd`, `flay`, `simian`) |
-| 🧱 **Boundary** | Partially | Dependency graph analyzers, import cycle detectors |
-| 🛡️ **Shield** | Mostly | Security scanners (`gosec`, `bandit`, `semgrep`) |
-| 🔗 **Provenance** | Mostly | Advisory scanners (`npm audit`, `osv-scanner`), lockfile diff, SBOM generators |
-| 🎯 **Variety** | Partially | Exhaustive match warnings (compiler), coverage tools |
-| 🔍 **Observability** | Partially | Lint rules for swallowed errors, missing log calls |
-| ⚡ **Efficiency** | Partially | Profilers, benchmark suites, allocation trackers |
+The tools that cover each lens's deterministic part, and what judgment adds
+on top, are mapped once, in [`docs/lenses.md`](docs/lenses.md#automation-tools-first)
+("Automation: Tools First"). This file does not restate that mapping.
 
 ## Roadmap
 

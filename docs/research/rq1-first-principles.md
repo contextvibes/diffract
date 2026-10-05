@@ -21,7 +21,7 @@ Independent analysis derived 7 principles in two categories:
 
 | Principle | Root Domain | Question |
 |-----------|-------------|----------|
-| Information Entropy | Physics | Can an isolated change be made in one boundary? |
+| Information Entropy | Physics | Is this knowledge in exactly one place? |
 | Membrane Permeability | Biology | Does it neutralize inputs violating invariants? |
 | Requisite Variety | Cybernetics | Does every input map to a defined output? |
 | Thermodynamic Efficiency | Physics | Is resource use proportional to work? |
@@ -54,4 +54,12 @@ unique findings in practice:
 | 🗑️ Subtract | Research assumes things should exist; Subtract asks "should this exist at all?" |
 | ✂️ Simplify | Research measures structural entropy; Simplify measures unnecessary complexity in ordered systems |
 | 🏷️ Name | Research catches structural naming issues; Name catches semantic accuracy |
+| 🧱 Boundary | Research folded change-locality into Information Entropy; Boundary makes "can this change stay in one place?" its own test |
 | 🔍 Observability | Research ensures all states are handled (Variety); Observability ensures they are reported |
+
+RQ1 ran in February 2026 against the 7-lens set that preceded 0.1.0. It
+independently derived 2 of those 7 (📌 Truth, 🛡️ Shield) and added 2 more
+(🎯 Variety, ⚡ Efficiency), giving the 9 lenses 0.1.0 shipped. The lenses
+above are the 5 it did not derive. 🔗 Provenance was added in 0.2.0
+(August 2026) and postdates this research entirely — its absence here is
+chronology, not an omission by the research model.
