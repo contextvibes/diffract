@@ -30,7 +30,7 @@ can be reviewed: code, documentation, architecture, API designs, or processes.
 
 **Value proposition (not measured):** A good senior reviewer already does
 most of what Diffract does, intuitively. The claimed value is in the rest —
-the lenses you'd skip, the proof you actually looked, and the calibration
+the lenses you'd skip, a record of where you looked, and the calibration
 test that catches what you missed. [No single component is original.](#references)
 The value is in the combination.
 
@@ -61,8 +61,9 @@ their human inspectors:
 **What these mechanisms do not do.** They are aids for a reviewer that is trying
 to be honest, not detectors of one that isn't. Most are executed by the reviewer,
 about the reviewer, in the reviewer's own output — a reviewer that misreads the
-artifact will certify a review of what it misread. Four of the thirteen are now
-partly checkable from outside — form and fidelity, never judgment:
+artifact will certify a review of what it misread. Three of the thirteen
+(Evidence, Cognitive Anchoring, Context Fidelity) are now partly checkable
+from outside — form and fidelity, never judgment:
 `scripts/check_review.py` verifies a review's shape — its lens
 sections, its mandated sections, its verdicts and severities, its
 Scorecard rows and counts, that every finding raised by a lens reaches the
@@ -71,9 +72,11 @@ it names in its own output both what it checked and what it did not;
 `scripts/render_scorecard.py` derives the Scorecard counts from the review's
 own index instead of trusting them; `scripts/check.py` runs the entry gate
 the review claims to have passed; and `calibration/` scores a reviewer
-against defects it was not told about. Eight of the remaining nine are
+against defects it was not told about, as a separate procedure. Eight of
+the remaining ten are
 [self-attested](docs/anti-dishonesty.md#what-these-mechanisms-can-and-cannot-detect);
-the ninth (Chunked Attestation) ships no executable form at all.
+Nothing-Found Verification is retired as a detection claim, and Chunked
+Attestation ships no executable form at all.
 
 **Your most important role:** Don't just approve the PLAN and wait. Challenge
 the agent during every phase. The most valuable findings in Diffract's own

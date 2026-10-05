@@ -30,8 +30,9 @@ exactly. Do not skip steps. Do not fix issues during analysis.
   DO → CHECK → LEARN flow continuously unless the user interrupts.
 - **Show every lens in the run's scope** (Rule 6 governs scope). Even when
   a lens has no findings, show the
-  cognitive anchoring (describe what a finding *would* look like — this
-  proves you examined the artifact, not just skimmed it).
+  cognitive anchoring (describe what a finding *would* look like). It is
+  required form, not evidence that you read the artifact: a generic anchor
+  can be written without opening it.
 - **Use tables for data, prose for judgment.** Findings go in tables.
   Explanations of Cobra/Compass decisions go in prose.
 - **Be kind.** Honesty without kindness is cruelty. Findings are about the

@@ -68,7 +68,8 @@ on top, are mapped once, in [`docs/lenses.md`](docs/lenses.md#automation-tools-f
       move 4 of the 13 mechanisms out of the reviewer's own attestation
       and into CI. The remaining nine, and the decision to run the checks
       at all, stay self-attested; `docs/anti-dishonesty.md` says which is
-      which
+      which. Since then mechanism 5 has been retired as a detection claim
+      (#24), so 3 of the 13 are checked from outside
 - [ ] Reference artifact set carrying independently verified defects at
       **graded difficulty** — required to assign reviewer tiers on demand
       (`docs/calibration.md`) and to populate tiers 2 and 3, which RQ3
@@ -87,8 +88,9 @@ on top, are mapped once, in [`docs/lenses.md`](docs/lenses.md#automation-tools-f
       the seeds are planted by the maintainer rather than a third party, so
       the author-graded problem (#26) applies to the fixture too; and it is
       a separate procedure run against a fixture, not a variant of the
-      in-review Nothing-Found Verification mechanism, which is still
-      self-attested. Complemented since 0.2.4 by capture–recapture
+      in-review Nothing-Found Verification mechanism, which is retired as a
+      detection claim (#24). A nearest-miss quote is being piloted in
+      `calibration/` runs only (see `calibration/README.md`). Complemented since 0.2.4 by capture–recapture
       estimation in `docs/calibration.md` (Lincoln–Petersen; Eick et al.;
       Gilb & Graham), which attacks the same gap from the other side:
       estimation says *how many* defects remain, seeding says *which one*

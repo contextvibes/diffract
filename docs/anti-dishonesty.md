@@ -25,7 +25,7 @@ outside the review, never by the review:
 - Three runs stated Scorecard counts contradicting their own findings index,
   including two `Discard:Integrity` verdicts appearing in no row.
 
-As of v0.4.0, four of the thirteen are no longer purely self-attested:
+Three of the thirteen are no longer purely self-attested:
 
 - **Mechanisms 1, 2 and 9** can be checked from outside by
   [`scripts/check_review.py`](../scripts/check_review.py) — lens coverage,
@@ -33,14 +33,14 @@ As of v0.4.0, four of the thirteen are no longer purely self-attested:
   quoted text appears verbatim at the line it is cited to. It checks **form and
   fidelity, not judgment.** It can prove a quote is real; it cannot tell you the
   finding was worth raising, and it cannot tell you what the reviewer missed.
-- **Mechanism 5** has a real seeded variant in [`calibration/`](../calibration/):
-  defects planted in a frozen artifact and a reviewer scored against an answer
-  key it has not seen. That measures recall directly instead of asking the
-  reviewer whether it thinks it would have noticed.
-
-The other nine remain self-attested. So does the decision to run the checker at
-all: a reviewer that never runs it, or runs it and ignores the result, is
-governed by nothing on this page.
+Of the other ten, eight remain self-attested. **Mechanism 5** is retired as
+a detection claim: it has detected none of its four recorded misses (see its
+section). [`calibration/`](../calibration/) measures recall directly — defects
+planted in a frozen artifact and a reviewer scored against an answer key it has
+not seen — but that is a separate procedure, not a check on mechanism 5.
+**Mechanism 10** ships no executable form. The decision to run the checker at
+all is self-attested too: a reviewer that never runs it, or runs it and ignores
+the result, is governed by nothing on this page.
 
 ## The Mechanisms
 
@@ -167,6 +167,14 @@ found anything. Read it as a self-attestation.
 As shipped in `PROMPT.md`, this mechanism does not do what its source domains
 do, and the "(Blind Seeding)" in its title describes the source, not the
 implementation.
+
+**Retired as a detection claim.** In every recorded run that missed a known
+defect, this step passed — four in RQ3 alone, two of which affirmed the defect
+while passing it — and it has no recorded detection. Diffract no longer claims it detects
+anything. `PROMPT.md` still mandates the step, because writing a concrete
+example forces a second pass over each lens, and `PROMPT.md` says it has not
+been measured to catch defects. Read its ✓ as that second pass, nothing more
+(issue #24).
 
 **A real seeded variant now exists alongside it.** [`calibration/`](../calibration/)
 holds a frozen artifact with defects planted in it, an answer key the reviewer
@@ -313,7 +321,7 @@ Any finding based purely on "best practice" dogmatism without a universal system
 | 2 | Cognitive Anchoring | Railways (shisa kanko) | Looking without seeing | External — `check_review.py` |
 | 3 | Falsifiability | Philosophy (Popper) | Opinion disguised as fact | Self-attested |
 | 4 | Calibration | Metrology + Radiology (dual-reading) | Reviewer-dependent outcomes | Self-attested |
-| 5 | Nothing-Found Verification | UXO / Radiology / Law | Unexamined "nothing found" claims — **not** false negatives; see the limitation under mechanism 5 | External — `calibration/` |
+| 5 | Nothing-Found Verification | UXO / Radiology / Law | Nothing demonstrated — no recorded detection; see mechanism 5 | Retired as a detection claim; `calibration/` measures recall separately |
 | 6 | Challenge-Response | Aviation (CRM) | Passive agreement | Self-attested |
 | 7 | Finder/Decider Separation | Aviation (RII) | Conflict of interest | Self-attested |
 | 8 | Retro | Manufacturing (Deming) | Framework stagnation | Self-attested |
