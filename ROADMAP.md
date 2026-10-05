@@ -18,9 +18,11 @@ on top, are mapped once, in [`docs/lenses.md`](docs/lenses.md#automation-tools-f
 - Antigravity skill driver — **never shipped.** No `.agents/` directory has
   existed in any commit. Diffract is driven by pointing an agent at
   `PROMPT.md`; per-tool adapters are tracked under v0.3.
-- Deterministic tool scripts — **dropped.** Diffract ships prompt-only. The
-  lens-to-tool mapping lives in `docs/lenses.md` ("Automation: Tools First");
-  tools are invoked directly rather than through wrappers.
+- Deterministic tool scripts (per-lens tool wrappers) — **dropped.** Lens
+  tools are invoked directly rather than through wrappers; the lens-to-tool
+  mapping lives in `docs/lenses.md` ("Automation: Tools First"). Diffract
+  is not prompt-only: `scripts/` ships checkers for the instrument and for
+  reviews (see v0.3 and v0.4 below), not wrappers for lens tools.
 - [x] Execute calibration tests across 3+ AI models — see
       [RQ3](docs/research/rq3-calibration-reproducibility.md) (4 models,
       10 runs, one frozen artifact)
