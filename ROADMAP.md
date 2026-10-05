@@ -95,6 +95,12 @@ on top, are mapped once, in [`docs/lenses.md`](docs/lenses.md#automation-tools-f
       Gilb & Graham), which attacks the same gap from the other side:
       estimation says *how many* defects remain, seeding says *which one*
       was missed
+- [ ] Severity-trend signal alongside the done-rule's count signal — the
+      v0.2.4 self-review cycles stopped finding contradictions between
+      files and started finding underspecification at the margins, a shift
+      in the *kind* of Major that the zero-new-Majors count cannot see.
+      Needs a defined class for each Major before it can be a signal; a
+      `PROMPT.md` change if adopted (moved here from #29)
 - [ ] IDE extension: highlight findings inline with lens icons
 - [ ] Auto-generate PLAN from project context (language, CI config)
 
