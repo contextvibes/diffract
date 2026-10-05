@@ -7,9 +7,15 @@
 > tiers, condition-1 witnesses, which vetting outcomes resolved true) have
 > not been checked by anyone independent of that party (issue #26).
 
-Calibration is how Diffract validates itself. The framework claims that
-the same code + same lenses + different reviewer = same findings. This
-claim must be testable.
+Calibration is how Diffract validates itself. The framework's Goal is that
+the same artifact + same lenses + different reviewer = the same defects,
+plus a surplus specific to each reviewer. This claim must be testable.
+
+It is not "the same findings". On an artifact large enough to hold many
+defensible findings, two competent reviewers each hold true claims the other
+never raised, so a test that demands identical findings fails every pairing
+for coverage, not for miscalibration (issue #23). What must agree is the
+defects; the surplus is adjudicated, below.
 
 ## The Test
 
@@ -27,10 +33,10 @@ claim must be testable.
    Clustering Claims, below
 6. Compare **stable claims**, not single runs:
    - **Overlap:** Both reviewers' stable claims match → framework is calibrated
-   - **Stable for A, absent in all of B's runs:** B's process failed →
-     investigate B's lens application
-   - **Stable for B, absent in all of A's runs:** A's process failed →
-     review is incomplete, cycle again
+   - **Stable for one reviewer, absent in all of the other's runs:**
+     adjudicate it against the frozen artifact (Success Criteria) — a
+     coverage miss for the reviewer that never raised it, or a false
+     positive for the reviewer that holds it
    - **Same stable claim, different verdict:** governor calibration differs
 
 **Why multiple runs:** one run per reviewer cannot distinguish "Reviewer B
@@ -143,11 +149,28 @@ At the end, rate each finding's calibration confidence (high/medium/low):
 
 ## Success Criteria
 
-A review is calibrated when **both** conditions hold:
+The result of The Test is a **ledger**, not a yes/no. Every stable claim of
+one reviewer that appears in none of the other's runs is **adjudicated
+against the frozen artifact** before any verdict on the pair. Check A against
+B *and* B against A — a one-directional check certifies a reviewer who found
+nothing.
 
-1. **Both directions clear.** No stable claim of either reviewer is absent
-   from all of the other reviewer's runs. Check A against B *and* B against
-   A — a one-directional check certifies a reviewer who found nothing.
+- Claim is **true** → record a **coverage miss** for the reviewer that never
+  raised it. That reviewer re-runs the owning lens with the claim as a probe.
+- Claim is **false** → record a **false positive** for the reviewer that
+  holds it: its Integrity process failed, not the other's coverage.
+
+Adjudication is judgment, so each ruling is recorded with its evidence —
+the artifact text, quoted, at its line — the same bar a finding meets. The
+ledger is the per-reviewer count of coverage misses and false positives, with
+those rulings attached.
+
+A pair is calibrated when **both** conditions hold:
+
+1. **No stable contradiction and no stable false claim.** The pair fails
+   outright when one reviewer stably asserts what the other stably denies, or
+   when adjudication rules any stable claim false. Coverage misses alone do
+   not fail the pair; they are the ledger, and they say who misses what.
 2. **Both reviewers produced stable claims.** A reviewer whose own claims
    never recur across its own runs has not been shown to agree with anyone;
    it has been shown to be unreliable. Zero stable claims is a failed run
@@ -166,7 +189,7 @@ it. Reviewer B produced *zero stable claims at all* — nothing recurred in a
 majority of its four runs — while nine of Reviewer A's stable claims were
 absent from every single B run, including a verified factual error B never
 raised once. The one-directional rule returns **calibrated**. Step 6 of The
-Test, on the same page, returns **B's process failed**. A criterion that
+Test, as it then read, returned **B's process failed**. A criterion that
 contradicts its own comparison table, and that the weakest reviewer passes
 by finding nothing, measures nothing.
 
@@ -356,7 +379,8 @@ ranking.
 **Tier 4 is necessary, not sufficient.** It gates entry to The Test; it does
 not predict passing it. In [RQ5](research/rq5-reviewer-tiering.md) all four
 configurations measured tier 4 on the same artifact, and every one of the six
-pairings then failed Success Criteria condition 1. Qualifying two reviewers
+pairings then failed Success Criteria condition 1 as it then read (both
+directions clear, before adjudication replaced it). Qualifying two reviewers
 does not mean they will agree.
 
 **Why Success Criteria does not already cover this.** Those criteria measure
@@ -413,9 +437,13 @@ Document calibration results in your retro:
 - Stable-claim overlap: [count]
 - Stable claims of A absent from all B runs: [count]
 - Stable claims of B absent from all A runs: [count]
+- Adjudication ledger: coverage misses A [x] / B [y]; false positives
+  A [x] / B [y]; stable contradictions [count] — each ruling with its
+  quoted evidence
 - Estimated total Majors (capture–recapture, Majors only): [N̂ / n/a — see
   Estimating What Both Reviewers Missed]
 - Estimated missed by both: [count / n/a]
 - Brier score (per-bin table attached): A [x] / B [y]
-- Result: [calibrated / not calibrated — cycle again]
+- Result: [calibrated — ledger attached / not calibrated — stable
+  contradiction or stable false claim]
 ```

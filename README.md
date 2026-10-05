@@ -18,11 +18,13 @@ who reviews it.
 
 **Mission:** Keep each other honest — structurally, not aspirationally.
 
-**Goal:** Same artifact + same lenses + different reviewer = same findings.
+**Goal:** Same artifact + same lenses + different reviewer = same defects,
+plus a surplus specific to each reviewer.
 
-**Measured status:** not yet achieved. In the latest tiering experiment
+**Measured status:** not yet demonstrated. In the latest tiering experiment
 (August 2026, against the 0.2.x instrument), every reviewer pairing failed
-the calibration criteria ([RQ5](docs/research/rq5-reviewer-tiering.md)). Diffract publishes its own
+the calibration criteria as they then stood
+([RQ5](docs/research/rq5-reviewer-tiering.md)). Diffract publishes its own
 failures — the protocol exists to make them visible, not to hide them.
 
 Diffract emerged from code review, but the lenses apply to anything that

@@ -104,16 +104,19 @@ two independent radiologists read the same images. The final report only
 proceeds when both findings are reconciled.
 
 **In Diffract:** A different reviewer applying the same lenses to the same
-code should reach the same conclusions. This is not aspirational — it's
-testable.
+code should find the same defects, each reviewer adding a surplus of its own.
+This is not aspirational — it's testable.
 
 **Calibration Test:** After a review is complete, a second reviewer
 (human or AI at the same capability level) independently applies the same
 lenses. Each reviewer completes at least 3 runs against a frozen artifact,
 and the comparison is on **stable claims** — those recurring in a majority
-of a reviewer's own runs. Calibrated requires both directions to be clear
-*and* both reviewers to have produced stable claims; a reviewer whose
-claims never recur has a failed run set, not a passing score. One run per
+of a reviewer's own runs. A stable claim one reviewer holds and the other
+never raised is adjudicated against the artifact: a coverage miss for one,
+or a false positive for the other. Calibrated requires no stable
+contradiction, no stable false claim, *and* both reviewers to have produced
+stable claims; a reviewer whose claims never recur has a failed run set,
+not a passing score. One run per
 reviewer cannot separate a miscalibrated reviewer from noise
 (see `calibration.md`).
 
