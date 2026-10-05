@@ -163,8 +163,10 @@ def check_lens_table():
     check_review.failures.clear()
     if not normative:
         return
-    reproduced = [(check_review.plain(name), q.strip())
-                  for name, q in re.findall(r'^\| \d+ \| (.+?) \| (.+?) \|$', readme, re.M)]
+    # Escape-aware, like every other table parse here (cycle-6 VAR-3).
+    reproduced = [(check_review.unescape(cells[1]), cells[2].replace('\\|', '|'))
+                  for cells in check_review.table_rows(readme)
+                  if len(cells) == 3 and re.match(r'^\d+$', cells[0])]
     if normative != reproduced:
         failures.append(f'README lens table drifted from PROMPT.md: {set(normative) ^ set(reproduced)}')
 

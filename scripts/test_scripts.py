@@ -184,6 +184,36 @@ class Fixtures(unittest.TestCase):
         self.assertIn('lists score_seeds.py, which is not in scripts/', joined)
         self.assertIn('scripts/extra.py is not in scripts/MANIFEST', joined)
 
+    # -- issue #43 VAR-3: an escaped pipe is part of its cell ---------------
+
+    def with_escaped_pipes(self):
+        text = read(EXAMPLE)
+        governors = '· 🐍 Library/Framework ·'
+        claim = 'what its parser does on receiving it.'
+        self.assertIn(governors, text)
+        self.assertIn(claim, text)
+        text = text.replace(
+            governors, '· 🐍 Library/Framework (of prototype \\| production \\| library/framework) ·', 1)
+        return text.replace(claim, 'what its parser does on receiving it: accept \\| strip \\| reject.')
+
+    def test_43_escaped_pipes_do_not_shift_columns(self):
+        review = self.write('pipes.md', self.with_escaped_pipes())
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 0, out)
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 0, out)
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertEqual(code, 0, out)
+
+    def test_43_an_unescaped_pipe_still_fails(self):
+        text = read(EXAMPLE).replace(
+            'what its parser does on receiving it.', 'accept | strip | reject.', 1)
+        review = self.write('bare-pipes.md', text)
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn('index row is 10 columns, expected 8', out)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

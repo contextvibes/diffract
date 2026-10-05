@@ -575,6 +575,10 @@ per finding **raised** — skips and discards included, not fixes only.
 artifacts); the file part is mandatory whenever the review covers more
 than one file.
 
+A literal `|` inside a cell of any table in the review — this index, the
+Scorecard, a lens table — is written `\|`, as Markdown table syntax requires;
+an unescaped one ends the cell, and every column after it shifts.
+
 **`Cycle`** holds the PDCA cycle in which the finding was raised. Together
 with the Scorecard's cycle count, this makes done-rule condition 1
 derivable from the index itself: convergence means the final cycle

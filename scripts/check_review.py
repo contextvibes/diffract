@@ -68,6 +68,41 @@ def plain(text):
     return re.sub(r'[*`]', '', text).strip()
 
 
+def split_row(line):
+    """The raw cells of a Markdown table row, or None if it is not one.
+
+    Escape-aware: `\\|` is a literal pipe inside a cell, as in GitHub's
+    table syntax, and does not end the cell. Splitting on every `|` shifted
+    every column after a cell that contained one, and failed a correct review
+    with "illegal verdict" or a missing Scorecard row — PROMPT.md writes the
+    Cobra levels pipe-separated, so restating them in a Governors row was
+    enough (cycle-6 VAR-3, issue #43). Cells come back stripped but still
+    escaped, so a caller that rewrites a row can write it back unchanged;
+    `unescape()` gives the value.
+    """
+    line = line.rstrip()
+    if not (line.startswith('|') and line.endswith('|') and len(line) > 1):
+        return None
+    cells = re.split(r'(?<!\\)\|', line[1:-1])
+    return [c.strip() for c in cells]
+
+
+def unescape(cell):
+    """A cell's value: escaped pipes restored and emphasis stripped."""
+    return plain(cell.replace('\\|', '|'))
+
+
+def table_rows(body):
+    """Raw cells of every table row in a body, header and rule rows dropped."""
+    rows = []
+    for line in body.split('\n'):
+        cells = split_row(line)
+        if cells is None or all(re.match(r'^:?-*:?$', c) for c in cells):
+            continue
+        rows.append(cells)
+    return rows
+
+
 def outside_fences(lines):
     """Per line, whether it sits outside a ``` fenced block."""
     inside, live = False, []
@@ -263,8 +298,15 @@ def lenses_run_row(review):
     body = section(review, 'Scorecard', level=3)
     if body is None:
         return None
-    m = re.search(r'^\| Lenses run \|\s*((\d+)\s*(?:of|/).*?)\|\s*$', body, re.M)
-    return (int(m.group(2)), m.group(1)) if m else None
+    value = scorecard_cells(body).get('Lenses run')
+    m = value and re.match(r'\s*(\d+)\s*(?:of|/)', value)
+    return (int(m.group(1)), value) if m else None
+
+
+def scorecard_cells(table):
+    """{metric: value} for every two-cell row of a Scorecard table body."""
+    return {unescape(cells[0]): unescape(cells[1])
+            for cells in table_rows(table) if len(cells) == 2}
 
 
 def check_lenses(review, lenses, scope=None):
@@ -339,11 +381,8 @@ def index_rows(review):
     if body is None:
         failures.append('no "## FINDINGS INDEX" section')
         return []
-    rows = []
-    for line in re.findall(r'^\|(.+)\|\s*$', body, re.M):
-        if re.match(r'^[\s|:-]+$', line) or line.strip().startswith('ID '):
-            continue
-        rows.append([plain(c) for c in line.split('|')])
+    rows = [[unescape(c) for c in cells] for cells in table_rows(body)
+            if unescape(cells[0]) != 'ID']
     for row in rows:
         if len(row) != 8:
             failures.append(f'index row is {len(row)} columns, expected 8: {row[:1]}')
@@ -373,8 +412,7 @@ def check_scorecard(review, rows, prompt_path):
     if table is None:
         failures.append('no "### Scorecard" section')
         return
-    card = {plain(k): v.strip() for k, v in
-            re.findall(r'^\| ([^|]+?) \| ([^|]*?) \|\s*$', table, re.M)}
+    card = scorecard_cells(table)
 
     version = instrument_version(review)
     if version is None:

@@ -117,18 +117,24 @@ def render(review, prompt_path=None):
     lead, lead_n, tied = leading_lens(rows)
     changes, notes, refused = [], [], []
 
-    def fix_row(match):
-        key, value = check_review.plain(match.group(1)), match.group(2).strip()
+    def fix_row(line):
+        # Escape-aware, as check_review.py parses it: a value carrying a
+        # literal `\|` is one cell, not two (cycle-6 VAR-3, issue #43).
+        cells = check_review.split_row(line)
+        if cells is None or len(cells) != 2:
+            return line
+        raw_key, value = cells
+        key = check_review.unescape(raw_key)
         stated = re.match(r'\s*(\d+)', value)
 
         if key in counts:
             want = counts[key]
             if not stated:
                 changes.append(f'{key}: no number stated, set to {want}')
-                return f'| {match.group(1)} | {want} |'
+                return f'| {raw_key} | {want} |'
             if int(stated.group(1)) != want:
                 changes.append(f'{key}: {stated.group(1)} -> {want}')
-                return f'| {match.group(1)} | {substitute_leading_number(value, want)} |'
+                return f'| {raw_key} | {substitute_leading_number(value, want)} |'
 
         elif key == 'Lenses run':
             lenses = check_review.normative_lenses(
@@ -138,7 +144,7 @@ def render(review, prompt_path=None):
             if stated and int(stated.group(1)) < present:
                 # A low claim is a counting slip: the sections are there.
                 changes.append(f'Lenses run: {stated.group(1)} -> {present}')
-                return f'| {match.group(1)} | {substitute_leading_number(value, present)} |'
+                return f'| {raw_key} | {substitute_leading_number(value, present)} |'
             if stated and int(stated.group(1)) > present:
                 # A high claim is a coverage claim, and the missing sections
                 # are the evidence against it. Correcting it down rewrote a
@@ -161,16 +167,16 @@ def render(review, prompt_path=None):
                     f'({lead_n} findings) -> rewritten')
                 plural = 's' if lead_n != 1 else ''
                 tie = f' — tied with {", ".join(t for t in tied if t != lead)}' if len(tied) > 1 else ''
-                return f'| {match.group(1)} | {lead} ({lead_n} finding{plural}){tie} |'
+                return f'| {raw_key} | {lead} ({lead_n} finding{plural}){tie} |'
 
         elif key == 'Fixed':
             notes.append(
                 "Fixed: pre-0.4.0 row, left in place — split it into "
                 "'Fix verdicts' and 'Fixes applied' (issue #33)")
 
-        return match.group(0)
+        return line
 
-    table = re.sub(r'^\| ([^|]+?) \| ([^|]*?) \|\s*$', fix_row, table, flags=re.M)
+    table = '\n'.join(fix_row(line) for line in table.split('\n'))
     return '\n'.join(prefix + table.split('\n') + suffix), changes, notes, refused
 
 
