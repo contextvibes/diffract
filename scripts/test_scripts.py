@@ -234,6 +234,76 @@ class Fixtures(unittest.TestCase):
         self.assertEqual((changes, refused), ([], []))
         self.assertEqual(rendered, read(SEEDED))
 
+    # -- issue #39: restated vocabulary is held to PROMPT.md ---------------
+
+    def drift_failures(self, root):
+        done = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'check.py')],
+                              cwd=root, capture_output=True, text=True)
+        return done.returncode, [l for l in done.stdout.splitlines()
+                                 if 'MANIFEST' not in l and l.startswith('FAIL')]
+
+    def edit(self, root, name, old, new):
+        path = os.path.join(root, name)
+        text = read(path)
+        self.assertIn(old, text, name)
+        with open(path, 'w') as handle:
+            handle.write(text.replace(old, new, 1))
+
+    def test_39_the_old_integrity_options_fail(self):
+        root = self.copy_of_repo()
+        self.edit(root, 'examples/diffract.yaml',
+                  '# Options: file-line | file-line-with-anchoring |\n'
+                  '#          file-line-with-anchoring-and-quotes (the PLAN default)',
+                  '# Options: file-line, file-line-with-anchoring (default)')
+        code, lines = self.drift_failures(root)
+        self.assertEqual(code, 1)
+        joined = ' '.join(lines)
+        self.assertIn('Options for integrity list file-line | file-line-with-anchoring;', joined)
+        self.assertIn("marks 'file-line-with-anchoring' as the integrity default", joined)
+
+    def test_39_illegal_config_keys_and_values_fail(self):
+        root = self.copy_of_repo()
+        self.edit(root, 'examples/diffract.yaml', 'cobra: production', 'cobra: strict')
+        self.edit(root, 'examples/diffract.yaml', 'max_cycles: 3', 'max_cycles: 5\nlenses: 3')
+        self.edit(root, 'CONTRIBUTING.md', '`scope: full`', '`scope: repo`')
+        code, lines = self.drift_failures(root)
+        self.assertEqual(code, 1)
+        joined = ' '.join(lines)
+        self.assertIn("cobra: 'strict' is not a permitted value", joined)
+        self.assertIn("max_cycles: '5' is outside 1–3", joined)
+        self.assertIn("'lenses' is not a PROMPT.md config key", joined)
+        self.assertRegex(joined, r"CONTRIBUTING.md:\d+: scope: 'repo' is not a permitted value")
+
+    def test_39_verdicts_tags_and_bins_restated_wrongly_fail(self):
+        root = self.copy_of_repo()
+        self.edit(root, 'README.md', '`[entry waived: cannot run checks]`',
+                  '`[entry skipped: cannot run checks]`')
+        self.edit(root, 'CONTRIBUTING.md', '`[async — no PLAN confirmation]`',
+                  '`[async: no PLAN confirmation]` or Skip:Scope')
+        self.edit(root, 'PROMPT.md', '| Major/Minor | High/Medium/Low |',
+                  '| Major/Minor | High/Low |')
+        code, lines = self.drift_failures(root)
+        self.assertEqual(code, 1)
+        joined = ' '.join(lines)
+        self.assertIn("tag '[entry skipped: cannot run checks]' matches no PROMPT.md tag", joined)
+        self.assertIn("tag '[async: no PLAN confirmation]' matches no PROMPT.md tag", joined)
+        self.assertIn("'Skip:Scope' is not a PROMPT.md verdict", joined)
+        self.assertIn("'High/Low' is not PROMPT.md's High/Medium/Low", joined)
+
+    def test_39_a_verdict_added_to_prompt_is_accepted_from_it(self):
+        prompt = read(os.path.join(ROOT, 'PROMPT.md'))
+        row = '| `Discard:Integrity` | Fails the evidence bar — not established as real |\n'
+        self.assertIn(row, prompt)
+        widened = self.write('PROMPT.md', prompt.replace(
+            row, row + '| `Skip:Budget` | Real, but over the review budget |\n', 1))
+        review = self.write('budget.md', read(SEEDED).replace('| Minor | Fix |', '| Minor | Skip:Budget |', 1))
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn("illegal verdict 'Skip:Budget'", out)
+        code, out = run('check_review.py', review, '--artifact', SEEDED_ARTIFACT,
+                        '--prompt', widened)
+        self.assertNotIn('illegal verdict', out)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

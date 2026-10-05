@@ -99,7 +99,9 @@ def render(review, prompt_path=None):
     # cleared here by hand; a second call that forgot inherited the first
     # call's failures and rejected a sound index (cycle-7 BOU-1, issue #47).
     failures = []
-    rows = check_review.index_rows(review, failures)
+    vocab = check_review.normative_vocabulary(
+        prompt_path or check_review.default_prompt(), failures)
+    rows = check_review.index_rows(review, vocab, failures)
     if failures:
         return review, [], [], [f'index rejected: {f}' for f in failures]
 

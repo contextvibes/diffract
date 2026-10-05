@@ -5,8 +5,10 @@ This is the reference implementation of the deterministic entry checks
 PROMPT.md mandates for non-code artifacts — a reviewer running Diffract
 against this repo runs it at PLAN — plus the repo's own release gates that
 can be checked without judgment: link and anchor resolution, code-fence
-balance, version-string agreement, and a README-vs-PROMPT lens-table diff.
-Standard library only.
+balance, version-string agreement, a README-vs-PROMPT lens-table diff, every
+other file's verdicts, tags, Severity and Confidence lists and config values
+against PROMPT.md's, and the scripts against scripts/MANIFEST. Standard
+library only.
 
 Every check is independent: a file this repository does not have is one
 `FAIL:` line, never an exception that cancels the checks after it. Diffract
@@ -190,6 +192,142 @@ def check_enforced_strings(failures):
                 f'({purpose}), but PROMPT.md never mandates it')
 
 
+# Files the vocabulary-drift check leaves alone. CHANGELOG.md quotes
+# superseded definitions on purpose; the two reviews are hash-pinned and
+# quote-checkable, frozen at the instrument version that produced them, and
+# never re-synced (CONTRIBUTING.md, Release Gates).
+DRIFT_EXEMPT = (
+    'CHANGELOG.md',
+    os.path.join('examples', 'semver-2.0.0-review.md'),
+    os.path.join('calibration', 'semver-2.0.0-seeded-review.md'),
+)
+CONFIG_EXAMPLE = os.path.join('examples', 'diffract.yaml')
+
+
+def drift_files():
+    """Every Markdown and YAML file outside the exempt set, PROMPT.md included."""
+    found = list(md_files()) + sorted(glob.glob('**/*.y*ml', recursive=True))
+    return [p for p in found if p not in DRIFT_EXEMPT
+            and not any(part in p.split(os.sep) for part in SKIP_DIRS)]
+
+
+def tag_pattern(tag):
+    """A regex for one PROMPT.md tag string, its `<...>` parts as wildcards."""
+    parts = re.split(r'<[^>]+>', tag)
+    return re.compile('^' + '.+'.join(re.escape(p) for p in parts) + '$')
+
+
+def check_vocabulary_drift(failures):
+    """Every restatement of a closed vocabulary agrees with PROMPT.md.
+
+    PROMPT.md is normative for its verdicts, severities, Confidence bins, tag
+    strings, and diffract.yaml keys and values, and other files may point at
+    them but not restate them differently. That was checked by eye, and eye
+    checking let a README restatement drop a clause in the release that added
+    it (issue #39). This gate reads each vocabulary out of PROMPT.md and fails
+    any other file whose text uses a value outside it: a verdict-shaped
+    string, a tag-shaped string, a slash list of severities or Confidence
+    bins, a `key: value` config mention, and the example config's keys,
+    values, and `# Options:` blocks. It catches a wrong or missing value, not
+    a paraphrase of a definition — that is still a reviewer's job.
+    """
+    if read('PROMPT.md', failures) is None:
+        return
+    vocab = check_review.normative_vocabulary('PROMPT.md', failures)
+    tags = [tag_pattern(t) for t in vocab['tags']]
+    heads = {re.match(r'\[(\w+)', t).group(1) for t in vocab['tags']}
+    values = vocab['config_values']
+    for path in drift_files():
+        text = read(path, failures)
+        if text is None:
+            continue
+
+        def at(match):
+            return f'{path}:{text.count(chr(10), 0, match.start()) + 1}'
+
+        for m in re.finditer(r'\b(?:Skip|Discard):[A-Za-z]+', text):
+            if m.group(0) not in vocab['verdicts']:
+                failures.append(f'{at(m)}: {m.group(0)!r} is not a PROMPT.md verdict')
+        # A tag is a bracketed string whose first word heads a PROMPT.md tag;
+        # a Markdown link or reference ([text](url), [text][ref]) is not one.
+        for m in re.finditer(r'\[(\w+)\b[^\]\n]*(?:\n[^\]\n]*)?\](?![(\[])', text):
+            tag = re.sub(r'\s+', ' ', m.group(0))
+            if m.group(1) in heads and not any(t.match(tag) for t in tags):
+                failures.append(f'{at(m)}: tag {tag!r} matches no PROMPT.md tag string')
+        for key in ('severities', 'confidences'):
+            words = '|'.join(vocab[key])
+            for m in re.finditer(rf'\b(?:{words})(?:/(?:{words}))+\b', text):
+                if m.group(0).split('/') != vocab[key]:
+                    failures.append(f'{at(m)}: {m.group(0)!r} is not PROMPT.md\'s '
+                                    f'{"/".join(vocab[key])}')
+        for m in re.finditer(r'`(\w+): ([^`\s]+)`', text):
+            key, value = m.groups()
+            if key in values and value not in values[key]:
+                failures.append(f'{at(m)}: {key}: {value!r} is not a permitted value '
+                                f'({", ".join(values[key])})')
+    check_config_example(vocab, failures)
+
+
+def check_config_example(vocab, failures):
+    """examples/diffract.yaml sets only PROMPT.md's keys, to permitted values,
+    and each of its `# Options:` comments lists exactly the permitted values
+    and marks no default PROMPT.md does not name. The example is the one
+    config file a user copies, so a wrong option list in it is a wrong
+    config in theirs (found in the 2026-10-05 triage: it named a weaker
+    Integrity bar as the default)."""
+    text = read(CONFIG_EXAMPLE, failures)
+    if text is None:
+        return
+    lines = text.split('\n')
+    options = None
+    for number, line in enumerate(lines, 1):
+        where = f'{CONFIG_EXAMPLE}:{number}'
+        opened = re.match(r'^#\s*Options:(.*)$', line)
+        if opened:
+            options = (number, [opened.group(1)])
+            continue
+        if options and re.match(r'^#\s{2,}\S', line):
+            options[1].append(line[1:])
+            continue
+        setting = re.match(r'^(\w+):\s*(.*?)\s*(?:#.*)?$', line)
+        if setting:
+            key, value = setting.group(1), setting.group(2).strip('"\'')
+            if key not in vocab['config_keys']:
+                failures.append(f'{where}: {key!r} is not a PROMPT.md config key')
+            elif key in vocab['config_values'] and value not in vocab['config_values'][key]:
+                failures.append(f'{where}: {key}: {value!r} is not a permitted value')
+            elif key in vocab['config_ranges']:
+                low, high = vocab['config_ranges'][key]
+                if not (value.isdigit() and low <= int(value) <= high):
+                    failures.append(f'{where}: {key}: {value!r} is outside {low}–{high}')
+            if options:
+                check_options(options, key, vocab, failures)
+        if not line.startswith('#'):
+            options = None
+
+
+def check_options(options, key, vocab, failures):
+    number, block = options
+    where = f'{CONFIG_EXAMPLE}:{number}'
+    listed, default = [], None
+    for part in block:
+        part = part.split(' — ')[0]
+        for token, note in re.findall(r'([a-z][\w-]*)\s*(\([^)]*\))?', part):
+            listed.append(token)
+            if 'default' in note:
+                default = token
+    permitted = vocab['config_values'].get(key)
+    if permitted is None:
+        failures.append(f'{where}: Options listed for {key!r}, which has no permitted values')
+        return
+    if listed != permitted:
+        failures.append(f'{where}: Options for {key} list {" | ".join(listed)}; '
+                        f'PROMPT.md permits {" | ".join(permitted)}')
+    if default and default != vocab['config_defaults'].get(key):
+        failures.append(f'{where}: marks {default!r} as the {key} default; PROMPT.md '
+                        f'names {vocab["config_defaults"].get(key, "none")}')
+
+
 MANIFEST = os.path.join('scripts', 'MANIFEST')
 
 
@@ -258,6 +396,7 @@ def main():
     check_links(failures)
     check_lens_table(failures)
     check_enforced_strings(failures)
+    check_vocabulary_drift(failures)
     check_manifest(failures)
     if failures:
         for failure in failures:

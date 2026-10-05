@@ -14,13 +14,13 @@ What it does check, it names in its output: a pass states each check by
 name, so a pass on a conforming review is distinguishable from a pass that
 never looked (issue: cycle-6 OBS-1).
 
-The normative lens list and the Scorecard row set are read from PROMPT.md at
-runtime rather than hard-coded, so the enforced form follows the instrument.
-`--prompt` overrides which PROMPT.md that is; the default is the one shipped
-beside this script, and the run reports which file it used. Point it at a
-PROMPT.md belonging to the artifact under review and the artifact defines the
-norm it is judged by — the hazard PROMPT.md states for `render_scorecard.py`,
-one step removed.
+The normative lens list, the Scorecard row set, and the verdict and severity
+vocabularies are read from PROMPT.md at runtime rather than hard-coded, so
+the enforced form follows the instrument. `--prompt` overrides which
+PROMPT.md that is; the default is the one shipped beside this script, and
+the run reports which file it used. Point it at a PROMPT.md belonging to the
+artifact under review and the artifact defines the norm it is judged by —
+the hazard PROMPT.md states for `render_scorecard.py`, one step removed.
 
   python3 scripts/check_review.py REVIEW.md --artifact PATH [--artifact PATH]
 
@@ -33,8 +33,6 @@ import os
 import re
 import sys
 
-VERDICTS = {'Fix', 'Skip:Compass', 'Skip:Cobra', 'Discard:Integrity'}
-SEVERITIES = {'Major', 'Minor'}
 ANCHOR = 'A finding would look like:'
 CLOSER = 'No findings matching this pattern.'
 
@@ -167,6 +165,11 @@ def stated_at_line_start(lines, phrase):
 
 
 
+def read_text(path):
+    with open(path) as handle:
+        return handle.read()
+
+
 def default_prompt():
     """PROMPT.md next to this script's repository root."""
     return os.path.join(
@@ -181,7 +184,7 @@ def normative_lens_rows(prompt_path, failures):
     time: two copies of an anti-drift parser are themselves something to
     drift.
     """
-    prompt = open(prompt_path).read()
+    prompt = read_text(prompt_path)
     section = re.search(r'#### The 10 Lenses.*?#### W5H1', prompt, re.S)
     if not section:
         failures.append(f'{prompt_path}: lens list section not found')
@@ -219,7 +222,7 @@ def normative_scorecard_rows(prompt_path, failures):
     that has to be edited in step with the document it enforces will
     eventually not be (issue #39).
     """
-    prompt = open(prompt_path).read()
+    prompt = read_text(prompt_path)
     template = re.search(r'### Scorecard\n\| Metric \| Value \|\n.*?```', prompt, re.S)
     if not template:
         failures.append(f'{prompt_path}: Scorecard template not found')
@@ -227,6 +230,63 @@ def normative_scorecard_rows(prompt_path, failures):
     rows = [plain(k) for k in
             re.findall(r'^\| ([^|]+?) \| [^|]*? \|$', template.group(0), re.M)]
     return [r for r in rows if r != 'Metric']
+
+
+def normative_vocabulary(prompt_path, failures):
+    """Every closed vocabulary PROMPT.md enumerates, read at its normative site.
+
+    Verdicts from the Verdict table; Severity and Confidence from the
+    paragraphs that define them; tag strings from every inline-code `[...]`
+    span outside fences, with `<...>` a placeholder; the config keys and
+    their permitted values from Agentic Execution. Hard-coded before, so a
+    value added to PROMPT.md failed every review that used it, against the
+    wrong instrument and without saying so (cycle-6 W5H-3), and nothing held
+    the other files' restatements to it (issue #39).
+    """
+    prompt = read_text(prompt_path)
+    lines = prompt.split('\n')
+    prose = ' '.join(line.strip() for line, live in zip(lines, outside_fences(lines)) if live)
+    vocab = {}
+
+    table = re.search(r'\*\*Verdict\*\* is one of .*?\n\n((?:\|.*\n)+)', prompt)
+    vocab['verdicts'] = ([unescape(cells[0]) for cells in table_rows(table.group(1))
+                          if unescape(cells[0]) != 'Verdict'] if table else [])
+
+    for key, term in (('severities', 'Severity'), ('confidences', 'Confidence')):
+        paragraph = re.search(r'^\*\*' + term + r'\*\* is .*?(?=\n\n)', prompt, re.S | re.M)
+        vocab[key] = (re.findall(r'\*\*(\w+)\*\* —', paragraph.group(0))
+                      if paragraph else [])
+
+    vocab['tags'] = sorted({re.sub(r'\s+', ' ', t)
+                            for t in re.findall(r'`(\[[^`\]]+\])`', prose)})
+
+    keys = re.search(r'defined keys — (.*?`)\.\s', prose)
+    vocab['config_keys'] = re.findall(r'`(\w+)`', keys.group(1)) if keys else []
+    values, defaults, ranges = {}, {}, {}
+    permitted = re.search(r'Permitted values: (.*?)\. An out-of-range', prose)
+    for clause in (permitted.group(1).split(';') if permitted else []):
+        named = re.match(r'\s*`(\w+)` is (.*)', clause)
+        if not named:
+            continue
+        key, rest = named.groups()
+        listed = rest.split(' — ')[0]
+        span = re.search(r'range (\d+)[–-](\d+)', listed)
+        if span:
+            ranges[key] = (int(span.group(1)), int(span.group(2)))
+            continue
+        values[key] = re.findall(r'`([^`]+)`', re.sub(r'\([^)]*\)', '', listed))
+        if 'the last is the PLAN default' in rest and values[key]:
+            defaults[key] = values[key][-1]
+    vocab['config_values'], vocab['config_defaults'] = values, defaults
+    vocab['config_ranges'] = ranges
+
+    for key, at in (('verdicts', 'the Verdict table'), ('severities', 'Severity'),
+                    ('confidences', 'Confidence'), ('tags', 'inline tag strings'),
+                    ('config_keys', 'the diffract.yaml key list'),
+                    ('config_values', 'the diffract.yaml permitted values')):
+        if not vocab[key]:
+            failures.append(f'{prompt_path}: no vocabulary parsed from {at}')
+    return vocab
 
 
 def instrument_version(review):
@@ -373,7 +433,8 @@ def check_index_completeness(review, rows, lenses, failures):
         failures.append(f'{fid}: in the Findings Index, raised in no lens table')
 
 
-def index_rows(review, failures):
+def index_rows(review, vocab, failures):
+    """The Findings Index rows, each verdict and severity checked against `vocab`."""
     body = section(review, 'FINDINGS INDEX', level=2)
     if body is None:
         failures.append('no "## FINDINGS INDEX" section')
@@ -384,9 +445,9 @@ def index_rows(review, failures):
         if len(row) != 8:
             failures.append(f'index row is {len(row)} columns, expected 8: {row[:1]}')
             continue
-        if row[5] not in VERDICTS:
+        if row[5] not in vocab['verdicts']:
             failures.append(f'{row[0]}: illegal verdict {row[5]!r}')
-        if row[4] not in SEVERITIES:
+        if row[4] not in vocab['severities']:
             failures.append(f'{row[0]}: illegal severity {row[4]!r}')
     return [r for r in rows if len(r) == 8]
 
@@ -722,8 +783,9 @@ def main():
     # caller had to remember to clear it by hand (cycle-7 BOU-1, issue #47).
     failures = []
     lenses = normative_lenses(args.prompt, failures)
+    vocab = normative_vocabulary(args.prompt, failures)
     check_lenses(review, lenses, declared_scope(review), failures)
-    rows = index_rows(review, failures)
+    rows = index_rows(review, vocab, failures)
     check_index_completeness(review, rows, lenses, failures)
     check_scorecard(review, rows, args.prompt, failures)
     ran = check_structure(review, rows, failures) or []

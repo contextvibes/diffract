@@ -106,6 +106,10 @@ caught it:
       (The Findings Index `Confidence` column shipped undefined.)
 - [ ] **README's spec statements diff clean against PROMPT.md** — the
       done-rule, lens questions, verdict names, and tag strings.
+      `check.py` diffs the lens questions, and holds every file's verdict
+      names, tag strings, Severity and Confidence lists, and
+      `diffract.yaml` keys and values to PROMPT.md's; the done-rule and
+      any paraphrase of a definition are still checked by eye.
       (README shipped a superseded exit rule after 0.2.4 changed it.)
 - [ ] **Version strings agree** — the README badge and the PROMPT.md
       header. (0.2.3 shipped with the header still reading 0.2.2.)
