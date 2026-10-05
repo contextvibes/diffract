@@ -231,7 +231,11 @@ section carrying one block per finding, in index order:
 
 The citation is `path:line`, `path:line-line`, or — for the non-code
 artifacts this file tells you to cite by section rather than by line —
-`path § Heading`, naming a heading that exists in that file. The quote is
+`path § Heading`, naming a heading that exists in that file. The path is
+the file's path as you were given it, or any trailing part of that path down
+to the bare filename; a path that is not a trailing part of a supplied file's
+path names some other file, and when a trailing part matches more than one
+supplied file, cite enough of the path to tell them apart. The quote is
 the artifact's own text, copied, never paraphrased or reflowed; the block
 is indented under the citation and each line is prefixed `>`. A finding
 whose quote does not appear where it says it does is a fabrication,

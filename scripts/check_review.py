@@ -526,6 +526,38 @@ def heading_body(lines, heading):
     return None if span is None else lines[span[0]:span[1]]
 
 
+def path_parts(path):
+    """A path's components after normalisation, absolute paths keeping '/'."""
+    norm = os.path.normpath(path)
+    parts = [p for p in norm.split(os.sep) if p not in ('', '.')]
+    return (['/'] if os.path.isabs(norm) else []) + parts
+
+
+def resolve_citation(path, artifacts):
+    """(display name, lines) of the one supplied artifact a citation names.
+
+    A cited path names a supplied artifact when its components are a suffix of
+    that artifact's absolute path: `semver.md`, `artifacts/semver.md` and the
+    full path all name `examples/artifacts/semver.md`; `vendor/semver.md` does
+    not. Citations used to resolve by basename alone, so a quote verified
+    against a file the review never cited and the checker reported it
+    "verbatim at its citation" (issue #49). Suffix rather than equality,
+    because a blind reviewer is handed files in a layout it cannot see and
+    cites them relative to whatever it was shown.
+
+    Returns (None, reason) when no artifact, or more than one, matches.
+    """
+    want = path_parts(path)
+    hits = [(name, lines) for name, (parts, lines) in artifacts.items()
+            if want and parts[len(parts) - len(want):] == want]
+    if len(hits) == 1:
+        return hits[0]
+    if not hits:
+        return None, f'cites {path}, not among the supplied artifacts'
+    return None, (f'cites {path}, which names more than one supplied artifact: '
+                  f'{", ".join(n for n, _ in hits)}')
+
+
 def check_evidence(review, rows, artifacts, require):
     """Every Evidence quote must appear verbatim where it says it does.
 
@@ -545,11 +577,10 @@ def check_evidence(review, rows, artifacts, require):
         seen.add(fid)
         if fid not in ids:
             failures.append(f'{fid}: Evidence for a finding with no index row')
-        name = os.path.basename(path)
-        if name not in artifacts:
-            failures.append(f'{fid}: cites {path}, not among the supplied artifacts')
+        name, lines = resolve_citation(path, artifacts)
+        if name is None:
+            failures.append(f'{fid}: {lines}')
             continue
-        lines = artifacts[name]
         a, b = int(start), int(end or start)
         if not 1 <= a <= b <= len(lines):
             failures.append(f'{fid}: line range {a}-{b} outside {name} (1-{len(lines)})')
@@ -569,11 +600,11 @@ def check_evidence(review, rows, artifacts, require):
         seen.add(fid)
         if fid not in ids:
             failures.append(f'{fid}: Evidence for a finding with no index row')
-        name = os.path.basename(path)
-        if name not in artifacts:
-            failures.append(f'{fid}: cites {path}, not among the supplied artifacts')
+        name, lines = resolve_citation(path, artifacts)
+        if name is None:
+            failures.append(f'{fid}: {lines}')
             continue
-        section = heading_body(artifacts[name], heading)
+        section = heading_body(lines, heading)
         if section is None:
             failures.append(f'{fid}: {name} has no heading {heading!r}')
             continue
@@ -613,12 +644,12 @@ def main():
         except OSError as e:
             print(f'FAIL: cannot read artifact: {e}')
             return 1
-        name = os.path.basename(path)
-        if name in artifacts:
-            print(f'FAIL: two artifacts share the basename {name!r}; '
-                  f'Evidence citations could not tell them apart')
-            return 1
-        artifacts[name] = data.decode().split('\n')
+        # Keyed by the path as supplied, matched by path suffix: two artifacts
+        # that share a basename are told apart by a citation that names
+        # enough of the path, and a citation too short to is a failure of
+        # that citation rather than of the run (issue #49).
+        name = os.path.normpath(path)
+        artifacts[name] = (path_parts(os.path.abspath(path)), data.decode().split('\n'))
         print(f'artifact {name} sha256 {hashlib.sha256(data).hexdigest()}')
 
     # What this run enforced, and where it got it: a pass is only meaningful

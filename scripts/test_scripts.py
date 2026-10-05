@@ -116,6 +116,40 @@ class Fixtures(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn('CORRECTED: Lenses run: 8 -> 10', out)
 
+    # -- issue #49: a cited path must be a suffix of the supplied path -----
+
+    def test_49_a_citation_to_another_directory_fails(self):
+        text = read(EXAMPLE).replace(
+            'examples/artifacts/semver-2.0.0.md:', 'totally/other/dir/semver-2.0.0.md:')
+        self.assertIn('totally/other/dir/semver-2.0.0.md:', text)
+        review = self.write('elsewhere.md', text)
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn('cites totally/other/dir/semver-2.0.0.md', out)
+        self.assertNotIn('all checks pass', out)
+
+    def test_49_shorter_and_absolute_suffixes_pass(self):
+        for cited in ('semver-2.0.0.md', 'artifacts/semver-2.0.0.md', EXAMPLE_ARTIFACT):
+            text = read(EXAMPLE).replace('examples/artifacts/semver-2.0.0.md:', cited + ':')
+            review = self.write('suffix.md', text)
+            code, out = self.check(review, EXAMPLE_ARTIFACT)
+            self.assertEqual(code, 0, f'{cited}\n{out}')
+
+    def test_49_a_shared_basename_is_told_apart_by_its_path(self):
+        twin = os.path.join(self.tmp.name, 'twin', 'semver-2.0.0.md')
+        os.makedirs(os.path.dirname(twin))
+        with open(twin, 'w') as handle:
+            handle.write('not the artifact\n')
+        code, out = run('check_review.py', EXAMPLE, '--artifact', EXAMPLE_ARTIFACT,
+                        '--artifact', twin)
+        self.assertEqual(code, 0, out)
+        text = read(EXAMPLE).replace('examples/artifacts/semver-2.0.0.md:', 'semver-2.0.0.md:')
+        review = self.write('ambiguous.md', text)
+        code, out = run('check_review.py', review, '--artifact', EXAMPLE_ARTIFACT,
+                        '--artifact', twin)
+        self.assertEqual(code, 1, out)
+        self.assertIn('names more than one supplied artifact', out)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
