@@ -33,8 +33,11 @@ import os
 import re
 import sys
 
-ANCHOR = 'A finding would look like:'
-CLOSER = 'No findings matching this pattern.'
+# How a finding ID is recognised in a table or a citation: wider than the
+# grammar, on purpose. A row whose ID breaks PROMPT.md's grammar is found here
+# and then failed by index_rows against the grammar PROMPT.md defines, rather
+# than passed over as if it were not a finding at all.
+ID_SHAPE = r'[A-Z0-9]{2,4}-\d+'
 
 # Every mandated step whose only proof of having run is a trace in the output.
 # Each phrase is required in the review and, by scripts/check.py's release
@@ -280,10 +283,43 @@ def normative_vocabulary(prompt_path, failures):
     vocab['config_values'], vocab['config_defaults'] = values, defaults
     vocab['config_ranges'] = ranges
 
+    # Finding IDs: `<lens abbreviation>-<n>`, the abbreviations listed in lens
+    # order and then W5H1's. The checker accepted any two to four capitals
+    # before, a grammar of its own that PROMPT.md never stated (issue #41).
+    named = re.search(r'The abbreviations are \*\*([A-Z0-9, ]+)\*\* for the ten '
+                      r'lenses in order, and \*\*([A-Z0-9]+)\*\* for W5H1', prose)
+    lenses = normative_lenses(prompt_path, [])
+    abbreviations = named.group(1).split(', ') if named else []
+    vocab['id_prefixes'] = dict(zip(lenses, abbreviations))
+    if named and len(abbreviations) == len(lenses):
+        vocab['id_prefixes']['W5H1'] = named.group(2)
+    else:
+        vocab['id_prefixes'] = {}
+
+    # The literal text of the two lens-output templates: what is outside the
+    # brackets. Text both templates carry is required of every lens section;
+    # text only Output B carries is required of a lens that found nothing.
+    # These were three string constants here, a rule PROMPT.md showed only by
+    # example (issue #41).
+    def literals(label):
+        block = re.search(label + r'.*?\n```markdown\n(.*?)```', prompt, re.S)
+        if not block:
+            return []
+        text = re.sub(r'\[[^\]]*\]', '\n', block.group(1))
+        return [part.strip() for line in text.split('\n')
+                if not line.lstrip().startswith(('#', '|'))
+                for part in [line] if len(part.strip()) > 1]
+    found_some, found_none = literals('Output A'), literals('Output B')
+    vocab['literals_always'] = [x for x in found_none if x in found_some]
+    vocab['literals_nothing_found'] = [x for x in found_none if x not in found_some]
+
     for key, at in (('verdicts', 'the Verdict table'), ('severities', 'Severity'),
                     ('confidences', 'Confidence'), ('tags', 'inline tag strings'),
                     ('config_keys', 'the diffract.yaml key list'),
-                    ('config_values', 'the diffract.yaml permitted values')):
+                    ('config_values', 'the diffract.yaml permitted values'),
+                    ('id_prefixes', 'the finding ID abbreviations'),
+                    ('literals_always', 'the Output A and B templates'),
+                    ('literals_nothing_found', 'the Output B template')):
         if not vocab[key]:
             failures.append(f'{prompt_path}: no vocabulary parsed from {at}')
     return vocab
@@ -312,6 +348,11 @@ def derived_counts(rows):
         'Compass-skipped': sum(1 for r in rows if r[5] == 'Skip:Compass'),
         'Integrity-discarded': sum(1 for r in rows if r[5] == 'Discard:Integrity'),
     }
+
+
+def lens_name(cell):
+    """A Lens cell's name without its icon: '🗑️ Subtract' -> 'Subtract'."""
+    return re.sub(r'^[\W_]+', '', plain(cell))
 
 
 def lens_sections(review, lenses):
@@ -356,7 +397,7 @@ def lenses_run_row(review):
     if body is None:
         return None
     value = scorecard_cells(body).get('Lenses run')
-    m = value and re.match(r'\s*(\d+)\s*(?:of|/)', value)
+    m = value and re.match(r'\s*(\d+) of ', value)
     return (int(m.group(1)), value) if m else None
 
 
@@ -366,7 +407,7 @@ def scorecard_cells(table):
             for cells in table_rows(table) if len(cells) == 2}
 
 
-def check_lenses(review, lenses, scope, failures):
+def check_lenses(review, lenses, scope, vocab, failures):
     found, order = lens_sections(review, lenses)
     present = [n for n in lenses if n in found]
 
@@ -400,14 +441,14 @@ def check_lenses(review, lenses, scope, failures):
         failures.append(f'lens sections out of normative order: {order}')
 
     for name, body in found.items():
-        if 'Checked:' not in body:
-            failures.append(f"{name}: no 'Checked:' line")
-        if re.search(r'^\|\s*[A-Z0-9]{3}-\d', body, re.M):
+        for literal in vocab['literals_always']:
+            if literal not in body:
+                failures.append(f"{name}: no {literal!r} line")
+        if re.search(r'^\|\s*' + ID_SHAPE, body, re.M):
             continue
-        if ANCHOR not in body:
-            failures.append(f'{name}: nothing-found lens without "{ANCHOR}"')
-        if CLOSER not in body:
-            failures.append(f'{name}: nothing-found lens without "{CLOSER}"')
+        for literal in vocab['literals_nothing_found']:
+            if literal not in body:
+                failures.append(f'{name}: nothing-found lens without "{literal}"')
 
 
 def check_index_completeness(review, rows, lenses, failures):
@@ -423,7 +464,7 @@ def check_index_completeness(review, rows, lenses, failures):
     order = [n for n in lenses if n in found] + (['W5H1'] if 'W5H1' in found else [])
     raised = {}
     for name in order:
-        for fid in re.findall(r'^\|\s*([A-Z0-9]{2,4}-\d+)\s*\|', found[name], re.M):
+        for fid in re.findall(r'^\|\s*(' + ID_SHAPE + r')\s*\|', found[name], re.M):
             raised.setdefault(fid, name)
     indexed = {r[0] for r in rows}
     for fid, name in sorted(raised.items()):
@@ -434,7 +475,8 @@ def check_index_completeness(review, rows, lenses, failures):
 
 
 def index_rows(review, vocab, failures):
-    """The Findings Index rows, each verdict and severity checked against `vocab`."""
+    """The Findings Index rows, each checked against PROMPT.md's vocabularies:
+    the ID grammar and its lens, the verdict, the severity, the Confidence."""
     body = section(review, 'FINDINGS INDEX', level=2)
     if body is None:
         failures.append('no "## FINDINGS INDEX" section')
@@ -445,6 +487,15 @@ def index_rows(review, vocab, failures):
         if len(row) != 8:
             failures.append(f'index row is {len(row)} columns, expected 8: {row[:1]}')
             continue
+        prefix = vocab['id_prefixes'].get(lens_name(row[1]))
+        if not re.fullmatch(r'[A-Z0-9]+-\d+', row[0]) or (
+                prefix and row[0].split('-')[0] != prefix):
+            want = f'{prefix}-<n>' if prefix else '<lens abbreviation>-<n>'
+            failures.append(f'{row[0]}: ID is not {want} for lens {row[1]!r}')
+        if lens_name(row[1]) not in vocab['id_prefixes']:
+            failures.append(f'{row[0]}: Lens {row[1]!r} is not a lens or W5H1')
+        if row[7] not in vocab['confidences']:
+            failures.append(f'{row[0]}: illegal Confidence {row[7]!r}')
         if row[5] not in vocab['verdicts']:
             failures.append(f'{row[0]}: illegal verdict {row[5]!r}')
         if row[4] not in vocab['severities']:
@@ -604,8 +655,8 @@ def requires_quotes(review, failures):
 
 
 QUOTE_BLOCK = r'((?:^\s+> ?.*$\n?)+)'
-LINE_CITE = r'^- ([A-Z0-9]{2,4}-\d+) — (\S+?):(\d+)(?:[-–](\d+))?\s*$\n' + QUOTE_BLOCK
-HEAD_CITE = r'^- ([A-Z0-9]{2,4}-\d+) — (\S+?) § (.+?)\s*$\n' + QUOTE_BLOCK
+LINE_CITE = r'^- (' + ID_SHAPE + r') — (\S+?):(\d+)(?:[-–](\d+))?\s*$\n' + QUOTE_BLOCK
+HEAD_CITE = r'^- (' + ID_SHAPE + r') — (\S+?) § (.+?)\s*$\n' + QUOTE_BLOCK
 
 
 def dedent_quote(block):
@@ -614,6 +665,24 @@ def dedent_quote(block):
 
 def squash(lines):
     return [re.sub(r'\s+', ' ', x).strip() for x in lines]
+
+
+def quoted_in_place(quote, lines):
+    """Whether `quote` appears in `lines` with the artifact's own line breaks.
+
+    A quote under a heading may begin and end mid-line, so its first line is
+    matched as the end of an artifact line and its last as the start of one;
+    every line between must be whole. Matching the joined text instead
+    accepted a reflowed quote, which PROMPT.md forbids (issue #41).
+    """
+    n = len(quote)
+    if n == 1:
+        return any(quote[0] in line for line in lines)
+    for i in range(len(lines) - n + 1):
+        if (lines[i].endswith(quote[0]) and lines[i + n - 1].startswith(quote[-1])
+                and lines[i + 1:i + n - 1] == quote[1:-1]):
+            return True
+    return False
 
 
 def heading_body(lines, heading):
@@ -704,13 +773,10 @@ def check_evidence(review, rows, artifacts, require, failures):
         if section is None:
             failures.append(f'{fid}: {name} has no heading {heading!r}')
             continue
-        quote = squash(dedent_quote(block))
-        haystack = squash(section)
-        joined = ' '.join(haystack)
-        if ' '.join(quote) not in joined:
+        if not quoted_in_place(squash(dedent_quote(block)), squash(section)):
             failures.append(
                 f'{fid}: quote does not appear under {name} § {heading}\n'
-                f'       quoted: {quote[0][:64]!r}')
+                f'       quoted: {dedent_quote(block)[0][:64]!r}')
             continue
         verified += 1
 
@@ -784,7 +850,7 @@ def main():
     failures = []
     lenses = normative_lenses(args.prompt, failures)
     vocab = normative_vocabulary(args.prompt, failures)
-    check_lenses(review, lenses, declared_scope(review), failures)
+    check_lenses(review, lenses, declared_scope(review), vocab, failures)
     rows = index_rows(review, vocab, failures)
     check_index_completeness(review, rows, lenses, failures)
     check_scorecard(review, rows, args.prompt, failures)
@@ -810,7 +876,8 @@ def main():
           'with the declared scope; cognitive anchoring on nothing-found '
           'lenses; every finding in a lens table carried into the Findings '
           'Index and every index row raised by a lens; the CHECK table; index '
-          'verdicts and severities legal; every mandated Scorecard row present '
+          'IDs, lenses, verdicts, severities and Confidence legal; every '
+          'mandated Scorecard row present '
           'and every derived count equal to the index; every Evidence quote '
           f'verbatim at its citation; and these mandated sections: {traces}.')
     print('not checked: whether any finding is real, whether a severity is '

@@ -304,6 +304,49 @@ class Fixtures(unittest.TestCase):
                         '--prompt', widened)
         self.assertNotIn('illegal verdict', out)
 
+    # -- issue #41: every rule check_review applies is read from PROMPT.md --
+
+    def test_41_an_id_whose_prefix_is_not_its_lens_fails(self):
+        row = '| SUB-1 | Subtract | 1 |'
+        text = read(SEEDED)
+        self.assertIn(row, text)
+        review = self.write('prefix.md', text.replace(row, '| SIM-1 | Subtract | 1 |', 1))
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn("SIM-1: ID is not SUB-<n> for lens 'Subtract'", out)
+
+    def test_41_an_illegal_confidence_fails(self):
+        text = read(SEEDED)
+        start = text.index('| SUB-1 | Subtract | 1 |')
+        end = text.index('\n', start)
+        row = text[start:end]
+        self.assertTrue(row.endswith('| High |'), row)
+        review = self.write('confidence.md',
+                            text[:start] + row[:-len('High |')] + 'Certain |' + text[end:])
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn("illegal Confidence 'Certain'", out)
+
+    def test_41_a_template_literal_is_read_from_prompt(self):
+        prompt = read(os.path.join(ROOT, 'PROMPT.md'))
+        literal = 'No findings matching this pattern.'
+        self.assertIn(literal, prompt)
+        changed = self.write('PROMPT.md', prompt.replace(literal, 'Nothing matched this pattern.'))
+        code, out = run('check_review.py', SEEDED, '--artifact', SEEDED_ARTIFACT,
+                        '--prompt', changed)
+        self.assertEqual(code, 1, out)
+        self.assertIn('Nothing matched this pattern.', out)
+
+    def test_41_a_slash_lenses_run_is_not_read_as_a_narrowing(self):
+        # PROMPT.md's row is `X of 10`; the `X/10` form the checker also
+        # accepted was a script-only rule, so it no longer declares a scope.
+        text = self.without_efficiency().replace(
+            '| Lenses run | 10 of 10 — none omitted',
+            '| Lenses run | 9/10 — Efficiency omitted by the requester', 1)
+        review = self.write('slash.md', text)
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn('no section for: Efficiency', out)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -76,10 +76,13 @@ def lens_totals(rows):
 
 
 def leading_lens(rows):
-    """Highest row count, ties broken by Majors then name — all three reported.
+    """(first tied lens by name, its count, every tied lens).
 
-    A tie is exactly where the reviewer's own reasoning belongs, so this
-    returns the candidates rather than silently picking one.
+    A tie is exactly where the reviewer's own reasoning belongs, so the row
+    is accepted when it names any tied lens, and only a row naming none is
+    rewritten — to the first by name, the others listed as tied. PROMPT.md
+    states this rule under Scorecard. (This docstring used to say ties were
+    broken by Majors; the code never did that.)
     """
     totals = lens_totals(rows)
     if not totals:
