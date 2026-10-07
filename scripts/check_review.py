@@ -24,6 +24,13 @@ artifact under review and the artifact defines the norm it is judged by —
 the hazard PROMPT.md states for `render_scorecard.py`, one step removed.
 
   python3 scripts/check_review.py REVIEW.md --artifact PATH [--artifact PATH]
+  python3 scripts/check_review.py REVIEW.md --no-artifact
+
+`--no-artifact` is for a review whose artifact is not available, such as an
+anonymized example. It skips the checks that need the artifact — artifact
+hashes, citation existence, and Evidence quote verification — and says so
+in its output. It refuses a review whose Integrity governor requires a
+verbatim quote per finding, since those quotes cannot be verified (#54).
 
 Exit code 0 = all checks pass; 1 = at least one failure (each is printed).
 """
@@ -865,7 +872,11 @@ def implementation():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('review')
-    ap.add_argument('--artifact', action='append', default=[], required=True)
+    given = ap.add_mutually_exclusive_group(required=True)
+    given.add_argument('--artifact', action='append', default=[])
+    given.add_argument('--no-artifact', action='store_true',
+                       help='the artifact is not available: skip the checks '
+                            'that need it; refused if Integrity requires quotes')
     ap.add_argument('--prompt', default=default_prompt())
     args = ap.parse_args()
 
@@ -896,6 +907,8 @@ def main():
     print(f'instrument {args.prompt} '
           f'version {prompt_version.group(1) if prompt_version else "unknown"}')
     print(implementation())
+    if args.no_artifact:
+        print('artifact: none supplied (--no-artifact)')
 
     # Collected here and passed to every check, never held at module level:
     # a module-global list leaked one call's failures into the next, and each
@@ -909,10 +922,22 @@ def main():
     check_scorecard(review, rows, args.prompt, vocab, failures)
     ran = check_structure(review, rows, vocab, failures) or []
     require = requires_quotes(review, failures)
-    verified, blocks = check_evidence(review, rows, artifacts, require, failures)
-
-    print(f'index rows {len(rows)} | quote blocks {blocks} '
-          f'(required: {"yes" if require else "no"}) | verified verbatim {verified}')
+    if args.no_artifact:
+        # Without the artifact, a quote is the reviewer's word. A run whose
+        # Integrity governor makes the quotes its evidence cannot pass on the
+        # reviewer's word, so it is refused rather than passed unverified.
+        if require:
+            failures.append('--no-artifact: the Integrity governor requires a '
+                            'verbatim quote per finding, and quotes cannot be '
+                            'verified without the artifact; supply --artifact')
+        blocks = (len(re.findall(LINE_CITE, review, re.M))
+                  + len(re.findall(HEAD_CITE, review, re.M)))
+        print(f'index rows {len(rows)} | quote blocks {blocks} '
+              f'(required: {"yes" if require else "no"}) | NOT verified: no artifact')
+    else:
+        verified, blocks = check_evidence(review, rows, artifacts, require, failures)
+        print(f'index rows {len(rows)} | quote blocks {blocks} '
+              f'(required: {"yes" if require else "no"}) | verified verbatim {verified}')
     print()
     if failures:
         for failure in failures:
@@ -925,14 +950,21 @@ def main():
     # reintroducing, inside the fix for it, the defect it was named for
     # (cycle-7 OBS-1, found again as cycle-8 OBS-1 and cycle-8b OBS-1).
     traces = '; '.join(ran)
+    evidence = ('' if args.no_artifact else
+                'every Evidence quote verbatim at its citation; ')
     print('checked: lens sections present, in normative order, and agreeing '
           'with the declared scope; cognitive anchoring on nothing-found '
           'lenses; every finding in a lens table carried into the Findings '
           'Index and every index row raised by a lens; the CHECK table; index '
           'IDs, lenses, verdicts, severities and Confidence legal; every '
           'mandated Scorecard row present '
-          'and every derived count equal to the index; every Evidence quote '
-          f'verbatim at its citation; and these mandated sections: {traces}.')
+          'and every derived count equal to the index; '
+          f'{evidence}and these mandated sections: {traces}.')
+    if args.no_artifact:
+        print('skipped (--no-artifact): the artifact hash, whether any cited '
+              'file or line exists, and whether any Evidence quote appears in '
+              'the artifact — no artifact was supplied, so nothing in this '
+              'review was checked against what it reviewed.')
     print('not checked: whether any finding is real, whether a severity is '
           'right, whether a lens was applied well, whether the cycle bound or '
           'the done-rule was respected, or whether the Exit Estimate has a '
