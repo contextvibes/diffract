@@ -302,8 +302,9 @@ Findings Index with `W5H1` in the Lens column.
 
 **Known deviation — your prior says otherwise.** The name echoes
 journalism's 5W1H, but W5H1 asks four of the six on purpose (above).
-Independent reviewers have repeatedly raised the name as a defect, and each
-time it was ruled deliberate (issue #31). A finding against it needs
+RQ5 reviewers, self-review cycle 5 and the v0.3.0 validation cycles each
+raised the name as a defect, and vetting ruled it deliberate each time
+(issue #31). A finding against it needs
 evidence beyond the mismatch with 5W1H.
 
 ### CHECK (vet every finding through governors)
