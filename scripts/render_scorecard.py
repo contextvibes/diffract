@@ -34,7 +34,8 @@ Run from the repository root:
     python3 scripts/render_scorecard.py REVIEW.md --write   # rewrite in place
 Exit 0 if the review's counts already agreed, 1 if any were corrected, 2 if
 something was refused rather than corrected — an index the checker rejects, no
-Scorecard, or a `Lenses run` claim higher than the lens sections present.
+Scorecard, a `Lenses run` claim higher than the lens sections present, or a
+`Lenses run` value not in PROMPT.md's `X of 10` form.
 
 `Lenses run` is corrected in one direction only. A number lower than the
 sections present is a counting slip and is corrected like any count. A number
@@ -146,6 +147,20 @@ def render(review, prompt_path=None):
                 prompt_path or check_review.default_prompt(), failures)
             found, _ = check_review.lens_sections(review, lenses)
             present = sum(1 for name in lenses if name in found)
+            pattern = check_review.lenses_run_pattern(vocab)
+            readable = pattern and pattern.match(check_review.unescape(value))
+            if not readable:
+                # Not a count this script can correct: `9/10` used to have
+                # its 9 rewritten and its form kept, so the output still
+                # failed the checker. PROMPT.md states the form; a value
+                # outside it is the reviewer's to restate (issue #41, call 6).
+                form = vocab['lenses_run_form'].replace('{run}', 'X')
+                refused.append(
+                    f'Lenses run value {value.strip()[:40]!r} does not open in '
+                    f"PROMPT.md's form {form!r}; restate it, there are "
+                    f'{present} lens sections present')
+                return line
+            stated = readable
             if stated and int(stated.group(1)) < present:
                 # A low claim is a counting slip: the sections are there.
                 changes.append(f'Lenses run: {stated.group(1)} -> {present}')

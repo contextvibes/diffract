@@ -56,6 +56,62 @@ shows a short text example of the output (#1). The example
 says Diffract ships prompt-only, and the severity-trend idea from #29 is
 on the ROADMAP.
 
+**`scope: path` can say which path.** The config's closed key list
+permitted `scope: path` but had no key to carry the path, so a config
+choosing it could not say what to review (#42). A `path` key now names
+the subtree, and PROMPT.md states one outcome for each combination of
+the two keys: a usable `path` under `scope: path` reviews that subtree;
+a missing or unusable one is reported and the run falls back to a full
+review rather than to a scope the reviewer picks; a `path` under any
+other scope is reported and ignored. The key list is still read from
+PROMPT.md, so `check.py` accepts `path` in `examples/diffract.yaml`
+because PROMPT.md names it, and fails it again if PROMPT.md stops. The
+config schema string stays `0.2`: the key is optional, and a config
+without it means what it meant before.
+
+**The entry gate asks what is missing.** Its six outcomes were
+descriptions that overlapped: when a check's *target* rather than its
+tool was absent, "cannot be run", "nothing to run against" and "checks
+fail" all fit, and the blind reviewer in cycle 6 had to pick a tag by
+argument (#40). Each check is now classified by one ordered test — is
+its target missing from the artifact, outside a declared subset, is its
+tool missing, or neither — and the run's outcome follows from a second
+table with one row per combination of results. The partial tag names,
+for each check not run, whether the tool or the target was missing,
+because those are different claims about the run. Two regression tests
+read both tables from PROMPT.md and fail if two of the cases collapse
+into one result or one tag. The two frozen semver reviews classified an
+offline link check as "nothing to run against" with no tag; under the
+new table that is a missing tool and `[entry partial: …]`. They are
+hash-pinned evidence and are not re-synced.
+
+**PROMPT.md carries its lists in a form a script can read.** Every
+closed list the scripts enforce was scraped out of PROMPT.md's prose by
+a regex of its own, and the mandated traces were not read at all: they
+were a table in `check_review.py`, held to PROMPT.md by a phrase search
+(#51). A fenced `json diffract-spec` block at the end of PROMPT.md now
+carries the closed lists — lenses with icons, questions and ID abbreviations,
+verdicts, Severity, Confidence, tags, config keys, values, default and
+range, the lens-output literals, the Scorecard rows, the `Lenses run`
+form, and the mandated and conditional traces. `check_review.py` and
+`render_scorecard.py` read their vocabulary from the block, and
+the trace table is gone. Some literals stay in code: the verdict and
+severity strings `derived_counts` adds up, the ID finder, and the
+Integrity words `requires_quotes` looks for. A PROMPT.md without the
+block, such as 0.4.0's passed with `--prompt`, now fails closed. A reviewer reads the same block. `check.py`
+reads every list back out of the prose at the site that defines it and
+fails the release on any difference between the two, which replaces the
+phrase search, and it fails a block that leaves out a Scorecard row the
+scripts derive. Two of the six judgment calls left open under #41 are
+settled here: the traces are derived, and a `Lenses run` value that does
+not open `X of 10` now fails the checker and is refused by
+`render_scorecard.py`, where the checker used to skip it and the renderer
+used its leading number. The prose parsers did
+not go away, they moved: the release gate still reads Markdown with
+regular expressions to compare it with the block, and a review is still
+parsed the same way, so #43's hand-parsing finding is narrowed, not
+closed.
+
 PROMPT.md changed, so every measured reviewer tier is stale until
 re-measured against this text.
 

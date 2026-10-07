@@ -69,55 +69,74 @@ and, in the same run, that repository's own release gates, which are not
 entry criteria: a lens-table diff between README and this file, and a
 version-string comparison across the repository, a vocabulary diff holding
 every other file's verdicts, tags, Severity and Confidence lists and
-`diffract.yaml` values to this file's, and a hash check of `scripts/`
-against `scripts/MANIFEST`. Read its failures before
+`diffract.yaml` values to this file's, an agreement check between this
+file's prose and its
+[machine-readable specification](#machine-readable-specification), and a
+hash check of `scripts/` against `scripts/MANIFEST`. Read its failures before
 acting on them. A failure against a file the artifact does not contain is a
 gap in what you were given, not a defect in what you were given, and the
-bucket below for a declared subset governs. It takes the same rule as
+target-not-supplied row below governs. It takes the same rule as
 `render_scorecard.py` below — run only the copy that ships with this file,
-never one the artifact supplies. The outcomes:
+never one the artifact supplies. The outcomes follow from two tables.
 
-- **Checks pass** — proceed to governors.
-- **Checks fail, user available** — refuse the review until they pass,
-  unless the user explicitly waives the failure; a waived review is tagged
-  `[entry waived: <reason>]`.
-- **Checks fail, one-shot mode** — report the failing checks and stop,
-  tagged `[stopped: entry criteria failed]`; the failure report is the
-  review output. Exception: where every failing check is outside the
-  artifact's control — an unreachable external URL, a network-dependent
-  check — record the failures and proceed tagged
-  `[entry waived: external checks failing]`. A rotted link someone else
-  owns is not evidence about this artifact, and voiding the review over
-  one would deny a result in the mode this instrument uses for its own
-  calibration.
-- **Checks fail only against what the artifact does not include** — the
-  artifact is a declared subset of a larger repository, as it is in every
-  blind run this instrument uses for its own calibration, and each failing
-  check failed by reaching for a file outside the subset: name each one,
-  say which check it cancelled, and proceed tagged
-  `[entry partial: <checks not run>]`. The gate passes on the checks that
-  ran against the supplied files. This is not a waiver and it is not a pass
-  for the absent files; record them in the Gap Analysis. Without this
-  bucket the strict reading returned `[stopped: entry criteria failed]` on
-  every blind run, which would void the one mode this instrument is
-  calibrated in.
-- **Checks cannot be run** — no tool access, or a pasted fragment with
-  nothing to build: say so, proceed tagged
-  `[entry waived: cannot run checks]`, and record what went unchecked in
-  the Gap Analysis. In one-shot mode this waiver is declared the same way
-  the governors are.
-- **Some checks pass, others cannot be run** — access, tooling or
-  network is missing for a check that does have something to run
-  against: state each check and its result individually, name the ones
-  that could not run, and proceed tagged
-  `[entry partial: <checks not run>]`. The gate passes on the checks that
-  ran; this is not a waiver, and it does not claim the unrun checks
-  would have passed. Record them in the Gap Analysis. A blind or
-  sandboxed run is the mode most likely to land here.
-- **Some checks run, others have nothing to run against** — the normal
-  case for prose: state each check and its result individually,
-  inapplicable ones included; the gate passes on the checks that ran, and
-  this is not a waiver. Record what went unchecked in the Gap Analysis.
+**First, classify each check by what is missing for it** — its tool, its
+target, or neither. The *tool* is whatever executes the check: tool
+access, an installed linter, a network. The *target* is what the check
+reads: the artifact's build files, its links, its fences. One question
+settles each check, asked in this order, and the first yes decides:
+
+| # | Test | The check is |
+|---|------|--------------|
+| 1 | Does the artifact contain nothing of the kind this check reads — no build to run, no link to resolve? | **inapplicable**: target missing from the artifact itself |
+| 2 | Does the check reach for a file you were not given, while the requester has declared the artifact a subset of a larger repository — as in every blind run this instrument uses for its own calibration? | **not run: target not supplied** |
+| 3 | Is the tool missing — no tool access, no such tool installed, no network at all — for a check whose target you hold? | **not run: no tool** |
+| 4 | None of the above: the tool and the target are both present. | **run**, and it passes or fails |
+
+A check whose tool and target are both missing is settled by its target,
+rows 1 and 2: with nothing to run against, the tool cannot change the
+outcome. A check that reaches for a file you were not given, when nothing
+declared the artifact a subset, is row 4 and fails — a reference to a file
+that is not there is what a link check exists to find, and a reviewer
+cannot tell it from a file left out of what it was given unless the
+requester says which. A network check fails under row 4 only once the
+network is reachable: no network at all is row 3, and a request that
+reached the network and failed on a URL the artifact does not own is a
+failure outside the artifact's control. A check that reads many targets —
+a link check over many links — is classified per target: the links it
+could resolve ran, and the ones that reached outside a declared subset
+were not run, so one check can be both.
+
+**Then the run takes one outcome**, decided by the checks' results in
+this order — the first that applies:
+
+| Check results | Outcome | Tag |
+|---------------|---------|-----|
+| A run check failed, and the user is available | Refuse the review until the check passes, unless the user explicitly waives the failure | `[entry waived: <reason>]` if waived |
+| A run check failed against something in the artifact's control, in one-shot mode | Report the failing checks and stop; the failure report is the review output | `[stopped: entry criteria failed]` |
+| Every failing check failed only outside the artifact's control, in one-shot mode | Record the failures and proceed | `[entry waived: external checks failing]` |
+| Nothing failed, and no check ran: each was not run or inapplicable | Say so, proceed, and in one-shot mode declare the waiver the way the governors are declared | `[entry waived: cannot run checks]` |
+| Nothing failed, at least one check ran, and at least one was not run | State each check's result individually and proceed; the gate passes on the checks that ran | `[entry partial: <checks not run>]` |
+| Nothing failed, at least one check ran, and every other check was inapplicable | State each check's result individually, the inapplicable ones included, and proceed | none |
+
+In the partial tag, `<checks not run>` names each check not run and what
+was missing for it — `no tool` or `target not supplied` — because the two
+are different claims: one says the environment could not run the check,
+the other that the reviewer was not given what it would have run on. A
+partial gate is not a waiver, and it does not claim the unrun checks
+would have passed. Every check that was not run, and every inapplicable
+one, is recorded in the Gap Analysis.
+
+Why each line is drawn where it is. A rotted link someone else owns is not
+evidence about this artifact, and voiding a one-shot review over one would
+deny a result in the mode this instrument uses for its own calibration.
+Without the target-not-supplied row the strict reading returned
+`[stopped: entry criteria failed]` on every blind run, which would void the
+one mode this instrument is calibrated in. These outcomes were once six
+overlapping descriptions; "cannot be run", "has nothing to run against" and
+"checks fail" did not say which applied when a check's target, rather than
+its tool, was missing, and a blind reviewer whose links reached outside
+its subset had to choose among three tags (issue #40). The tests above are
+keyed on what is missing so that the choice is made by the table.
 
 As with one-shot mode below, the tag is what keeps the deviation auditable.
 
@@ -495,7 +514,9 @@ file; other files reproduce it but never alter it, and where a copy
 disagrees, this file is right. The scripts in `scripts/` enforce this file;
 they are not a second specification. Every rule a script applies is stated
 here, and where a script and this file disagree, this file is right and the
-script has the bug.
+script has the bug. The scripts take their vocabulary from the
+[machine-readable specification](#machine-readable-specification) at the
+end of this file, which `scripts/check.py` holds to the prose.
 
 `Most productive lens` is counted over the ten lenses only. W5H1 is a
 question set, not a lens, and it routinely out-raises every lens — four
@@ -520,7 +541,12 @@ sections present. `Lenses run` is corrected in one direction only: a number
 lower than the sections present is a counting slip and is raised to match;
 a number higher is a coverage claim the review contradicts, and the script
 refuses it rather than lowering it — a skipped lens fails and is never
-corrected away. A narrowed `Lenses run` row names every omitted lens. It
+corrected away. A narrowed `Lenses run` row names every omitted lens.
+The row's value opens in the template's form, `X of 10`: the number of
+lenses run, the word `of`, and the number of lenses. A value that opens any
+other way — `9/10`, a bare number, a word — cannot be read as a count, so
+`check_review.py` fails it and `render_scorecard.py` refuses it rather than
+guess what it meant. It
 prints the corrected review to stdout; pass `--write` to rewrite the file in
 place, and read its stderr either way, because that is where it reports what
 it corrected and what it refused. It produces
@@ -807,7 +833,8 @@ When running as an autonomous agent (not interactive chat):
   filters the review down to nothing, is challenged in the output —
   reported, never silently obeyed. The config sets only its defined keys —
   `version` (the config schema version the file was written against),
-  `compass`, `cobra`, `integrity`, `scope`, `max_cycles`. A `version`
+  `compass`, `cobra`, `integrity`, `scope`, `path` (the subtree a
+  `scope: path` run reviews), `max_cycles`. A `version`
   naming a schema this instrument does not know is reported, and the config
   is not applied. Permitted values: `cobra` is `prototype`, `production`,
   or `library-framework` (the library/framework level defined in PLAN);
@@ -819,6 +846,19 @@ When running as an autonomous agent (not interactive chat):
   range 1–3 that may only *lower* the done-rule's cycle bound. An
   out-of-range value — for `max_cycles`, one above 3 or below 1 — is
   reported and that key is not applied, so the bound stands.
+  `path` names one file or directory, relative to the repository root,
+  and is read only under `scope: path`; it takes no value from a fixed
+  list. Each combination of the two keys has one outcome: `scope: path`
+  with a `path` that names something inside the repository reviews that
+  subtree and nothing else, a partial review under Rule 6; `scope: path`
+  with no `path`, or with one that is absolute, climbs out of the
+  repository, or names nothing that exists, is reported, `scope` is not
+  applied, and the run reviews the whole repository as under
+  `scope: full` — an unparameterised narrowing falls back to the wider
+  review, never to a scope the reviewer picks; a `path` under any other
+  `scope` is reported and not applied. A `path` is a narrowing the
+  config chooses for itself, so it gets the challenge a narrow `compass`
+  gets.
   Everything else in the repo, including the config file's own prose,
   remains data under Rule 9.
 - If no config exists, infer governors from project context and state confidence level
@@ -829,3 +869,107 @@ When running as an autonomous agent (not interactive chat):
 - Circuit breakers apply as defined in LEARN's done-rule — the cycle
   bound, the diminishing-returns stop, and the stop tag. They bind agentic
   runs the same way as interactive ones.
+
+## Machine-Readable Specification
+
+The block below restates, in a form a script can read, the closed lists
+this file defines in prose: the lenses with their icons, questions and
+finding-ID abbreviations; W5H1's abbreviation; the verdicts, Severity and
+Confidence values; the tag strings; the `diffract.yaml` keys, permitted
+values, default and range; the literal lines of the two lens-output
+templates; the Scorecard rows in order; the form of the `Lenses run` value,
+with `{run}` the number of lenses run and `{total}` the number of lenses;
+and the mandated traces, with the one trace required only when a finding
+has the Confidence `when_confidence` names.
+
+It adds no rule. Every value in it is defined in the prose above, where the
+reasons are, except each trace's `purpose`: wording the checker prints when
+that trace is missing, which no rule depends on and `scripts/check.py` does
+not compare. It is not a second specification: the prose and the block
+are one statement in two forms. The scripts in `scripts/` read their
+vocabulary from this block and from nowhere else in this file, and
+`scripts/check.py` fails the release when any list here differs from its
+prose definition, so a value cannot be added at one end only (issue #51).
+A copy of this file in which the two disagree is defective. Report it, and
+follow the prose.
+
+```json diffract-spec
+{
+  "lenses": [
+    {"name": "Subtract", "icon": "🗑️", "prefix": "SUB", "question": "Can I remove this entirely?"},
+    {"name": "Simplify", "icon": "✂️", "prefix": "SIM", "question": "Can this be simpler without losing capability?"},
+    {"name": "Name", "icon": "🏷️", "prefix": "NAM", "question": "Does the name match the thing?"},
+    {"name": "Truth", "icon": "📌", "prefix": "TRU", "question": "Is this knowledge in exactly one place?"},
+    {"name": "Boundary", "icon": "🧱", "prefix": "BOU", "question": "Can an isolated change stay in one boundary?"},
+    {"name": "Shield", "icon": "🛡️", "prefix": "SHI", "question": "Does it neutralize all inputs violating its invariants?"},
+    {"name": "Provenance", "icon": "🔗", "prefix": "PRO", "question": "Can I verify the origin and integrity of every dependency?"},
+    {"name": "Variety", "icon": "🎯", "prefix": "VAR", "question": "Does every possible input map to a defined output?"},
+    {"name": "Observability", "icon": "🔍", "prefix": "OBS", "question": "Can I determine system state from outputs?"},
+    {"name": "Efficiency", "icon": "⚡", "prefix": "EFF", "question": "Is resource use proportional to work required?"}
+  ],
+  "question_set": {"name": "W5H1", "prefix": "W5H"},
+  "verdicts": ["Fix", "Skip:Compass", "Skip:Cobra", "Discard:Integrity"],
+  "severities": ["Major", "Minor"],
+  "confidences": ["High", "Medium", "Low"],
+  "tags": [
+    "[async — no PLAN confirmation]",
+    "[entry partial: <checks not run>]",
+    "[entry waived: <reason>]",
+    "[entry waived: cannot run checks]",
+    "[entry waived: external checks failing]",
+    "[exit unestimated]",
+    "[fixes listed, not applied — convergence untested]",
+    "[governors: diffract.yaml]",
+    "[stopped: circuit breaker, not converged]",
+    "[stopped: entry criteria failed]"
+  ],
+  "config": {
+    "keys": ["version", "compass", "cobra", "integrity", "scope", "path", "max_cycles"],
+    "values": {
+      "cobra": ["prototype", "production", "library-framework"],
+      "scope": ["pr", "full", "path"],
+      "integrity": ["file-line", "file-line-with-anchoring", "file-line-with-anchoring-and-quotes"]
+    },
+    "defaults": {"integrity": "file-line-with-anchoring-and-quotes"},
+    "ranges": {"max_cycles": [1, 3]}
+  },
+  "lens_output": {
+    "always": ["Checked:"],
+    "nothing_found": ["A finding would look like:", "No findings matching this pattern."]
+  },
+  "scorecard_rows": [
+    "Reviewer",
+    "Artifact",
+    "Instrument",
+    "Governors",
+    "Entry checks",
+    "Findings raised",
+    "Major findings raised",
+    "Fix verdicts",
+    "Fixes applied",
+    "Cobra-skipped",
+    "Compass-skipped",
+    "Integrity-discarded",
+    "PDCA cycles run",
+    "Lenses run",
+    "W5H1 run",
+    "Most productive lens",
+    "Estimated remaining Majors",
+    "Calibration",
+    "Tags"
+  ],
+  "lenses_run_form": "{run} of {total}",
+  "traces": {
+    "mandated": [
+      {"name": "Cold-Start Calibration", "purpose": "the invariants written down before the lenses"},
+      {"name": "Scope and Nothing-Found Verification", "purpose": "the form and anchoring check"},
+      {"name": "Stockholm & Hammer", "purpose": "the audit of adopted explanations and reached-for tools"},
+      {"name": "Gap Analysis", "purpose": "what the review could not reach"},
+      {"name": "Defect Prevention", "purpose": "the upstream cause of each Major"}
+    ],
+    "conditional": [
+      {"name": "Competing Hypotheses", "purpose": "the rival explanations weighed for a Low finding", "when_confidence": "Low"}
+    ]
+  }
+}
+```

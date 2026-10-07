@@ -9,10 +9,12 @@
 # proceeds on the config alone, tagged [governors: diffract.yaml].
 
 # Config schema version — the key set this file was written against
-# (version, compass, cobra, integrity, scope, max_cycles), normative in
-# PROMPT.md's Agentic Execution section. Unchanged since 0.2. A reviewer
-# that does not know this schema reports the mismatch and does not apply
-# the config.
+# (version, compass, cobra, integrity, scope, path, max_cycles), normative
+# in PROMPT.md's Agentic Execution section. The string still reads 0.2:
+# `path` was added after it without a schema bump, as an optional key read
+# only under `scope: path`, so a config that omits it means what it meant
+# before. A reviewer that does not know this schema reports the mismatch
+# and does not apply the config.
 version: "0.2"
 
 # 🧭 Compass — What are we looking for?
@@ -37,11 +39,17 @@ integrity: file-line-with-anchoring-and-quotes
 # Options:
 #   pr   — Review only changed files + direct dependents (git diff)
 #   full — Review the entire codebase
-#   path — Review a specific subtree (requires user to specify path)
+#   path — Review one subtree, named by the `path` key below
 # Any value other than `full` produces a partial review. Name what it left
 # out in the Gap Analysis — see PROMPT.md rule 6. Setting this key is not
 # the disclosure.
 scope: pr
+
+# 📁 Subtree for `scope: path` — a file or directory relative to the repo
+# root. Read only under `scope: path`; under any other scope it is reported
+# and not applied. `scope: path` with no usable `path` falls back to a full
+# review — PROMPT.md's Agentic Execution section states each case.
+# path: src/payments
 
 # 🔄 PDCA Circuit Breakers
 max_cycles: 3          # Maximum PDCA iterations before stopping
