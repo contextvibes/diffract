@@ -29,6 +29,18 @@ on unescaped pipes (#43). The checks pass their failure list explicitly
 `check.py` (#46). Each of these comes with a regression test in
 `scripts/test_scripts.py`, which CI runs.
 
+**Every published review now passes the checker in CI.**
+`examples/web-service.md` had only its Scorecard arithmetic checked, and
+it failed `check_review.py`: its W5H1 table carried an extra column, so
+W5H-1 and W5H-2 sat in the Findings Index but in no lens table, and the
+section had no `Checked:` line. The section now uses the Output A format,
+with the same two findings. The example is anonymized and its artifact is
+not in the repo, so `check_review.py` gains `--no-artifact`, which skips
+the artifact hash, citation existence and quote verification, says so in
+its pass output, and refuses any review that carries an Evidence quote or
+whose Integrity governor requires one, since no quote can be verified. CI runs it on that example
+(#54).
+
 **One claim retired.** Mechanism 5, cognitive anchoring, no longer
 claims to detect that a reviewer read the artifact: a generic anchor can
 be written without opening it. Three of the thirteen mechanisms are

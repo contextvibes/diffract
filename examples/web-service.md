@@ -101,11 +101,13 @@ nested loop producing O(n²) where O(n) is achievable.
 No findings matching this pattern.
 
 ### W5H1
-| Q | ID | File | Finding | Line | Severity | Confidence |
-|---|---|------|---------|------|----------|------------|
-| Why | W5H-1 | cmd/server/main.go | No comment explaining 35s write timeout | 35 | Minor | Medium |
-| Why | W5H-2 | internal/vendors/parse.go | No comment explaining backward-compat field name fallback | 74 | Minor | Medium |
-| When | — | — | Session cookie expiry — already raised as SHI-2, not counted again | — | — | — |
+Checked: Why — rationale for non-obvious constants and fallbacks; When — expiry and timeouts.
+| ID | File | Finding | Line | Severity | Confidence |
+|----|------|---------|------|----------|------------|
+| W5H-1 | cmd/server/main.go | Why: no comment explaining 35s write timeout | 35 | Minor | Medium |
+| W5H-2 | internal/vendors/parse.go | Why: no comment explaining backward-compat field name fallback | 74 | Minor | Medium |
+
+When: session cookie expiry — already raised as SHI-2, not counted again.
 
 ## CHECK
 

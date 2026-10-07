@@ -595,5 +595,59 @@ class Fixtures(unittest.TestCase):
         self.assertIn("'Lenses run' value '10/10", out)
 
 
+    # -- issue #54: a review without its artifact, checked honestly -------
+
+    def test_54_no_artifact_names_what_it_skipped(self):
+        code, out = run('check_review.py', WEB, '--no-artifact')
+        self.assertEqual(code, 0, out)
+        self.assertIn('skipped (--no-artifact): the artifact hash', out)
+        self.assertIn('NOT verified: no artifact', out)
+        self.assertNotIn('verbatim at its citation', out)
+        self.assertNotIn('verified verbatim', out)
+
+    def test_54_no_artifact_refuses_a_review_that_requires_quotes(self):
+        for review in (EXAMPLE, SEEDED):
+            code, out = run('check_review.py', review, '--no-artifact')
+            self.assertEqual(code, 1, f'{review}\n{out}')
+            self.assertIn('Integrity governor requires a verbatim quote', out)
+            self.assertNotIn('all checks pass', out)
+
+    def test_54_no_artifact_refuses_an_unrequested_quote(self):
+        # A quote present is verified or the review fails; without the
+        # artifact it cannot be verified, required or not.
+        text = read(WEB)
+        self.assertNotIn('\n  > ', text)
+        heading = '\n## FINDINGS INDEX'
+        self.assertIn(heading, text)
+        block = ('\n## Evidence\n\n- W5H-1 — cmd/server/main.go:35\n'
+                 '  > a quote no one can check\n')
+        review = self.write('quoted.md', text.replace(heading, block + heading, 1))
+        code, out = run('check_review.py', review, '--no-artifact')
+        self.assertEqual(code, 1, out)
+        self.assertIn('Evidence quote block(s) present', out)
+        self.assertNotIn('all checks pass', out)
+
+    def test_54_artifact_or_no_artifact_is_required_and_exclusive(self):
+        code, out = run('check_review.py', WEB)
+        self.assertEqual(code, 2, out)
+        code, out = run('check_review.py', WEB, '--no-artifact', '--artifact', EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 2, out)
+
+    def test_54_no_artifact_still_runs_the_form_checks(self):
+        text = read(WEB)
+        checked = 'Checked: Why — rationale'
+        self.assertIn(checked, text)
+        review = self.write('no-checked.md', text.replace(checked, 'Why — rationale', 1))
+        code, out = run('check_review.py', review, '--no-artifact')
+        self.assertEqual(code, 1, out)
+        self.assertIn("W5H1: no 'Checked:' line", out)
+        row = '| W5H-2 | internal/vendors/parse.go |'
+        self.assertIn(row, text)
+        review = self.write('no-row.md', text.replace(row, '| Why | W5H-2 | internal/vendors/parse.go |', 1))
+        code, out = run('check_review.py', review, '--no-artifact')
+        self.assertEqual(code, 1, out)
+        self.assertIn('W5H-2: in the Findings Index, raised in no lens table', out)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
