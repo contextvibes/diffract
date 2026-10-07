@@ -1,5 +1,16 @@
 # Research: Calibration Reproducibility (RQ3)
 
+> **Author-graded.** Designed, run and analysed by the party that authored the
+> instrument under test. The judgment-dependent results — claim clusters,
+> stability, tier assignments — have not been checked by anyone independent of
+> that party (issue #26).
+>
+> **A record of method only.** Its claims were clustered under no written
+> equivalence rule, so its clusters and every count built on them cannot be
+> reproduced. They are left as published, not re-derived. The rule in
+> [calibration](../calibration.md#clustering-claims) applies from 0.5.0 on
+> (issue #22).
+
 ## Research Question
 
 > Diffract claims that same artifact + same lenses + different reviewer =

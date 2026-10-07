@@ -30,8 +30,9 @@ exactly. Do not skip steps. Do not fix issues during analysis.
   DO → CHECK → LEARN flow continuously unless the user interrupts.
 - **Show every lens in the run's scope** (Rule 6 governs scope). Even when
   a lens has no findings, show the
-  cognitive anchoring (describe what a finding *would* look like — this
-  proves you examined the artifact, not just skimmed it).
+  cognitive anchoring (describe what a finding *would* look like). It is
+  required form, not evidence that you read the artifact: a generic anchor
+  can be written without opening it.
 - **Use tables for data, prose for judgment.** Findings go in tables.
   Explanations of Cobra/Compass decisions go in prose.
 - **Be kind.** Honesty without kindness is cruelty. Findings are about the
@@ -66,7 +67,10 @@ gate must be visible in the output, not assumed. For a review of the
 Diffract repository itself, `scripts/check.py` implements these checks —
 and, in the same run, that repository's own release gates, which are not
 entry criteria: a lens-table diff between README and this file, and a
-version-string comparison across the repository. Read its failures before
+version-string comparison across the repository, a vocabulary diff holding
+every other file's verdicts, tags, Severity and Confidence lists and
+`diffract.yaml` values to this file's, and a hash check of `scripts/`
+against `scripts/MANIFEST`. Read its failures before
 acting on them. A failure against a file the artifact does not contain is a
 gap in what you were given, not a defect in what you were given, and the
 bucket below for a declared subset governs. It takes the same rule as
@@ -126,6 +130,12 @@ Diffract: [version]
 ⚖️ Integrity: [evidence rules — default: file:line per lens, cognitive anchoring
             required, every finding carries a verbatim quote of the text it cites]
 ```
+
+Write each governor on a line of its own that opens with its name and a
+colon; a line that continues one is indented. The ⚖️ Integrity line says in
+words whether this run requires a quote per finding — `quote` or `verbatim`
+— and `scripts/check_review.py` reads it that way: a line that names
+neither requires none.
 
 **Cobra levels** — these definitions are normative; other files may
 reference them but never restate them:
@@ -213,6 +223,11 @@ No findings matching this pattern.
 incomplete.** Add the cognitive anchoring — this is how we verify you
 actually looked.
 
+The text outside the brackets in Output A and Output B is written exactly
+as shown. `scripts/check_review.py` reads it from these two templates: what
+both carry is required in every lens section, and what only Output B
+carries is required in a lens that found nothing.
+
 **Evidence blocks.** When the ⚖️ Integrity governor requires a verbatim
 quote per finding — the PLAN default — end DO with an `### Evidence`
 section carrying one block per finding, in index order:
@@ -230,9 +245,17 @@ section carrying one block per finding, in index order:
 
 The citation is `path:line`, `path:line-line`, or — for the non-code
 artifacts this file tells you to cite by section rather than by line —
-`path § Heading`, naming a heading that exists in that file. The quote is
+`path § Heading`, naming a heading that exists in that file. The path is
+the file's path as you were given it, or any trailing part of that path down
+to the bare filename; a path that is not a trailing part of a supplied file's
+path names some other file, and when a trailing part matches more than one
+supplied file, cite enough of the path to tell them apart. The quote is
 the artifact's own text, copied, never paraphrased or reflowed; the block
-is indented under the citation and each line is prefixed `>`. A finding
+is indented under the citation and each line is prefixed `>`. Each block
+opens with a list item, `- <ID> — <citation>`, as shown. Whitespace runs
+inside a line, and at either end of it, are not compared; line breaks are,
+so a reflowed quote does not match. A quote cited by heading may begin and
+end mid-line. A finding
 whose quote does not appear where it says it does is a fabrication,
 whether or not it was invented deliberately, and this is the one property
 of a review a reader can check without repeating it.
@@ -277,12 +300,24 @@ W5H1 findings use the same Output A row format, severity rules, and
 anchoring duty as lens findings, with IDs `W5H-<n>`; they appear in the
 Findings Index with `W5H1` in the Lens column.
 
+**Known deviation — your prior says otherwise.** The name echoes
+journalism's 5W1H, but W5H1 asks four of the six on purpose (above).
+RQ5 reviewers, self-review cycle 5 and the v0.3.0 validation cycles each
+raised the name as a defect, and vetting ruled it deliberate each time
+(issue #31). A finding against it needs
+evidence beyond the mismatch with 5W1H.
+
 ### CHECK (vet every finding through governors)
 
 This phase carries a heading of its own in the review, and the Competing
 Hypotheses blocks below sit under it. Both are output requirements, not just
 working steps: a mandated step that leaves no named trace can be attested to
 but not checked, which is the whole reason the traces exist.
+Each trace is a heading, or a bold label opening a line, that carries the
+step's name: Cold-Start Calibration, Scope and Nothing-Found Verification,
+Stockholm & Hammer, Gap Analysis, Defect Prevention, and — where a
+Low-Confidence finding exists — Competing Hypotheses. A name mentioned in
+passing is not a trace.
 
 **Head it `## CHECK` in the review**, with any subsections under it at level
 3. `### CHECK` is also accepted, and then its subsections must be level 4 —
@@ -319,6 +354,13 @@ against Compass or Cobra; one that clears Integrity but fails Compass is
 `Skip:Compass` and is never tested against Cobra. Reviewers applying the
 governors in another order return different verdicts on the same finding.
 
+**Grade against the artifact's definitions, not canon's.** Where the
+artifact defines a concept itself, a finding that it misuses that concept
+quotes the artifact's own definition. A finding graded against a textbook
+version the artifact has deliberately replaced has not established its
+premise: `Discard:Integrity`. Where the artifact gives no definition of its
+own, canon is the standard — a misattribution is still a finding.
+
 #### Competing Hypotheses (Low Confidence only)
 
 Before a **Low**-Confidence finding receives its verdict, weigh competing
@@ -333,9 +375,10 @@ Medium-Confidence findings skip this step — the cost stays proportional to
 the doubt.
 
 **Where it goes.** The weighing appears immediately below the CHECK table,
-one block per Low-Confidence finding, naming the hypotheses, the
-discriminating evidence, and the surviving hypothesis. This is what makes
-the step auditable: the CHECK table's Confidence column says which rows owed
+one block per Low-Confidence finding, naming the finding's ID, the
+hypotheses, the discriminating evidence, and the surviving hypothesis,
+under a heading or bold label that carries the words Competing Hypotheses.
+This is what makes the step auditable: the CHECK table's Confidence column says which rows owed
 a block, and a `Low` row with no block below the table did not receive the
 step. A mandated step that leaves no trace in the mandated output cannot be
 checked by anyone but the reviewer who claims to have run it.
@@ -386,7 +429,9 @@ Treat a ✓ as a prompt to look at that lens again, not as evidence it is clean.
 **Stockholm & Hammer Audit:** Ask yourself: *"Did I let any issues pass
 because I empathized with the author's explanation (Stockholm)? Did I
 accept over-engineering because it matches a familiar pattern (Golden
-Hammer)?"*
+Hammer)? Did I grade anything against the canonical version of a concept
+rather than the definition written here (Golden Hammer, turned on the
+reviewer)?"*
 
 #### User Override
 
@@ -447,14 +492,19 @@ Summarize the review outcome. This makes results comparable across
 reviews. The review output format — the Scorecard and Findings Index
 templates, the verdict strings, and the tag strings — is normative in this
 file; other files reproduce it but never alter it, and where a copy
-disagrees, this file is right.
+disagrees, this file is right. The scripts in `scripts/` enforce this file;
+they are not a second specification. Every rule a script applies is stated
+here, and where a script and this file disagree, this file is right and the
+script has the bug.
 
 `Most productive lens` is counted over the ten lenses only. W5H1 is a
 question set, not a lens, and it routinely out-raises every lens — four
 findings against a leader of two in `examples/semver-2.0.0-review.md` — so
 counting it would make it the answer on almost any review. Its own
-`W5H1 run` row records that it ran. This rule is stated here because the
-hand path and the scripted path must produce the same document: it lived
+`W5H1 run` row records that it ran. On a tie, the row names the tied
+lenses, or the one the reviewer chose and why; `render_scorecard.py`
+rewrites only a row that names none of them. These rules are stated here
+because the hand path and the scripted path must produce the same document: it lived
 only in `render_scorecard.py`, where it was a rule the two paths could
 silently disagree about.
 
@@ -466,12 +516,18 @@ whose Scorecard contradicts its own index is recounted, not verified.
 **If you can run a script, do not count by hand.** `render_scorecard.py`
 reads the finished review and rewrites the derived rows — the count rows and
 `Most productive lens` from the index itself, `Lenses run` from the lens
-sections present. It prints the corrected review to stdout; pass `--write` to
-rewrite the file in place, and read its stderr either way, because that is
-where it reports what it corrected. It produces
+sections present. `Lenses run` is corrected in one direction only: a number
+lower than the sections present is a counting slip and is raised to match;
+a number higher is a coverage claim the review contradicts, and the script
+refuses it rather than lowering it — a skipped lens fails and is never
+corrected away. A narrowed `Lenses run` row names every omitted lens. It
+prints the corrected review to stdout; pass `--write` to rewrite the file in
+place, and read its stderr either way, because that is where it reports what
+it corrected and what it refused. It produces
 the same document you would have produced with the arithmetic done correctly,
-so a run that uses it and a run that does not are comparable. Where it runs, it
-is the authority. The instruction above remains the path for a reviewer with no
+so a run that uses it and a run that does not are comparable. Where it runs,
+its counts replace the hand count, and it is held to this file like every
+script. The instruction above remains the path for a reviewer with no
 tool access; arithmetic is not judgment, and neither path decides anything the
 other would decide differently.
 
@@ -546,9 +602,15 @@ per finding **raised** — skips and discards included, not fixes only.
 |----|------|-------|---------|----------|---------|----------------------|------------|
 ```
 
+**`Lens`** holds the lens's name, with or without its icon, or `W5H1`.
+
 **`Line(s)`** holds `file:line` (or `file § heading` for non-code
 artifacts); the file part is mandatory whenever the review covers more
 than one file.
+
+A literal `|` inside a cell of any table in the review — this index, the
+Scorecard, a lens table — is written `\|`, as Markdown table syntax requires;
+an unescaped one ends the cell, and every column after it shifts.
 
 **`Cycle`** holds the PDCA cycle in which the finding was raised. Together
 with the Scorecard's cycle count, this makes done-rule condition 1
@@ -614,8 +676,10 @@ stays true, because a check that derives them corrupts a correct review:
 Both are the reviewer's to state. Two further rows are numbers but not counts
 of rows here: `Lenses run` is a count of the review's lens *sections*, which is
 why `render_scorecard.py` derives it from the review body rather than from this
-table, and `Estimated remaining Majors` is a forecast, not a tally. Every other
-count in the Scorecard is a count of rows in this table.
+table — and corrects it only when it is lower than the sections present, since
+a higher one claims a lens that was not run — and `Estimated remaining Majors`
+is a forecast, not a tally. Every other count in the Scorecard is a count of
+rows in this table.
 
 Stating this as "two" when it was four was the same defect the rule exists to
 prevent — a counting policy that disagrees with the script implementing it —

@@ -5,8 +5,10 @@ This is the reference implementation of the deterministic entry checks
 PROMPT.md mandates for non-code artifacts — a reviewer running Diffract
 against this repo runs it at PLAN — plus the repo's own release gates that
 can be checked without judgment: link and anchor resolution, code-fence
-balance, version-string agreement, and a README-vs-PROMPT lens-table diff.
-Standard library only.
+balance, version-string agreement, a README-vs-PROMPT lens-table diff, every
+other file's verdicts, tags, Severity and Confidence lists and config values
+against PROMPT.md's, and the scripts against scripts/MANIFEST. Standard
+library only.
 
 Every check is independent: a file this repository does not have is one
 `FAIL:` line, never an exception that cancels the checks after it. Diffract
@@ -16,9 +18,13 @@ while looking like it ran.
 
 Run from the repository root: python3 scripts/check.py
 Exit code 0 = all checks pass; 1 = at least one failure (each is printed).
+
+`python3 scripts/check.py --write-manifest` regenerates scripts/MANIFEST after
+a script changes; the check then holds the scripts to it.
 """
 
 import glob
+import hashlib
 import os
 import re
 import sys
@@ -27,8 +33,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import check_review
 
 SKIP_DIRS = ('.claude', 'node_modules', '.git')
-
-failures = []
 
 
 def at_root():
@@ -62,19 +66,18 @@ def strip_code(text):
     return re.sub(r'`+[^`\n]*`+', '', strip_fenced(text))
 
 
-_anchor_cache = {}
-
-
-def anchors_of(path):
+def anchors_of(path, cache, failures):
     """GitHub-style slugs for every heading outside fenced code blocks.
 
     Cached: without it the target is re-read and re-parsed once per anchored
-    link, and one unreadable target appends one failure per link to it.
+    link, and one unreadable target appends one failure per link to it. The
+    cache belongs to one run of check_links(), not to the module, for the
+    reason the failure list does (issue #47).
     """
-    if path in _anchor_cache:
-        return _anchor_cache[path]
-    slugs = _anchor_cache.setdefault(path, set())
-    text = read(path)
+    if path in cache:
+        return cache[path]
+    slugs = cache.setdefault(path, set())
+    text = read(path, failures)
     if text is None:
         return slugs
     for heading in re.findall(r'^#+\s+(.*)$', strip_fenced(text), re.M):
@@ -84,7 +87,7 @@ def anchors_of(path):
     return slugs
 
 
-def read(path):
+def read(path, failures):
     """File contents, or None with a recorded failure."""
     try:
         with open(path) as handle:
@@ -94,7 +97,7 @@ def read(path):
         return None
 
 
-def check_versions():
+def check_versions(failures):
     """The version strings that are present must agree.
 
     An absent file used to cancel the comparison entirely, so on a partial
@@ -109,7 +112,7 @@ def check_versions():
     }
     values = {}
     for label, (path, pattern) in sources.items():
-        text = read(path)
+        text = read(path, failures)
         if text is None:
             continue
         found = re.search(pattern, text, re.M)
@@ -121,9 +124,9 @@ def check_versions():
         failures.append(f'version strings disagree: {values}')
 
 
-def check_fences():
+def check_fences(failures):
     for path in md_files():
-        text = read(path)
+        text = read(path, failures)
         if text is None:
             continue
         markers = len(re.findall(r'^```', text, re.M))
@@ -131,9 +134,10 @@ def check_fences():
             failures.append(f"{path}: unbalanced code fences ({markers} markers)")
 
 
-def check_links():
+def check_links(failures):
+    anchors = {}
     for path in md_files():
-        raw = read(path)
+        raw = read(path, failures)
         if raw is None:
             continue
         text = strip_code(raw)
@@ -146,26 +150,27 @@ def check_links():
             target = os.path.normpath(os.path.join(base, target_path)) if target_path else path
             if target_path and not os.path.exists(target):
                 failures.append(f"{path}: broken link {link}")
-            elif anchor and target.endswith('.md') and anchor not in anchors_of(target):
+            elif (anchor and target.endswith('.md')
+                  and anchor not in anchors_of(target, anchors, failures)):
                 failures.append(f"{path}: broken anchor {link}")
 
 
-def check_lens_table():
-    readme = read('README.md')
-    if readme is None or read('PROMPT.md') is None:
+def check_lens_table(failures):
+    readme = read('README.md', failures)
+    if readme is None or read('PROMPT.md', failures) is None:
         return
-    normative = check_review.normative_lens_rows('PROMPT.md')
-    failures.extend(check_review.failures)
-    check_review.failures.clear()
+    normative = check_review.normative_lens_rows('PROMPT.md', failures)
     if not normative:
         return
-    reproduced = [(check_review.plain(name), q.strip())
-                  for name, q in re.findall(r'^\| \d+ \| (.+?) \| (.+?) \|$', readme, re.M)]
+    # Escape-aware, like every other table parse here (cycle-6 VAR-3).
+    reproduced = [(check_review.unescape(cells[1]), cells[2].replace('\\|', '|'))
+                  for cells in check_review.table_rows(readme)
+                  if len(cells) == 3 and re.match(r'^\d+$', cells[0])]
     if normative != reproduced:
         failures.append(f'README lens table drifted from PROMPT.md: {set(normative) ^ set(reproduced)}')
 
 
-def check_enforced_strings():
+def check_enforced_strings(failures):
     """Every section check_review.py demands of a review is mandated in PROMPT.md.
 
     The general form of a defect this repository has now shipped four times: a
@@ -176,7 +181,7 @@ def check_enforced_strings():
     this gate holds the two ends together instead. A trace added to the
     checker fails the release until PROMPT.md mandates it.
     """
-    prompt = read('PROMPT.md')
+    prompt = read('PROMPT.md', failures)
     if prompt is None:
         return
     for phrase, purpose in (check_review.MANDATED_TRACES
@@ -187,15 +192,212 @@ def check_enforced_strings():
                 f'({purpose}), but PROMPT.md never mandates it')
 
 
+# Files the vocabulary-drift check leaves alone. CHANGELOG.md quotes
+# superseded definitions on purpose; the two reviews are hash-pinned and
+# quote-checkable, frozen at the instrument version that produced them, and
+# never re-synced (CONTRIBUTING.md, Release Gates).
+DRIFT_EXEMPT = (
+    'CHANGELOG.md',
+    os.path.join('examples', 'semver-2.0.0-review.md'),
+    os.path.join('calibration', 'semver-2.0.0-seeded-review.md'),
+)
+CONFIG_EXAMPLE = os.path.join('examples', 'diffract.yaml')
+
+
+def drift_files():
+    """Every Markdown and YAML file outside the exempt set, PROMPT.md included."""
+    found = list(md_files()) + sorted(glob.glob('**/*.y*ml', recursive=True))
+    return [p for p in found if p not in DRIFT_EXEMPT
+            and not any(part in p.split(os.sep) for part in SKIP_DIRS)]
+
+
+def tag_pattern(tag):
+    """A regex for one PROMPT.md tag string, its `<...>` parts as wildcards."""
+    parts = re.split(r'<[^>]+>', tag)
+    return re.compile('^' + '.+'.join(re.escape(p) for p in parts) + '$')
+
+
+def check_vocabulary_drift(failures):
+    """Every restatement of a closed vocabulary agrees with PROMPT.md.
+
+    PROMPT.md is normative for its verdicts, severities, Confidence bins, tag
+    strings, and diffract.yaml keys and values, and other files may point at
+    them but not restate them differently. That was checked by eye, and eye
+    checking let a README restatement drop a clause in the release that added
+    it (issue #39). This gate reads each vocabulary out of PROMPT.md and fails
+    any other file whose text uses a value outside it: a verdict-shaped
+    string, a tag-shaped string, a slash list of severities or Confidence
+    bins, a `key: value` config mention, and the example config's keys,
+    values, and `# Options:` blocks. It catches a wrong or missing value, not
+    a paraphrase of a definition — that is still a reviewer's job.
+    """
+    if read('PROMPT.md', failures) is None:
+        return
+    vocab = check_review.normative_vocabulary('PROMPT.md', failures)
+    tags = [tag_pattern(t) for t in vocab['tags']]
+    heads = {re.match(r'\[(\w+)', t).group(1) for t in vocab['tags']}
+    values = vocab['config_values']
+    for path in drift_files():
+        text = read(path, failures)
+        if text is None:
+            continue
+
+        def at(match):
+            return f'{path}:{text.count(chr(10), 0, match.start()) + 1}'
+
+        for m in re.finditer(r'\b(?:Skip|Discard):[A-Za-z]+', text):
+            if m.group(0) not in vocab['verdicts']:
+                failures.append(f'{at(m)}: {m.group(0)!r} is not a PROMPT.md verdict')
+        # A tag is a bracketed string whose first word heads a PROMPT.md tag;
+        # a Markdown link or reference ([text](url), [text][ref]) is not one.
+        for m in re.finditer(r'\[(\w+)\b[^\]\n]*(?:\n[^\]\n]*)?\](?![(\[])', text):
+            tag = re.sub(r'\s+', ' ', m.group(0))
+            if m.group(1) in heads and not any(t.match(tag) for t in tags):
+                failures.append(f'{at(m)}: tag {tag!r} matches no PROMPT.md tag string')
+        for key in ('severities', 'confidences'):
+            words = '|'.join(vocab[key])
+            for m in re.finditer(rf'\b(?:{words})(?:/(?:{words}))+\b', text):
+                if m.group(0).split('/') != vocab[key]:
+                    failures.append(f'{at(m)}: {m.group(0)!r} is not PROMPT.md\'s '
+                                    f'{"/".join(vocab[key])}')
+        for m in re.finditer(r'`(\w+): ([^`\s]+)`', text):
+            key, value = m.groups()
+            if key in values and value not in values[key]:
+                failures.append(f'{at(m)}: {key}: {value!r} is not a permitted value '
+                                f'({", ".join(values[key])})')
+    check_config_example(vocab, failures)
+
+
+def check_config_example(vocab, failures):
+    """examples/diffract.yaml sets only PROMPT.md's keys, to permitted values,
+    and each of its `# Options:` comments lists exactly the permitted values
+    and marks no default PROMPT.md does not name. The example is the one
+    config file a user copies, so a wrong option list in it is a wrong
+    config in theirs (found in the 2026-10-05 triage: it named a weaker
+    Integrity bar as the default)."""
+    text = read(CONFIG_EXAMPLE, failures)
+    if text is None:
+        return
+    lines = text.split('\n')
+    options = None
+    for number, line in enumerate(lines, 1):
+        where = f'{CONFIG_EXAMPLE}:{number}'
+        opened = re.match(r'^#\s*Options:(.*)$', line)
+        if opened:
+            options = (number, [opened.group(1)])
+            continue
+        if options and re.match(r'^#\s{2,}\S', line):
+            options[1].append(line[1:])
+            continue
+        setting = re.match(r'^(\w+):\s*(.*?)\s*(?:#.*)?$', line)
+        if setting:
+            key, value = setting.group(1), setting.group(2).strip('"\'')
+            if key not in vocab['config_keys']:
+                failures.append(f'{where}: {key!r} is not a PROMPT.md config key')
+            elif key in vocab['config_values'] and value not in vocab['config_values'][key]:
+                failures.append(f'{where}: {key}: {value!r} is not a permitted value')
+            elif key in vocab['config_ranges']:
+                low, high = vocab['config_ranges'][key]
+                if not (value.isdigit() and low <= int(value) <= high):
+                    failures.append(f'{where}: {key}: {value!r} is outside {low}–{high}')
+            if options:
+                check_options(options, key, vocab, failures)
+        if not line.startswith('#'):
+            options = None
+
+
+def check_options(options, key, vocab, failures):
+    number, block = options
+    where = f'{CONFIG_EXAMPLE}:{number}'
+    listed, default = [], None
+    for part in block:
+        part = part.split(' — ')[0]
+        for token, note in re.findall(r'([a-z][\w-]*)\s*(\([^)]*\))?', part):
+            listed.append(token)
+            if 'default' in note:
+                default = token
+    permitted = vocab['config_values'].get(key)
+    if permitted is None:
+        failures.append(f'{where}: Options listed for {key!r}, which has no permitted values')
+        return
+    if listed != permitted:
+        failures.append(f'{where}: Options for {key} list {" | ".join(listed)}; '
+                        f'PROMPT.md permits {" | ".join(permitted)}')
+    if default and default != vocab['config_defaults'].get(key):
+        failures.append(f'{where}: marks {default!r} as the {key} default; PROMPT.md '
+                        f'names {vocab["config_defaults"].get(key, "none")}')
+
+
+MANIFEST = os.path.join('scripts', 'MANIFEST')
+
+
+def script_files():
+    """Every file the manifest covers: scripts/ itself, minus the manifest."""
+    return sorted(name for name in os.listdir('scripts')
+                  if name != 'MANIFEST' and not name.startswith('.')
+                  and os.path.isfile(os.path.join('scripts', name)))
+
+
+def sha256_of(path):
+    with open(path, 'rb') as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+
+
+def write_manifest():
+    with open(MANIFEST, 'w') as handle:
+        for name in script_files():
+            handle.write(f'{sha256_of(os.path.join("scripts", name))}  {name}\n')
+
+
+def check_manifest(failures):
+    """Every script matches its scripts/MANIFEST hash, and the set is complete.
+
+    The scripts carried no version marker, so a blind reviewer handed
+    `scripts/` could not say which implementation it reviewed, nor whether the
+    checkout it was given was complete (issue #46). The manifest is in
+    `sha256sum -c` format, so it can be verified without this script.
+    """
+    text = read(MANIFEST, failures)
+    if text is None:
+        return
+    listed = {}
+    for number, line in enumerate(text.splitlines(), 1):
+        m = re.match(r'^([0-9a-f]{64})  (\S+)$', line)
+        if not m:
+            failures.append(f'{MANIFEST}:{number}: not "<sha256>  <file>": {line!r}')
+            continue
+        listed[m.group(2)] = m.group(1)
+    present = set(script_files())
+    for name, digest in sorted(listed.items()):
+        if name not in present:
+            failures.append(f'{MANIFEST} lists {name}, which is not in scripts/')
+        elif sha256_of(os.path.join('scripts', name)) != digest:
+            failures.append(f'scripts/{name} does not match its {MANIFEST} hash; '
+                            f'regenerate with --write-manifest if the change is intended')
+    for name in sorted(present - set(listed)):
+        failures.append(f'scripts/{name} is not in {MANIFEST}')
+
+
 def main():
     if not at_root():
         print('FAIL: run from a Diffract checkout: no PROMPT.md and README.md here')
         return 1
-    check_versions()
-    check_fences()
-    check_links()
-    check_lens_table()
-    check_enforced_strings()
+    if sys.argv[1:] == ['--write-manifest']:
+        write_manifest()
+        print(f'wrote {MANIFEST}')
+        return 0
+    if sys.argv[1:]:
+        print('usage: check.py [--write-manifest]')
+        return 2
+    # Passed to every check rather than held at module level (issue #47).
+    failures = []
+    check_versions(failures)
+    check_fences(failures)
+    check_links(failures)
+    check_lens_table(failures)
+    check_enforced_strings(failures)
+    check_vocabulary_drift(failures)
+    check_manifest(failures)
     if failures:
         for failure in failures:
             print(f'FAIL: {failure}')

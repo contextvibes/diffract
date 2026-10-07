@@ -14,13 +14,13 @@ What it does check, it names in its output: a pass states each check by
 name, so a pass on a conforming review is distinguishable from a pass that
 never looked (issue: cycle-6 OBS-1).
 
-The normative lens list and the Scorecard row set are read from PROMPT.md at
-runtime rather than hard-coded, so the enforced form follows the instrument.
-`--prompt` overrides which PROMPT.md that is; the default is the one shipped
-beside this script, and the run reports which file it used. Point it at a
-PROMPT.md belonging to the artifact under review and the artifact defines the
-norm it is judged by — the hazard PROMPT.md states for `render_scorecard.py`,
-one step removed.
+The normative lens list, the Scorecard row set, and the verdict and severity
+vocabularies are read from PROMPT.md at runtime rather than hard-coded, so
+the enforced form follows the instrument. `--prompt` overrides which
+PROMPT.md that is; the default is the one shipped beside this script, and
+the run reports which file it used. Point it at a PROMPT.md belonging to the
+artifact under review and the artifact defines the norm it is judged by —
+the hazard PROMPT.md states for `render_scorecard.py`, one step removed.
 
   python3 scripts/check_review.py REVIEW.md --artifact PATH [--artifact PATH]
 
@@ -33,10 +33,11 @@ import os
 import re
 import sys
 
-VERDICTS = {'Fix', 'Skip:Compass', 'Skip:Cobra', 'Discard:Integrity'}
-SEVERITIES = {'Major', 'Minor'}
-ANCHOR = 'A finding would look like:'
-CLOSER = 'No findings matching this pattern.'
+# How a finding ID is recognised in a table or a citation: wider than the
+# grammar, on purpose. A row whose ID breaks PROMPT.md's grammar is found here
+# and then failed by index_rows against the grammar PROMPT.md defines, rather
+# than passed over as if it were not a finding at all.
+ID_SHAPE = r'[A-Z0-9]{2,4}-\d+'
 
 # Every mandated step whose only proof of having run is a trace in the output.
 # Each phrase is required in the review and, by scripts/check.py's release
@@ -60,12 +61,44 @@ HYPOTHESES = re.compile(r'^(?:#+\s+|\*\*)[^\n]*Competing Hypotheses', re.I)
 
 
 
-failures = []
-
-
 def plain(text):
     """Strip markdown emphasis so cell values compare as literal strings."""
     return re.sub(r'[*`]', '', text).strip()
+
+
+def split_row(line):
+    """The raw cells of a Markdown table row, or None if it is not one.
+
+    Escape-aware: `\\|` is a literal pipe inside a cell, as in GitHub's
+    table syntax, and does not end the cell. Splitting on every `|` shifted
+    every column after a cell that contained one, and failed a correct review
+    with "illegal verdict" or a missing Scorecard row — PROMPT.md writes the
+    Cobra levels pipe-separated, so restating them in a Governors row was
+    enough (cycle-6 VAR-3, issue #43). Cells come back stripped but still
+    escaped, so a caller that rewrites a row can write it back unchanged;
+    `unescape()` gives the value.
+    """
+    line = line.rstrip()
+    if not (line.startswith('|') and line.endswith('|') and len(line) > 1):
+        return None
+    cells = re.split(r'(?<!\\)\|', line[1:-1])
+    return [c.strip() for c in cells]
+
+
+def unescape(cell):
+    """A cell's value: escaped pipes restored and emphasis stripped."""
+    return plain(cell.replace('\\|', '|'))
+
+
+def table_rows(body):
+    """Raw cells of every table row in a body, header and rule rows dropped."""
+    rows = []
+    for line in body.split('\n'):
+        cells = split_row(line)
+        if cells is None or all(re.match(r'^:?-*:?$', c) for c in cells):
+            continue
+        rows.append(cells)
+    return rows
 
 
 def outside_fences(lines):
@@ -135,13 +168,18 @@ def stated_at_line_start(lines, phrase):
 
 
 
+def read_text(path):
+    with open(path) as handle:
+        return handle.read()
+
+
 def default_prompt():
     """PROMPT.md next to this script's repository root."""
     return os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'PROMPT.md')
 
 
-def normative_lens_rows(prompt_path):
+def normative_lens_rows(prompt_path, failures):
     """(name, question) per lens, in order, verbatim from PROMPT.md's list.
 
     The one parser for the normative lens list. `scripts/check.py` diffs
@@ -149,7 +187,7 @@ def normative_lens_rows(prompt_path):
     time: two copies of an anti-drift parser are themselves something to
     drift.
     """
-    prompt = open(prompt_path).read()
+    prompt = read_text(prompt_path)
     section = re.search(r'#### The 10 Lenses.*?#### W5H1', prompt, re.S)
     if not section:
         failures.append(f'{prompt_path}: lens list section not found')
@@ -161,9 +199,9 @@ def normative_lens_rows(prompt_path):
     return rows
 
 
-def normative_lenses(prompt_path):
+def normative_lenses(prompt_path, failures):
     """The ten lens names, in order, without their icons."""
-    names = [n for n, _ in normative_lens_rows(prompt_path)]
+    names = [n for n, _ in normative_lens_rows(prompt_path, failures)]
     return [n.split(None, 1)[-1] if ' ' in n else n for n in names]
 
 
@@ -179,7 +217,7 @@ PRE_040_ROWS = [
 ]
 
 
-def normative_scorecard_rows(prompt_path):
+def normative_scorecard_rows(prompt_path, failures):
     """The Scorecard rows, in order, as PROMPT.md's template defines them.
 
     Read rather than hard-coded for the same reason the lens list is: a row
@@ -187,7 +225,7 @@ def normative_scorecard_rows(prompt_path):
     that has to be edited in step with the document it enforces will
     eventually not be (issue #39).
     """
-    prompt = open(prompt_path).read()
+    prompt = read_text(prompt_path)
     template = re.search(r'### Scorecard\n\| Metric \| Value \|\n.*?```', prompt, re.S)
     if not template:
         failures.append(f'{prompt_path}: Scorecard template not found')
@@ -195,6 +233,96 @@ def normative_scorecard_rows(prompt_path):
     rows = [plain(k) for k in
             re.findall(r'^\| ([^|]+?) \| [^|]*? \|$', template.group(0), re.M)]
     return [r for r in rows if r != 'Metric']
+
+
+def normative_vocabulary(prompt_path, failures):
+    """Every closed vocabulary PROMPT.md enumerates, read at its normative site.
+
+    Verdicts from the Verdict table; Severity and Confidence from the
+    paragraphs that define them; tag strings from every inline-code `[...]`
+    span outside fences, with `<...>` a placeholder; the config keys and
+    their permitted values from Agentic Execution. Hard-coded before, so a
+    value added to PROMPT.md failed every review that used it, against the
+    wrong instrument and without saying so (cycle-6 W5H-3), and nothing held
+    the other files' restatements to it (issue #39).
+    """
+    prompt = read_text(prompt_path)
+    lines = prompt.split('\n')
+    prose = ' '.join(line.strip() for line, live in zip(lines, outside_fences(lines)) if live)
+    vocab = {}
+
+    table = re.search(r'\*\*Verdict\*\* is one of .*?\n\n((?:\|.*\n)+)', prompt)
+    vocab['verdicts'] = ([unescape(cells[0]) for cells in table_rows(table.group(1))
+                          if unescape(cells[0]) != 'Verdict'] if table else [])
+
+    for key, term in (('severities', 'Severity'), ('confidences', 'Confidence')):
+        paragraph = re.search(r'^\*\*' + term + r'\*\* is .*?(?=\n\n)', prompt, re.S | re.M)
+        vocab[key] = (re.findall(r'\*\*(\w+)\*\* —', paragraph.group(0))
+                      if paragraph else [])
+
+    vocab['tags'] = sorted({re.sub(r'\s+', ' ', t)
+                            for t in re.findall(r'`(\[[^`\]]+\])`', prose)})
+
+    keys = re.search(r'defined keys — (.*?`)\.\s', prose)
+    vocab['config_keys'] = re.findall(r'`(\w+)`', keys.group(1)) if keys else []
+    values, defaults, ranges = {}, {}, {}
+    permitted = re.search(r'Permitted values: (.*?)\. An out-of-range', prose)
+    for clause in (permitted.group(1).split(';') if permitted else []):
+        named = re.match(r'\s*`(\w+)` is (.*)', clause)
+        if not named:
+            continue
+        key, rest = named.groups()
+        listed = rest.split(' — ')[0]
+        span = re.search(r'range (\d+)[–-](\d+)', listed)
+        if span:
+            ranges[key] = (int(span.group(1)), int(span.group(2)))
+            continue
+        values[key] = re.findall(r'`([^`]+)`', re.sub(r'\([^)]*\)', '', listed))
+        if 'the last is the PLAN default' in rest and values[key]:
+            defaults[key] = values[key][-1]
+    vocab['config_values'], vocab['config_defaults'] = values, defaults
+    vocab['config_ranges'] = ranges
+
+    # Finding IDs: `<lens abbreviation>-<n>`, the abbreviations listed in lens
+    # order and then W5H1's. The checker accepted any two to four capitals
+    # before, a grammar of its own that PROMPT.md never stated (issue #41).
+    named = re.search(r'The abbreviations are \*\*([A-Z0-9, ]+)\*\* for the ten '
+                      r'lenses in order, and \*\*([A-Z0-9]+)\*\* for W5H1', prose)
+    lenses = normative_lenses(prompt_path, [])
+    abbreviations = named.group(1).split(', ') if named else []
+    vocab['id_prefixes'] = dict(zip(lenses, abbreviations))
+    if named and len(abbreviations) == len(lenses):
+        vocab['id_prefixes']['W5H1'] = named.group(2)
+    else:
+        vocab['id_prefixes'] = {}
+
+    # The literal text of the two lens-output templates: what is outside the
+    # brackets. Text both templates carry is required of every lens section;
+    # text only Output B carries is required of a lens that found nothing.
+    # These were three string constants here, a rule PROMPT.md showed only by
+    # example (issue #41).
+    def literals(label):
+        block = re.search(label + r'.*?\n```markdown\n(.*?)```', prompt, re.S)
+        if not block:
+            return []
+        text = re.sub(r'\[[^\]]*\]', '\n', block.group(1))
+        return [part.strip() for line in text.split('\n')
+                if not line.lstrip().startswith(('#', '|'))
+                for part in [line] if len(part.strip()) > 1]
+    found_some, found_none = literals('Output A'), literals('Output B')
+    vocab['literals_always'] = [x for x in found_none if x in found_some]
+    vocab['literals_nothing_found'] = [x for x in found_none if x not in found_some]
+
+    for key, at in (('verdicts', 'the Verdict table'), ('severities', 'Severity'),
+                    ('confidences', 'Confidence'), ('tags', 'inline tag strings'),
+                    ('config_keys', 'the diffract.yaml key list'),
+                    ('config_values', 'the diffract.yaml permitted values'),
+                    ('id_prefixes', 'the finding ID abbreviations'),
+                    ('literals_always', 'the Output A and B templates'),
+                    ('literals_nothing_found', 'the Output B template')):
+        if not vocab[key]:
+            failures.append(f'{prompt_path}: no vocabulary parsed from {at}')
+    return vocab
 
 
 def instrument_version(review):
@@ -220,6 +348,11 @@ def derived_counts(rows):
         'Compass-skipped': sum(1 for r in rows if r[5] == 'Skip:Compass'),
         'Integrity-discarded': sum(1 for r in rows if r[5] == 'Discard:Integrity'),
     }
+
+
+def lens_name(cell):
+    """A Lens cell's name without its icon: '🗑️ Subtract' -> 'Subtract'."""
+    return re.sub(r'^[\W_]+', '', plain(cell))
 
 
 def lens_sections(review, lenses):
@@ -254,14 +387,27 @@ def declared_scope(review):
     checker required all ten unconditionally until cycle 7, which made the one
     documented way to narrow a review the one way to fail this check.
     """
+    stated = lenses_run_row(review)
+    return None if stated is None else stated[0]
+
+
+def lenses_run_row(review):
+    """(number, full value) of the Scorecard's `Lenses run` row, or None."""
     body = section(review, 'Scorecard', level=3)
     if body is None:
         return None
-    m = re.search(r'^\| Lenses run \|\s*(\d+)\s*(?:of|/)', body, re.M)
-    return int(m.group(1)) if m else None
+    value = scorecard_cells(body).get('Lenses run')
+    m = value and re.match(r'\s*(\d+) of ', value)
+    return (int(m.group(1)), value) if m else None
 
 
-def check_lenses(review, lenses, scope=None):
+def scorecard_cells(table):
+    """{metric: value} for every two-cell row of a Scorecard table body."""
+    return {unescape(cells[0]): unescape(cells[1])
+            for cells in table_rows(table) if len(cells) == 2}
+
+
+def check_lenses(review, lenses, scope, vocab, failures):
     found, order = lens_sections(review, lenses)
     present = [n for n in lenses if n in found]
 
@@ -277,23 +423,35 @@ def check_lenses(review, lenses, scope=None):
         failures.append(
             f'Scorecard declares {scope} of {len(lenses)} lenses run, but '
             f'{len(present)} lens sections are present: {", ".join(present)}')
+    else:
+        # A narrowed scope is declared, not inferred: PROMPT.md's template
+        # makes the row "name any omitted". A row reading "9 of 10 — none
+        # omitted" over nine sections is a skipped lens with its count edited
+        # to match, which is how render_scorecard.py used to launder one
+        # (issue #50).
+        stated = (lenses_run_row(review) or (None, ''))[1].lower()
+        unnamed = [n for n in lenses if n not in found and n.lower() not in stated]
+        if unnamed:
+            failures.append(
+                f'Scorecard declares {scope} of {len(lenses)} lenses run but its '
+                f'Lenses run row does not name the omitted: {", ".join(unnamed)}')
 
     expected = present + (['W5H1'] if 'W5H1' in found else [])
     if order != expected:
         failures.append(f'lens sections out of normative order: {order}')
 
     for name, body in found.items():
-        if 'Checked:' not in body:
-            failures.append(f"{name}: no 'Checked:' line")
-        if re.search(r'^\|\s*[A-Z0-9]{3}-\d', body, re.M):
+        for literal in vocab['literals_always']:
+            if literal not in body:
+                failures.append(f"{name}: no {literal!r} line")
+        if re.search(r'^\|\s*' + ID_SHAPE, body, re.M):
             continue
-        if ANCHOR not in body:
-            failures.append(f'{name}: nothing-found lens without "{ANCHOR}"')
-        if CLOSER not in body:
-            failures.append(f'{name}: nothing-found lens without "{CLOSER}"')
+        for literal in vocab['literals_nothing_found']:
+            if literal not in body:
+                failures.append(f'{name}: nothing-found lens without "{literal}"')
 
 
-def check_index_completeness(review, rows, lenses):
+def check_index_completeness(review, rows, lenses, failures):
     """Every finding raised in a lens table is in the index, and vice versa.
 
     PROMPT.md makes the index authoritative for every count in the review, so
@@ -306,7 +464,7 @@ def check_index_completeness(review, rows, lenses):
     order = [n for n in lenses if n in found] + (['W5H1'] if 'W5H1' in found else [])
     raised = {}
     for name in order:
-        for fid in re.findall(r'^\|\s*([A-Z0-9]{2,4}-\d+)\s*\|', found[name], re.M):
+        for fid in re.findall(r'^\|\s*(' + ID_SHAPE + r')\s*\|', found[name], re.M):
             raised.setdefault(fid, name)
     indexed = {r[0] for r in rows}
     for fid, name in sorted(raised.items()):
@@ -316,28 +474,36 @@ def check_index_completeness(review, rows, lenses):
         failures.append(f'{fid}: in the Findings Index, raised in no lens table')
 
 
-def index_rows(review):
+def index_rows(review, vocab, failures):
+    """The Findings Index rows, each checked against PROMPT.md's vocabularies:
+    the ID grammar and its lens, the verdict, the severity, the Confidence."""
     body = section(review, 'FINDINGS INDEX', level=2)
     if body is None:
         failures.append('no "## FINDINGS INDEX" section')
         return []
-    rows = []
-    for line in re.findall(r'^\|(.+)\|\s*$', body, re.M):
-        if re.match(r'^[\s|:-]+$', line) or line.strip().startswith('ID '):
-            continue
-        rows.append([plain(c) for c in line.split('|')])
+    rows = [[unescape(c) for c in cells] for cells in table_rows(body)
+            if unescape(cells[0]) != 'ID']
     for row in rows:
         if len(row) != 8:
             failures.append(f'index row is {len(row)} columns, expected 8: {row[:1]}')
             continue
-        if row[5] not in VERDICTS:
+        prefix = vocab['id_prefixes'].get(lens_name(row[1]))
+        if not re.fullmatch(r'[A-Z0-9]+-\d+', row[0]) or (
+                prefix and row[0].split('-')[0] != prefix):
+            want = f'{prefix}-<n>' if prefix else '<lens abbreviation>-<n>'
+            failures.append(f'{row[0]}: ID is not {want} for lens {row[1]!r}')
+        if lens_name(row[1]) not in vocab['id_prefixes']:
+            failures.append(f'{row[0]}: Lens {row[1]!r} is not a lens or W5H1')
+        if row[7] not in vocab['confidences']:
+            failures.append(f'{row[0]}: illegal Confidence {row[7]!r}')
+        if row[5] not in vocab['verdicts']:
             failures.append(f'{row[0]}: illegal verdict {row[5]!r}')
-        if row[4] not in SEVERITIES:
+        if row[4] not in vocab['severities']:
             failures.append(f'{row[0]}: illegal severity {row[4]!r}')
     return [r for r in rows if len(r) == 8]
 
 
-def check_scorecard(review, rows, prompt_path):
+def check_scorecard(review, rows, prompt_path, failures):
     """Every mandated Scorecard row is present, and every derived count is right.
 
     Presence and arithmetic are separate failures. Before cycle 6 only the
@@ -355,15 +521,14 @@ def check_scorecard(review, rows, prompt_path):
     if table is None:
         failures.append('no "### Scorecard" section')
         return
-    card = {plain(k): v.strip() for k, v in
-            re.findall(r'^\| ([^|]+?) \| ([^|]*?) \|\s*$', table, re.M)}
+    card = scorecard_cells(table)
 
     version = instrument_version(review)
     if version is None:
         failures.append('Scorecard states no "Instrument | Diffract X.Y" row')
-        required = normative_scorecard_rows(prompt_path)
+        required = normative_scorecard_rows(prompt_path, failures)
     elif version >= (0, 4):
-        required = normative_scorecard_rows(prompt_path)
+        required = normative_scorecard_rows(prompt_path, failures)
     else:
         required = PRE_040_ROWS
     for key in required:
@@ -407,7 +572,7 @@ def hypotheses_region(check_body):
     return '\n'.join(region)
 
 
-def check_structure(review, rows):
+def check_structure(review, rows, failures):
     """The mandated output elements that prove a mandated step ran.
 
     A step whose only evidence is the reviewer's word is not checkable, so
@@ -457,7 +622,7 @@ def check_structure(review, rows):
     return checked
 
 
-def requires_quotes(review):
+def requires_quotes(review, failures):
     """Whether this run's Integrity governor demands a quote block per finding.
 
     The Integrity governor (PROMPT.md, PLAN) makes evidence rules a per-run
@@ -490,8 +655,8 @@ def requires_quotes(review):
 
 
 QUOTE_BLOCK = r'((?:^\s+> ?.*$\n?)+)'
-LINE_CITE = r'^- ([A-Z0-9]{2,4}-\d+) — (\S+?):(\d+)(?:[-–](\d+))?\s*$\n' + QUOTE_BLOCK
-HEAD_CITE = r'^- ([A-Z0-9]{2,4}-\d+) — (\S+?) § (.+?)\s*$\n' + QUOTE_BLOCK
+LINE_CITE = r'^- (' + ID_SHAPE + r') — (\S+?):(\d+)(?:[-–](\d+))?\s*$\n' + QUOTE_BLOCK
+HEAD_CITE = r'^- (' + ID_SHAPE + r') — (\S+?) § (.+?)\s*$\n' + QUOTE_BLOCK
 
 
 def dedent_quote(block):
@@ -502,13 +667,63 @@ def squash(lines):
     return [re.sub(r'\s+', ' ', x).strip() for x in lines]
 
 
+def quoted_in_place(quote, lines):
+    """Whether `quote` appears in `lines` with the artifact's own line breaks.
+
+    A quote under a heading may begin and end mid-line, so its first line is
+    matched as the end of an artifact line and its last as the start of one;
+    every line between must be whole. Matching the joined text instead
+    accepted a reflowed quote, which PROMPT.md forbids (issue #41).
+    """
+    n = len(quote)
+    if n == 1:
+        return any(quote[0] in line for line in lines)
+    for i in range(len(lines) - n + 1):
+        if (lines[i].endswith(quote[0]) and lines[i + n - 1].startswith(quote[-1])
+                and lines[i + 1:i + n - 1] == quote[1:-1]):
+            return True
+    return False
+
+
 def heading_body(lines, heading):
     """Lines of the named heading's section, heading line included, or None."""
     span = heading_span(lines, heading)
     return None if span is None else lines[span[0]:span[1]]
 
 
-def check_evidence(review, rows, artifacts, require):
+def path_parts(path):
+    """A path's components after normalisation, absolute paths keeping '/'."""
+    norm = os.path.normpath(path)
+    parts = [p for p in norm.split(os.sep) if p not in ('', '.')]
+    return (['/'] if os.path.isabs(norm) else []) + parts
+
+
+def resolve_citation(path, artifacts):
+    """(display name, lines) of the one supplied artifact a citation names.
+
+    A cited path names a supplied artifact when its components are a suffix of
+    that artifact's absolute path: `semver.md`, `artifacts/semver.md` and the
+    full path all name `examples/artifacts/semver.md`; `vendor/semver.md` does
+    not. Citations used to resolve by basename alone, so a quote verified
+    against a file the review never cited and the checker reported it
+    "verbatim at its citation" (issue #49). Suffix rather than equality,
+    because a blind reviewer is handed files in a layout it cannot see and
+    cites them relative to whatever it was shown.
+
+    Returns (None, reason) when no artifact, or more than one, matches.
+    """
+    want = path_parts(path)
+    hits = [(name, lines) for name, (parts, lines) in artifacts.items()
+            if want and parts[len(parts) - len(want):] == want]
+    if len(hits) == 1:
+        return hits[0]
+    if not hits:
+        return None, f'cites {path}, not among the supplied artifacts'
+    return None, (f'cites {path}, which names more than one supplied artifact: '
+                  f'{", ".join(n for n, _ in hits)}')
+
+
+def check_evidence(review, rows, artifacts, require, failures):
     """Every Evidence quote must appear verbatim where it says it does.
 
     Two citation forms, both specified in PROMPT.md: `path:line` for code and
@@ -527,11 +742,10 @@ def check_evidence(review, rows, artifacts, require):
         seen.add(fid)
         if fid not in ids:
             failures.append(f'{fid}: Evidence for a finding with no index row')
-        name = os.path.basename(path)
-        if name not in artifacts:
-            failures.append(f'{fid}: cites {path}, not among the supplied artifacts')
+        name, lines = resolve_citation(path, artifacts)
+        if name is None:
+            failures.append(f'{fid}: {lines}')
             continue
-        lines = artifacts[name]
         a, b = int(start), int(end or start)
         if not 1 <= a <= b <= len(lines):
             failures.append(f'{fid}: line range {a}-{b} outside {name} (1-{len(lines)})')
@@ -551,21 +765,18 @@ def check_evidence(review, rows, artifacts, require):
         seen.add(fid)
         if fid not in ids:
             failures.append(f'{fid}: Evidence for a finding with no index row')
-        name = os.path.basename(path)
-        if name not in artifacts:
-            failures.append(f'{fid}: cites {path}, not among the supplied artifacts')
+        name, lines = resolve_citation(path, artifacts)
+        if name is None:
+            failures.append(f'{fid}: {lines}')
             continue
-        section = heading_body(artifacts[name], heading)
+        section = heading_body(lines, heading)
         if section is None:
             failures.append(f'{fid}: {name} has no heading {heading!r}')
             continue
-        quote = squash(dedent_quote(block))
-        haystack = squash(section)
-        joined = ' '.join(haystack)
-        if ' '.join(quote) not in joined:
+        if not quoted_in_place(squash(dedent_quote(block)), squash(section)):
             failures.append(
                 f'{fid}: quote does not appear under {name} § {heading}\n'
-                f'       quoted: {quote[0][:64]!r}')
+                f'       quoted: {dedent_quote(block)[0][:64]!r}')
             continue
         verified += 1
 
@@ -573,6 +784,29 @@ def check_evidence(review, rows, artifacts, require):
         for fid in sorted(ids - seen):
             failures.append(f'{fid}: Integrity requires a quote block, none found')
     return verified, blocks
+
+
+def implementation():
+    """One line naming the checker that ran: its hash, and the manifest's.
+
+    A pass names the instrument it enforced; it must name the implementation
+    too, or a run against one revision of this file is indistinguishable from
+    a run against the next (issue #46). scripts/check.py holds the scripts to
+    scripts/MANIFEST; this only reports whether this file agrees with it.
+    """
+    here = os.path.abspath(__file__)
+    with open(here, 'rb') as handle:
+        mine = hashlib.sha256(handle.read()).hexdigest()
+    manifest = os.path.join(os.path.dirname(here), 'MANIFEST')
+    try:
+        with open(manifest, 'rb') as handle:
+            data = handle.read()
+    except OSError:
+        return f'checker sha256 {mine} (no scripts/MANIFEST beside it)'
+    listed = re.search(r'^([0-9a-f]{64})  check_review\.py$', data.decode(), re.M)
+    agrees = 'matches' if listed and listed.group(1) == mine else 'does NOT match'
+    return (f'checker sha256 {mine}, {agrees} scripts/MANIFEST '
+            f'(sha256 {hashlib.sha256(data).hexdigest()})')
 
 
 def main():
@@ -595,12 +829,12 @@ def main():
         except OSError as e:
             print(f'FAIL: cannot read artifact: {e}')
             return 1
-        name = os.path.basename(path)
-        if name in artifacts:
-            print(f'FAIL: two artifacts share the basename {name!r}; '
-                  f'Evidence citations could not tell them apart')
-            return 1
-        artifacts[name] = data.decode().split('\n')
+        # Keyed by the path as supplied, matched by path suffix: two artifacts
+        # that share a basename are told apart by a citation that names
+        # enough of the path, and a citation too short to is a failure of
+        # that citation rather than of the run (issue #49).
+        name = os.path.normpath(path)
+        artifacts[name] = (path_parts(os.path.abspath(path)), data.decode().split('\n'))
         print(f'artifact {name} sha256 {hashlib.sha256(data).hexdigest()}')
 
     # What this run enforced, and where it got it: a pass is only meaningful
@@ -608,15 +842,21 @@ def main():
     prompt_version = re.search(r'\*\*Version: ([\d.]+)\*\*', open(args.prompt).read())
     print(f'instrument {args.prompt} '
           f'version {prompt_version.group(1) if prompt_version else "unknown"}')
+    print(implementation())
 
-    lenses = normative_lenses(args.prompt)
-    check_lenses(review, lenses, declared_scope(review))
-    rows = index_rows(review)
-    check_index_completeness(review, rows, lenses)
-    check_scorecard(review, rows, args.prompt)
-    ran = check_structure(review, rows) or []
-    require = requires_quotes(review)
-    verified, blocks = check_evidence(review, rows, artifacts, require)
+    # Collected here and passed to every check, never held at module level:
+    # a module-global list leaked one call's failures into the next, and each
+    # caller had to remember to clear it by hand (cycle-7 BOU-1, issue #47).
+    failures = []
+    lenses = normative_lenses(args.prompt, failures)
+    vocab = normative_vocabulary(args.prompt, failures)
+    check_lenses(review, lenses, declared_scope(review), vocab, failures)
+    rows = index_rows(review, vocab, failures)
+    check_index_completeness(review, rows, lenses, failures)
+    check_scorecard(review, rows, args.prompt, failures)
+    ran = check_structure(review, rows, failures) or []
+    require = requires_quotes(review, failures)
+    verified, blocks = check_evidence(review, rows, artifacts, require, failures)
 
     print(f'index rows {len(rows)} | quote blocks {blocks} '
           f'(required: {"yes" if require else "no"}) | verified verbatim {verified}')
@@ -636,7 +876,8 @@ def main():
           'with the declared scope; cognitive anchoring on nothing-found '
           'lenses; every finding in a lens table carried into the Findings '
           'Index and every index row raised by a lens; the CHECK table; index '
-          'verdicts and severities legal; every mandated Scorecard row present '
+          'IDs, lenses, verdicts, severities and Confidence legal; every '
+          'mandated Scorecard row present '
           'and every derived count equal to the index; every Evidence quote '
           f'verbatim at its citation; and these mandated sections: {traces}.')
     print('not checked: whether any finding is real, whether a severity is '

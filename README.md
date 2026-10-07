@@ -18,11 +18,13 @@ who reviews it.
 
 **Mission:** Keep each other honest — structurally, not aspirationally.
 
-**Goal:** Same artifact + same lenses + different reviewer = same findings.
+**Goal:** Same artifact + same lenses + different reviewer = same defects,
+plus a surplus specific to each reviewer.
 
-**Measured status:** not yet achieved. In the latest tiering experiment
+**Measured status:** not yet demonstrated. In the latest tiering experiment
 (August 2026, against the 0.2.x instrument), every reviewer pairing failed
-the calibration criteria ([RQ5](docs/research/rq5-reviewer-tiering.md)). Diffract publishes its own
+the calibration criteria as they then stood
+([RQ5](docs/research/rq5-reviewer-tiering.md)). Diffract publishes its own
 failures — the protocol exists to make them visible, not to hide them.
 
 Diffract emerged from code review, but the lenses apply to anything that
@@ -30,7 +32,7 @@ can be reviewed: code, documentation, architecture, API designs, or processes.
 
 **Value proposition (not measured):** A good senior reviewer already does
 most of what Diffract does, intuitively. The claimed value is in the rest —
-the lenses you'd skip, the proof you actually looked, and the calibration
+the lenses you'd skip, a record of where you looked, and the calibration
 test that catches what you missed. [No single component is original.](#references)
 The value is in the combination.
 
@@ -61,8 +63,9 @@ their human inspectors:
 **What these mechanisms do not do.** They are aids for a reviewer that is trying
 to be honest, not detectors of one that isn't. Most are executed by the reviewer,
 about the reviewer, in the reviewer's own output — a reviewer that misreads the
-artifact will certify a review of what it misread. Four of the thirteen are now
-partly checkable from outside — form and fidelity, never judgment:
+artifact will certify a review of what it misread. Three of the thirteen
+(Evidence, Cognitive Anchoring, Context Fidelity) are now partly checkable
+from outside — form and fidelity, never judgment:
 `scripts/check_review.py` verifies a review's shape — its lens
 sections, its mandated sections, its verdicts and severities, its
 Scorecard rows and counts, that every finding raised by a lens reaches the
@@ -71,8 +74,11 @@ it names in its own output both what it checked and what it did not;
 `scripts/render_scorecard.py` derives the Scorecard counts from the review's
 own index instead of trusting them; `scripts/check.py` runs the entry gate
 the review claims to have passed; and `calibration/` scores a reviewer
-against defects it was not told about. The rest are
-[self-attested](docs/anti-dishonesty.md#what-these-mechanisms-can-and-cannot-detect).
+against defects it was not told about, as a separate procedure. Eight of
+the remaining ten are
+[self-attested](docs/anti-dishonesty.md#what-these-mechanisms-can-and-cannot-detect);
+Nothing-Found Verification is retired as a detection claim, and Chunked
+Attestation ships no executable form at all.
 
 **Your most important role:** Don't just approve the PLAN and wait. Challenge
 the agent during every phase. The most valuable findings in Diffract's own
@@ -85,7 +91,9 @@ find what's wrong. You find what's missing.
 
 1. Open your preferred AI assistant (Claude, Gemini, ChatGPT, or any LLM)
 2. Paste the contents of [`PROMPT.md`](PROMPT.md) into the chat
-3. Paste the artifact you want to review (code, documentation, design)
+3. Paste the artifact you want to review (code, documentation, design).
+   This sends it to whichever AI service you chose, under that service's
+   terms. Do not paste anything you are not permitted to share with it.
 4. The AI runs the deterministic entry checks it can (or tags the review
    `[entry waived: cannot run checks]`), then proposes governors (PLAN)
    and waits for your confirmation
@@ -106,6 +114,42 @@ review by hand — try 🗑️ Subtract and 🛡️ Shield on your next PR and d
 the narrowed lens set as partial coverage (PROMPT.md, Rule 6). An agent
 executing PROMPT.md runs all 10 unless the user narrows the set; no
 `diffract.yaml` key selects lenses.
+
+### What the output looks like
+
+A review comment is only as useful as it is checkable. Compare a typical
+comment:
+
+> "The session handling looks a bit risky — maybe worth another look?"
+
+with a finding row from the [web-service example](examples/web-service.md),
+raised by the 🛡️ Shield lens:
+
+| ID | File | Finding | Line | Severity | Confidence |
+|---|------|---------|------|----------|------------|
+| SHI-2 | internal/session/session.go | Session cookie has no expiry — lives until browser closes | 54 | Major | High |
+
+and, from the same review, a lens that found nothing:
+
+```
+### ✂️ Simplify
+Checked: all function signatures, interface definitions, configuration layers.
+A finding would look like: a function doing two things that could be split,
+an interface with a single implementation that a concrete type would serve,
+or a config layer that only forwards values unchanged.
+No findings matching this pattern.
+```
+
+What makes these useful:
+
+- **Located.** A file and a line: anyone can open it and check.
+- **Testable.** "Has no expiry" is true or false of the code, not a matter
+  of taste.
+- **Owned and graded.** One lens raised it, with a severity and a
+  confidence a later step can vet it against.
+- **Empty lenses show their scope.** "Nothing found" says what was checked
+  and what a finding would have looked like, so the scope can be
+  challenged. It is not proof the artifact was read.
 
 ## The Protocol at a Glance
 
@@ -243,7 +287,7 @@ number can be verified against the original text.
 
 Diffract was developed through a collaboration between a human engineer
 and AI assistants during a code review session in February 2026. The
-protocol started as 8 review lenses, was challenged against independent
+protocol started as 7 review lenses, was challenged against independent
 first-principles research (DeepThink), cross-validated against high-stakes
 industry practices (DeepResearch), and refined through multiple PDCA
 cycles — including applying the protocol to itself.
@@ -272,6 +316,13 @@ same artifact, same lenses, different intent — each producing unique findings:
 | "Does it guide AI to use tools first?" | No per-lens tooling table |
 | "Is it language-neutral?" | Go-specific tools in automation table |
 | "Is every sentence clear and kind?" | "Refuse" → "Pause", added kindness rule |
+
+> Every finding in this table has since been addressed; it is kept as a
+> worked example of what changing the Compass surfaces, not as an open
+> issue list. The terminology row resolved into a deliberate distinction
+> rather than a rename: Rule 4 requires findings to be *testable*, and
+> *falsifiability* names the Popper principle behind it (see
+> `docs/lenses.md`, "Rules Make Findings Citeable").
 
 The Compass is the most powerful lever in the protocol.
 

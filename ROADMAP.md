@@ -8,18 +8,9 @@ only judgment can assess.
 
 ## Automation Potential
 
-| Lens | Deterministic? | Tool Opportunity |
-|------|---------------|-----------------|
-| 🗑️ **Subtract** | Partially | Dead code detectors (`deadcode`, `vulture`, `ts-prune`) |
-| ✂️ **Simplify** | No | Requires judgment — what is "unnecessary" complexity? |
-| 🏷️ **Name** | No | Requires domain understanding |
-| 📌 **Truth** | Partially | Duplication detectors (`jscpd`, `flay`, `simian`) |
-| 🧱 **Boundary** | Partially | Dependency graph analyzers, import cycle detectors |
-| 🛡️ **Shield** | Mostly | Security scanners (`gosec`, `bandit`, `semgrep`) |
-| 🔗 **Provenance** | Mostly | Advisory scanners (`npm audit`, `osv-scanner`), lockfile diff, SBOM generators |
-| 🎯 **Variety** | Partially | Exhaustive match warnings (compiler), coverage tools |
-| 🔍 **Observability** | Partially | Lint rules for swallowed errors, missing log calls |
-| ⚡ **Efficiency** | Partially | Profilers, benchmark suites, allocation trackers |
+The tools that cover each lens's deterministic part, and what judgment adds
+on top, are mapped once, in [`docs/lenses.md`](docs/lenses.md#automation-tools-first)
+("Automation: Tools First"). This file does not restate that mapping.
 
 ## Roadmap
 
@@ -27,9 +18,11 @@ only judgment can assess.
 - Antigravity skill driver — **never shipped.** No `.agents/` directory has
   existed in any commit. Diffract is driven by pointing an agent at
   `PROMPT.md`; per-tool adapters are tracked under v0.3.
-- Deterministic tool scripts — **dropped.** Diffract ships prompt-only. The
-  lens-to-tool mapping lives in `docs/lenses.md` ("Automation: Tools First");
-  tools are invoked directly rather than through wrappers.
+- Deterministic tool scripts (per-lens tool wrappers) — **dropped.** Lens
+  tools are invoked directly rather than through wrappers; the lens-to-tool
+  mapping lives in `docs/lenses.md` ("Automation: Tools First"). Diffract
+  is not prompt-only: `scripts/` ships checkers for the instrument and for
+  reviews (see v0.3 and v0.4 below), not wrappers for lens tools.
 - [x] Execute calibration tests across 3+ AI models — see
       [RQ3](docs/research/rq3-calibration-reproducibility.md) (4 models,
       10 runs, one frozen artifact)
@@ -75,7 +68,8 @@ only judgment can assess.
       move 4 of the 13 mechanisms out of the reviewer's own attestation
       and into CI. The remaining nine, and the decision to run the checks
       at all, stay self-attested; `docs/anti-dishonesty.md` says which is
-      which
+      which. Since then mechanism 5 has been retired as a detection claim
+      (#24), so 3 of the 13 are checked from outside
 - [ ] Reference artifact set carrying independently verified defects at
       **graded difficulty** — required to assign reviewer tiers on demand
       (`docs/calibration.md`) and to populate tiers 2 and 3, which RQ3
@@ -94,12 +88,19 @@ only judgment can assess.
       the seeds are planted by the maintainer rather than a third party, so
       the author-graded problem (#26) applies to the fixture too; and it is
       a separate procedure run against a fixture, not a variant of the
-      in-review Nothing-Found Verification mechanism, which is still
-      self-attested. Complemented since 0.2.4 by capture–recapture
+      in-review Nothing-Found Verification mechanism, which is retired as a
+      detection claim (#24). A nearest-miss quote is being piloted in
+      `calibration/` runs only (see `calibration/README.md`). Complemented since 0.2.4 by capture–recapture
       estimation in `docs/calibration.md` (Lincoln–Petersen; Eick et al.;
       Gilb & Graham), which attacks the same gap from the other side:
       estimation says *how many* defects remain, seeding says *which one*
       was missed
+- [ ] Severity-trend signal alongside the done-rule's count signal — the
+      v0.2.4 self-review cycles stopped finding contradictions between
+      files and started finding underspecification at the margins, a shift
+      in the *kind* of Major that the zero-new-Majors count cannot see.
+      Needs a defined class for each Major before it can be a signal; a
+      `PROMPT.md` change if adopted (moved here from #29)
 - [ ] IDE extension: highlight findings inline with lens icons
 - [ ] Auto-generate PLAN from project context (language, CI config)
 

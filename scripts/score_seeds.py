@@ -16,6 +16,8 @@ import argparse
 import re
 import sys
 
+import check_review
+
 
 def seeds(path):
     out = []
@@ -26,13 +28,17 @@ def seeds(path):
 
 
 def findings(path):
-    text = open(path).read()
-    if '## FINDINGS INDEX' not in text:
+    # The index is located and split the way check_review.py does it: at its
+    # heading, outside fences, and escape-aware. A literal split on the heading
+    # text and on every `|` were each a defect already fixed there (cycle-7
+    # SHI-1, cycle-6 VAR-3).
+    body = check_review.section(open(path).read(), 'FINDINGS INDEX', level=2)
+    if body is None:
         sys.exit('no FINDINGS INDEX in review')
     out = []
-    for row in re.findall(r'^\|(.+)\|\s*$', text.split('## FINDINGS INDEX')[1], re.M):
-        c = [re.sub(r'[*`]', '', x).strip() for x in row.split('|')]
-        if len(c) != 8 or c[0] == 'ID' or set(c[0]) <= set('-: '):
+    for cells in check_review.table_rows(body):
+        c = [check_review.unescape(x) for x in cells]
+        if len(c) != 8 or c[0] == 'ID':
             continue
         m = re.search(r':(\d+)(?:[-–](\d+))?', c[3])
         if m:

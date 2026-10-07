@@ -106,6 +106,10 @@ caught it:
       (The Findings Index `Confidence` column shipped undefined.)
 - [ ] **README's spec statements diff clean against PROMPT.md** — the
       done-rule, lens questions, verdict names, and tag strings.
+      `check.py` diffs the lens questions, and holds every file's verdict
+      names, tag strings, Severity and Confidence lists, and
+      `diffract.yaml` keys and values to PROMPT.md's; the done-rule and
+      any paraphrase of a definition are still checked by eye.
       (README shipped a superseded exit rule after 0.2.4 changed it.)
 - [ ] **Version strings agree** — the README badge and the PROMPT.md
       header. (0.2.3 shipped with the header still reading 0.2.2.)
@@ -198,6 +202,12 @@ caught it:
       and left its siblings open: the executable channel, then the
       declarative channel under `scope: pr`, then `scope: full`. Each fix
       was correct and none was general.)
+- [ ] **A PR that changes a file in `scripts/` regenerates
+      `scripts/MANIFEST`** with `python3 scripts/check.py --write-manifest`;
+      `check.py` fails on any script whose hash disagrees with it, and on
+      any file missing from either side. (The scripts carried no version
+      marker, so a blind reviewer handed `scripts/` could not name the
+      implementation it reviewed or tell whether its copy was complete.)
 - [ ] **Version-string equality is checked mechanically, not by eye** —
       `grep` the README badge against the PROMPT.md header before
       tagging. (The duplication is forced — the badge and the standalone

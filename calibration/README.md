@@ -92,6 +92,32 @@ seeded line for an unrelated reason is not a hit.
 Recall is the headline number, but the interesting one is usually which lens
 caught which seed, and whether the seeds a reviewer misses cluster.
 
+## Pilot: nearest-miss quote
+
+Nothing-Found Verification (mechanism 5 in `docs/anti-dishonesty.md`) is
+retired as a detection claim, and a generic cognitive anchor can be written
+without opening the artifact. Issue #24 proposed one line that cannot be: a
+verbatim quote of the text that came closest to being a finding. It is piloted
+here, in fixture runs only. It is not part of `PROMPT.md`, no review outside
+this directory is asked for it, and `check_review.py` does not check it.
+
+To run the pilot, give the reviewer this instruction alongside `PROMPT.md`, and
+record in `results.md` that the run was a pilot run:
+
+```
+In every lens that reports no findings, add one line before
+"No findings matching this pattern.":
+Nearest miss: "[verbatim quote of the artifact text that came closest to being
+a finding in this lens]" (line N) — not a finding because [one clause].
+```
+
+Score two things. **Mechanically:** the fraction of nearest-miss quotes that
+appear verbatim at the cited line of the frozen fixture. **By reading:** whether
+each quote is specific to its lens, compared with the plain anchors of non-pilot
+runs. Do not expect recall to move; recall is what the seeds measure. The risk
+to watch is pseudo-findings, which the "not a finding because" clause exists to
+release.
+
 ## Licensing
 
 `artifacts/semver-2.0.0-seeded.md` is a **modified** copy of Semantic Versioning

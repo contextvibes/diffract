@@ -1,5 +1,10 @@
 # Research: High-Stakes Review Patterns (RQ2)
 
+> **Author-graded.** The research was produced by an AI research model. Which
+> industry mechanisms Diffract adopted, and how faithfully, was judged by the
+> party that authored the instrument. No independent analyst has checked that
+> mapping (issue #26).
+
 ## Research Question
 
 > How do high-stakes industries (aviation, medicine, nuclear, law) structure

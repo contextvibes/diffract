@@ -1,8 +1,21 @@
 # Calibration
 
-Calibration is how Diffract validates itself. The framework claims that
-the same code + same lenses + different reviewer = same findings. This
-claim must be testable.
+> **Author-graded.** Every measurement this page cites — RQ3, RQ5, the Brier
+> worked example and the `calibration/` fixture run — was designed, run and
+> graded by the party that authored the instrument under test. The
+> judgment-dependent results (which claims are the same claim, stability,
+> tiers, condition-1 witnesses, which vetting outcomes resolved true) have
+> not been checked by anyone independent of that party (issue #26).
+
+Calibration is how Diffract validates itself. The framework's Goal is that
+the same artifact + same lenses + different reviewer = the same defects,
+plus a surplus specific to each reviewer. This claim must be testable.
+
+It is not "the same findings". On an artifact large enough to hold many
+defensible findings, two competent reviewers each hold true claims the other
+never raised, so a test that demands identical findings fails every pairing
+for coverage, not for miscalibration (issue #23). What must agree is the
+defects; the surplus is adjudicated, below.
 
 ## The Test
 
@@ -16,13 +29,14 @@ claim must be testable.
    other's
 5. Within each reviewer, cluster equivalent claims across runs. A claim is
    **stable** for a reviewer when it recurs in a majority of that reviewer's
-   runs
+   runs. Equivalence and the clustering procedure are defined under
+   Clustering Claims, below
 6. Compare **stable claims**, not single runs:
    - **Overlap:** Both reviewers' stable claims match → framework is calibrated
-   - **Stable for A, absent in all of B's runs:** B's process failed →
-     investigate B's lens application
-   - **Stable for B, absent in all of A's runs:** A's process failed →
-     review is incomplete, cycle again
+   - **Stable for one reviewer, absent in all of the other's runs:**
+     adjudicate it against the frozen artifact (Success Criteria) — a
+     coverage miss for the reviewer that never raised it, or a false
+     positive for the reviewer that holds it
    - **Same stable claim, different verdict:** governor calibration differs
 
 **Why multiple runs:** one run per reviewer cannot distinguish "Reviewer B
@@ -39,6 +53,33 @@ across runs measures the reviewer. See
 **Important:** Calibration tests stop at CHECK. Do not proceed to LEARN (fix).
 Fixing changes the artifact, which invalidates the comparison. Both reviewers
 must see the exact same artifact in the exact same state.
+
+### Clustering Claims
+
+Stability, tiers and Success Criteria condition 1 all turn on whether two
+claims are *the same claim*. Before 0.5.0 nothing here said when they were,
+and an analysis that clustered without a written rule did it inconsistently
+in both directions, each time in the direction of its own predictions
+(issue #22). From 0.5.0 on, this rule applies:
+
+> Two claims are **equivalent** iff (a) their cited lines overlap or cite
+> the same section, and (b) they assert the same defect predicate about that
+> text — the same thing wrong, not the same remedy. Wording, lens assignment,
+> and verdict differences do not separate claims; a different predicate at
+> the same lines does. Rows with any verdict count toward clustering,
+> `Discard:Integrity` included.
+
+Clustering is done **blind**: pool all rows from all runs of both reviewers,
+strip them of reviewer and run labels, cluster, then unblind. A reviewer that
+clusters its own runs is attesting to itself, and an analyst who can see the
+labels can cluster toward what they expect, as the analysis above did. For 0.5.0, the clustering is done by
+an **independent analyst** — someone who did not write the instrument version
+under test and is not a reviewer in the test.
+
+Results from before 0.5.0 — RQ3's and RQ5's clusters, stability counts,
+tiers and pairing results — were produced under no written rule. They are
+left as published and are records of method only: no one can reproduce them,
+and they are not re-derived under this rule.
 
 ## When to Run
 
@@ -108,11 +149,28 @@ At the end, rate each finding's calibration confidence (high/medium/low):
 
 ## Success Criteria
 
-A review is calibrated when **both** conditions hold:
+The result of The Test is a **ledger**, not a yes/no. Every stable claim of
+one reviewer that appears in none of the other's runs is **adjudicated
+against the frozen artifact** before any verdict on the pair. Check A against
+B *and* B against A — a one-directional check certifies a reviewer who found
+nothing.
 
-1. **Both directions clear.** No stable claim of either reviewer is absent
-   from all of the other reviewer's runs. Check A against B *and* B against
-   A — a one-directional check certifies a reviewer who found nothing.
+- Claim is **true** → record a **coverage miss** for the reviewer that never
+  raised it. That reviewer re-runs the owning lens with the claim as a probe.
+- Claim is **false** → record a **false positive** for the reviewer that
+  holds it: its Integrity process failed, not the other's coverage.
+
+Adjudication is judgment, so each ruling is recorded with its evidence —
+the artifact text, quoted, at its line — the same bar a finding meets. The
+ledger is the per-reviewer count of coverage misses and false positives, with
+those rulings attached.
+
+A pair is calibrated when **both** conditions hold:
+
+1. **No stable contradiction and no stable false claim.** The pair fails
+   outright when one reviewer stably asserts what the other stably denies, or
+   when adjudication rules any stable claim false. Coverage misses alone do
+   not fail the pair; they are the ledger, and they say who misses what.
 2. **Both reviewers produced stable claims.** A reviewer whose own claims
    never recur across its own runs has not been shown to agree with anyone;
    it has been shown to be unreliable. Zero stable claims is a failed run
@@ -131,7 +189,7 @@ it. Reviewer B produced *zero stable claims at all* — nothing recurred in a
 majority of its four runs — while nine of Reviewer A's stable claims were
 absent from every single B run, including a verified factual error B never
 raised once. The one-directional rule returns **calibrated**. Step 6 of The
-Test, on the same page, returns **B's process failed**. A criterion that
+Test, as it then read, returned **B's process failed**. A criterion that
 contradicts its own comparison table, and that the weakest reviewer passes
 by finding nothing, measures nothing.
 
@@ -195,6 +253,30 @@ Capture–recapture and the seeded-error variant on the
 self-check cannot detect its own misses — from opposite sides: estimation
 says *how many* defects remain, ground truth says *which one* was missed.
 Neither substitutes for the other.
+
+## Where Diffract Deviates from Canon
+
+Every component of Diffract is well represented in model training data, so a
+reviewer arrives with the canonical version of each concept already in mind.
+Wherever the instrument deliberately departs from canon, that prior pulls the
+other way, and reviewers grade the instrument against the concept they know
+instead of the definition written in it (issue #31). These are the known
+departures. Expect finding-noise to cluster at them when clustering
+calibration claims. Each definition is normative where the last column
+points, and is not restated here.
+
+| Concept | Canon | Diffract | Defined in |
+|---------|-------|----------|------------|
+| W5H1 | Journalism's 5W1H asks six questions | Asks four; What and Where are left to the 🏷️ Name and 🧱 Boundary lenses | `PROMPT.md`, DO (W5H1) |
+| *Survived* | Read as "passed vetting" or "was fixed" | Not the same as a `Fix` verdict | `PROMPT.md`, Findings Index |
+| Convergence | A pass that finds nothing new | Counts Major `Fix` outcomes only | `PROMPT.md`, LEARN (done-rule) |
+| Capture–recapture | Lincoln–Petersen over two samples of one closed population | Valid only across independent runs on a frozen artifact, never across cycles with fixes in between: each fix changes the population | `PROMPT.md`, LEARN; this page, Estimating What Both Reviewers Missed |
+| Confidence probabilities | A forecast's stated probability | The bins' canonical probabilities are initial priors, not measurements | `PROMPT.md`, Findings Index |
+
+`PROMPT.md` carries a point-of-use warning only where reviewers have
+repeatedly collided with the prior and the finding was rejected each time
+(currently the W5H1 name). This table is for human readers and calibration
+analysis.
 
 ## Scoring Confidence (Brier)
 
@@ -297,7 +379,8 @@ ranking.
 **Tier 4 is necessary, not sufficient.** It gates entry to The Test; it does
 not predict passing it. In [RQ5](research/rq5-reviewer-tiering.md) all four
 configurations measured tier 4 on the same artifact, and every one of the six
-pairings then failed Success Criteria condition 1. Qualifying two reviewers
+pairings then failed Success Criteria condition 1 as it then read (both
+directions clear, before adjudication replaced it). Qualifying two reviewers
 does not mean they will agree.
 
 **Why Success Criteria does not already cover this.** Those criteria measure
@@ -327,8 +410,9 @@ review under test.
 [RQ3](research/rq3-calibration-reproducibility.md) placed two reviewers and
 left two unplaced, bound to `PROMPT.md` @ `bd780e4`.
 [RQ5](research/rq5-reviewer-tiering.md) placed four at tier 4, bound to
-`PROMPT.md` v0.2.1 @ `9cb9cf2` and to `README.md` @ `22926ec`. Both sets are
-**stale**: this release changed `PROMPT.md` again. Every tier on this page
+`PROMPT.md` v0.2.1 @ `9cb9cf2` and to `README.md` @ `22926ec`. Both sets were
+clustered under no written equivalence rule and are records of method only
+(see Clustering Claims). Both are also **stale**: this release changed `PROMPT.md` again. Every tier on this page
 must be re-measured before it is relied on — which is the rule in the
 definition above doing its job, not an oversight.
 
@@ -348,12 +432,18 @@ Document calibration results in your retro:
 - Findings per run: A [n₁, n₂, …] / B [n₁, n₂, …]
 - Stable claims (majority of runs): A [X] / B [Y]
 - Cluster map: [cluster → the run-local finding IDs it groups, per reviewer]
+- Clustered by: [analyst] — blind: [yes/no] — independent of the instrument's
+  author and of both reviewers: [yes/no]
 - Stable-claim overlap: [count]
 - Stable claims of A absent from all B runs: [count]
 - Stable claims of B absent from all A runs: [count]
+- Adjudication ledger: coverage misses A [x] / B [y]; false positives
+  A [x] / B [y]; stable contradictions [count] — each ruling with its
+  quoted evidence
 - Estimated total Majors (capture–recapture, Majors only): [N̂ / n/a — see
   Estimating What Both Reviewers Missed]
 - Estimated missed by both: [count / n/a]
 - Brier score (per-bin table attached): A [x] / B [y]
-- Result: [calibrated / not calibrated — cycle again]
+- Result: [calibrated — ledger attached / not calibrated — stable
+  contradiction or stable false claim]
 ```
