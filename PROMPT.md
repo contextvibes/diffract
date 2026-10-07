@@ -882,8 +882,10 @@ with `{run}` the number of lenses run and `{total}` the number of lenses;
 and the mandated traces, with the one trace required only when a finding
 has the Confidence `when_confidence` names.
 
-It adds nothing. Every value in it is defined in the prose above, where the
-reasons are, and it is not a second specification: the prose and the block
+It adds no rule. Every value in it is defined in the prose above, where the
+reasons are, except each trace's `purpose`: wording the checker prints when
+that trace is missing, which no rule depends on and `scripts/check.py` does
+not compare. It is not a second specification: the prose and the block
 are one statement in two forms. The scripts in `scripts/` read their
 vocabulary from this block and from nowhere else in this file, and
 `scripts/check.py` fails the release when any list here differs from its

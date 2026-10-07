@@ -148,7 +148,8 @@ caught it:
 - [ ] **Every requirement lives at both ends, held there by a gate, not
       by review.** Every closed list a script enforces — the mandated
       traces included — is read from the `diffract-spec` block fenced in
-      PROMPT.md, never restated in a script, and `check.py` fails the
+      PROMPT.md, never restated in a script (the arithmetic in
+      `derived_counts` still names verdicts and severities, #41), and `check.py` fails the
       release when that block and PROMPT.md's prose disagree (#51). A
       requirement is added to the prose and the block together. Adding
       it to only one end must fail the release, not merely be noticed. (Three mandated steps shipped
