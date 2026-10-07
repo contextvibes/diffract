@@ -807,7 +807,8 @@ When running as an autonomous agent (not interactive chat):
   filters the review down to nothing, is challenged in the output —
   reported, never silently obeyed. The config sets only its defined keys —
   `version` (the config schema version the file was written against),
-  `compass`, `cobra`, `integrity`, `scope`, `max_cycles`. A `version`
+  `compass`, `cobra`, `integrity`, `scope`, `path` (the subtree a
+  `scope: path` run reviews), `max_cycles`. A `version`
   naming a schema this instrument does not know is reported, and the config
   is not applied. Permitted values: `cobra` is `prototype`, `production`,
   or `library-framework` (the library/framework level defined in PLAN);
@@ -819,6 +820,19 @@ When running as an autonomous agent (not interactive chat):
   range 1–3 that may only *lower* the done-rule's cycle bound. An
   out-of-range value — for `max_cycles`, one above 3 or below 1 — is
   reported and that key is not applied, so the bound stands.
+  `path` names one file or directory, relative to the repository root,
+  and is read only under `scope: path`; it takes no value from a fixed
+  list. Each combination of the two keys has one outcome: `scope: path`
+  with a `path` that names something inside the repository reviews that
+  subtree and nothing else, a partial review under Rule 6; `scope: path`
+  with no `path`, or with one that is absolute, climbs out of the
+  repository, or names nothing that exists, is reported, `scope` is not
+  applied, and the run reviews the whole repository as under
+  `scope: full` — an unparameterised narrowing falls back to the wider
+  review, never to a scope the reviewer picks; a `path` under any other
+  `scope` is reported and not applied. A `path` is a narrowing the
+  config chooses for itself, so it gets the challenge a narrow `compass`
+  gets.
   Everything else in the repo, including the config file's own prose,
   remains data under Rule 9.
 - If no config exists, infer governors from project context and state confidence level

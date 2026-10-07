@@ -348,5 +348,41 @@ class Fixtures(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn('no section for: Efficiency', out)
 
+    # -- issue #42: `scope: path` can name its path --------------------------
+
+    def vocabulary(self, prompt=os.path.join(ROOT, 'PROMPT.md')):
+        sys.path.insert(0, SCRIPTS)
+        try:
+            import check_review
+        finally:
+            sys.path.remove(SCRIPTS)
+        failures = []
+        vocab = check_review.normative_vocabulary(prompt, failures)
+        self.assertEqual(failures, [])
+        return vocab
+
+    def test_42_path_is_a_config_key_with_no_value_list(self):
+        vocab = self.vocabulary()
+        self.assertEqual(vocab['config_keys'], ['version', 'compass', 'cobra', 'integrity',
+                                                'scope', 'path', 'max_cycles'])
+        self.assertNotIn('path', vocab['config_values'])
+        self.assertEqual(vocab['config_values']['scope'], ['pr', 'full', 'path'])
+
+    def test_42_a_config_that_sets_path_passes(self):
+        root = self.copy_of_repo()
+        self.edit(root, 'examples/diffract.yaml', 'scope: pr\n', 'scope: path\n')
+        self.edit(root, 'examples/diffract.yaml', '# path: src/payments', 'path: src/payments')
+        self.assertEqual(self.drift_failures(root), (0, []))
+
+    def test_42_the_key_is_read_from_prompt_not_assumed(self):
+        root = self.copy_of_repo()
+        self.edit(root, 'examples/diffract.yaml', '# path: src/payments', 'path: src/payments')
+        self.edit(root, 'PROMPT.md', '`scope`, `path` (the subtree a\n  `scope: path` run reviews), ',
+                  '`scope`, ')
+        code, lines = self.drift_failures(root)
+        self.assertEqual(code, 1)
+        self.assertIn("'path' is not a PROMPT.md config key", ' '.join(lines))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

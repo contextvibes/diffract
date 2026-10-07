@@ -56,6 +56,19 @@ shows a short text example of the output (#1). The example
 says Diffract ships prompt-only, and the severity-trend idea from #29 is
 on the ROADMAP.
 
+**`scope: path` can say which path.** The config's closed key list
+permitted `scope: path` but had no key to carry the path, so a config
+choosing it could not say what to review (#42). A `path` key now names
+the subtree, and PROMPT.md states one outcome for each combination of
+the two keys: a usable `path` under `scope: path` reviews that subtree;
+a missing or unusable one is reported and the run falls back to a full
+review rather than to a scope the reviewer picks; a `path` under any
+other scope is reported and ignored. The key list is still read from
+PROMPT.md, so `check.py` accepts `path` in `examples/diffract.yaml`
+because PROMPT.md names it, and fails it again if PROMPT.md stops. The
+config schema string stays `0.2`: the key is optional, and a config
+without it means what it meant before.
+
 PROMPT.md changed, so every measured reviewer tier is stale until
 re-measured against this text.
 
