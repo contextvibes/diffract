@@ -28,6 +28,12 @@ jobs:
           python3 scripts/check_review.py calibration/semver-2.0.0-seeded-review.md \
             --artifact calibration/artifacts/semver-2.0.0-seeded.md
 
+      # Anonymized: its paths are fictional and no artifact is in the repo, so
+      # only the checks that need no artifact run. --no-artifact says which it
+      # skipped, and refuses a review whose Integrity governor requires quotes.
+      - name: Anonymized example review
+        run: python3 scripts/check_review.py examples/web-service.md --no-artifact
+
       # The Scorecard must already agree with the index it restates:
       # render_scorecard.py exits non-zero if it had to correct anything.
       - name: Scorecard arithmetic
