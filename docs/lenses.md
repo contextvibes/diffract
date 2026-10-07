@@ -1,5 +1,8 @@
 # The 10 Lenses
 
+> [PROMPT.md](../PROMPT.md) is the normative protocol. This page explains the
+> lenses; where the two disagree, PROMPT.md is right and this page has a defect.
+
 Each lens is grounded in a first principle from a domain **outside** software
 engineering. This grounding ensures the lenses are universal — they apply to
 any programming language, paradigm, or architecture style.
