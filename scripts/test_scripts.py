@@ -612,6 +612,21 @@ class Fixtures(unittest.TestCase):
             self.assertIn('Integrity governor requires a verbatim quote', out)
             self.assertNotIn('all checks pass', out)
 
+    def test_54_no_artifact_refuses_an_unrequested_quote(self):
+        # A quote present is verified or the review fails; without the
+        # artifact it cannot be verified, required or not.
+        text = read(WEB)
+        self.assertNotIn('\n  > ', text)
+        heading = '\n## FINDINGS INDEX'
+        self.assertIn(heading, text)
+        block = ('\n## Evidence\n\n- W5H-1 — cmd/server/main.go:35\n'
+                 '  > a quote no one can check\n')
+        review = self.write('quoted.md', text.replace(heading, block + heading, 1))
+        code, out = run('check_review.py', review, '--no-artifact')
+        self.assertEqual(code, 1, out)
+        self.assertIn('Evidence quote block(s) present', out)
+        self.assertNotIn('all checks pass', out)
+
     def test_54_artifact_or_no_artifact_is_required_and_exclusive(self):
         code, out = run('check_review.py', WEB)
         self.assertEqual(code, 2, out)

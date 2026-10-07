@@ -29,8 +29,10 @@ the hazard PROMPT.md states for `render_scorecard.py`, one step removed.
 `--no-artifact` is for a review whose artifact is not available, such as an
 anonymized example. It skips the checks that need the artifact — artifact
 hashes, citation existence, and Evidence quote verification — and says so
-in its output. It refuses a review whose Integrity governor requires a
-verbatim quote per finding, since those quotes cannot be verified (#54).
+in its output. It refuses any review that carries an Evidence quote, or
+whose Integrity governor requires one per finding: a quote that is present
+is verified or the review fails, and without the artifact it cannot be
+verified (#54).
 
 Exit code 0 = all checks pass; 1 = at least one failure (each is printed).
 """
@@ -926,12 +928,18 @@ def main():
         # Without the artifact, a quote is the reviewer's word. A run whose
         # Integrity governor makes the quotes its evidence cannot pass on the
         # reviewer's word, so it is refused rather than passed unverified.
+        # Neither can an unrequested quote: one that misquotes the artifact is
+        # still a fabrication, and every quote present is verified or fails.
+        blocks = (len(re.findall(LINE_CITE, review, re.M))
+                  + len(re.findall(HEAD_CITE, review, re.M)))
         if require:
             failures.append('--no-artifact: the Integrity governor requires a '
                             'verbatim quote per finding, and quotes cannot be '
                             'verified without the artifact; supply --artifact')
-        blocks = (len(re.findall(LINE_CITE, review, re.M))
-                  + len(re.findall(HEAD_CITE, review, re.M)))
+        elif blocks:
+            failures.append(f'--no-artifact: {blocks} Evidence quote block(s) '
+                            'present, and none can be verified without the '
+                            'artifact; supply --artifact')
         print(f'index rows {len(rows)} | quote blocks {blocks} '
               f'(required: {"yes" if require else "no"}) | NOT verified: no artifact')
     else:
@@ -961,9 +969,9 @@ def main():
           'and every derived count equal to the index; '
           f'{evidence}and these mandated sections: {traces}.')
     if args.no_artifact:
-        print('skipped (--no-artifact): the artifact hash, whether any cited '
-              'file or line exists, and whether any Evidence quote appears in '
-              'the artifact — no artifact was supplied, so nothing in this '
+        print('skipped (--no-artifact): the artifact hash, and whether any '
+              'Evidence citation resolves — the review carries no Evidence '
+              'quotes, and no artifact was supplied, so nothing in this '
               'review was checked against what it reviewed.')
     print('not checked: whether any finding is real, whether a severity is '
           'right, whether a lens was applied well, whether the cycle bound or '

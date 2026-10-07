@@ -37,8 +37,8 @@ section had no `Checked:` line. The section now uses the Output A format,
 with the same two findings. The example is anonymized and its artifact is
 not in the repo, so `check_review.py` gains `--no-artifact`, which skips
 the artifact hash, citation existence and quote verification, says so in
-its pass output, and refuses a review whose Integrity governor requires
-verbatim quotes, since they cannot be verified. CI runs it on that example
+its pass output, and refuses any review that carries an Evidence quote or
+whose Integrity governor requires one, since no quote can be verified. CI runs it on that example
 (#54).
 
 **One claim retired.** Mechanism 5, cognitive anchoring, no longer
