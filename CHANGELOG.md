@@ -11,6 +11,50 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+## [Unreleased]
+
+Work toward 0.5.0, not yet a release. The version string is unchanged.
+
+**The checker reads its rules from PROMPT.md.** Every rule
+`scripts/check_review.py` applied that PROMPT.md did not state is now
+either read from PROMPT.md or written into it (#41). The vocabulary
+(verdicts, tags, Severity and Confidence lists, config keys and values)
+is read from PROMPT.md, and `check.py` holds every other `.md` and YAML
+file to it (#39). Two holes the checker had are closed: a `Lenses run`
+claim higher than the lens sections present now fails instead of being
+corrected away (#50), and an Evidence citation must be a trailing part of
+a supplied path, not just share its basename (#49). Table rows split only
+on unescaped pipes (#43). The checks pass their failure list explicitly
+(#47), and `scripts/MANIFEST` pins each script's hash, gated by
+`check.py` (#46). Each of these comes with a regression test in
+`scripts/test_scripts.py`, which CI runs.
+
+**One claim retired.** Mechanism 5, cognitive anchoring, no longer
+claims to detect that a reviewer read the artifact: a generic anchor can
+be written without opening it. Three of the thirteen mechanisms are
+checked from outside, not four. A nearest-miss quote is piloted in
+calibration only (#24).
+
+**Calibration says who graded it.** Every study states at its head that
+it is author-graded (#26). Claim equivalence is defined, with blind
+clustering by an independent analyst from 0.5.0 on; RQ3 and RQ5 stay as
+published, labelled records of method only (#22). The Goal is restated
+as the same defects plus a reviewer-specific surplus, and condition 1's
+yes/no becomes an adjudicated ledger of misses and false positives
+(#23).
+
+**Docs.** Reviewers grade the instrument against its own definitions,
+where it defines them (#31). README, RQ1 and ROADMAP now match what the
+repo records, the ROADMAP tool table gives way to a link to
+`docs/lenses.md`, and How to Use warns before pasting (#52). The README
+shows a short text example of the output (#1). The example
+`diffract.yaml` matches PROMPT.md's integrity options, ROADMAP no longer
+says Diffract ships prompt-only, and the severity-trend idea from #29 is
+on the ROADMAP.
+
+PROMPT.md changed, so every measured reviewer tier is stale until
+re-measured against this text.
+
 ## [0.4.0] — 2026-08-30
 
 A review's form becomes partly checkable, and the checker says what it
