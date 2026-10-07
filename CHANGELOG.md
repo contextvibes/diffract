@@ -85,6 +85,29 @@ offline link check as "nothing to run against" with no tag; under the
 new table that is a missing tool and `[entry partial: …]`. They are
 hash-pinned evidence and are not re-synced.
 
+**PROMPT.md carries its lists in a form a script can read.** Every
+closed list the scripts enforce was scraped out of PROMPT.md's prose by
+a regex of its own, and the mandated traces were not read at all: they
+were a table in `check_review.py`, held to PROMPT.md by a phrase search
+(#51). A fenced `json diffract-spec` block at the end of PROMPT.md now
+carries them all — lenses with icons, questions and ID abbreviations,
+verdicts, Severity, Confidence, tags, config keys, values, default and
+range, the lens-output literals, the Scorecard rows, the `Lenses run`
+form, and the mandated and conditional traces. `check_review.py` and
+`render_scorecard.py` read the block and nothing else in PROMPT.md, and
+the trace table is gone. A reviewer reads the same block. `check.py`
+reads every list back out of the prose at the site that defines it and
+fails the release on any difference between the two, which replaces the
+phrase search, and it fails a block that leaves out a Scorecard row the
+scripts derive. Two of the six judgment calls left open under #41 are
+settled here: the traces are derived, and a `Lenses run` value that does
+not open `X of 10` now fails the checker and is refused by
+`render_scorecard.py` instead of being skipped. The prose parsers did
+not go away, they moved: the release gate still reads Markdown with
+regular expressions to compare it with the block, and a review is still
+parsed the same way, so #43's hand-parsing finding is narrowed, not
+closed.
+
 PROMPT.md changed, so every measured reviewer tier is stale until
 re-measured against this text.
 

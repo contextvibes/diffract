@@ -146,11 +146,12 @@ caught it:
       exempt from every verification applied to lenses, and absent from
       the Scorecard — so a run that skipped it passed every self-check.)
 - [ ] **Every requirement lives at both ends, held there by a gate, not
-      by review.** A section `check_review.py` demands of a review is in
-      `MANDATED_TRACES`, which `check.py` diffs against PROMPT.md; a
-      normative list a script enforces is parsed out of PROMPT.md rather
-      than restated. Adding a requirement to only one end must fail the
-      release, not merely be noticed. (Three mandated steps shipped
+      by review.** Every closed list a script enforces — the mandated
+      traces included — is read from the `diffract-spec` block fenced in
+      PROMPT.md, never restated in a script, and `check.py` fails the
+      release when that block and PROMPT.md's prose disagree (#51). A
+      requirement is added to the prose and the block together. Adding
+      it to only one end must fail the release, not merely be noticed. (Three mandated steps shipped
       checked by nothing while the checker's own pass message reported
       them as checked; the previous release named this pattern in its
       CHANGELOG and still shipped an instance-level fix for it.)

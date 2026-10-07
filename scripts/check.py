@@ -7,7 +7,8 @@ against this repo runs it at PLAN — plus the repo's own release gates that
 can be checked without judgment: link and anchor resolution, code-fence
 balance, version-string agreement, a README-vs-PROMPT lens-table diff, every
 other file's verdicts, tags, Severity and Confidence lists and config values
-against PROMPT.md's, and the scripts against scripts/MANIFEST. Standard
+against PROMPT.md's, PROMPT.md's prose against its own machine-readable
+specification block, and the scripts against scripts/MANIFEST. Standard
 library only.
 
 Every check is independent: a file this repository does not have is one
@@ -170,26 +171,169 @@ def check_lens_table(failures):
         failures.append(f'README lens table drifted from PROMPT.md: {set(normative) ^ set(reproduced)}')
 
 
-def check_enforced_strings(failures):
-    """Every section check_review.py demands of a review is mandated in PROMPT.md.
+def prose_vocabulary(prompt):
+    """Every list the spec block carries, read back out of PROMPT.md's prose.
 
-    The general form of a defect this repository has now shipped four times: a
-    rule enforced by a script and stated in no document, or stated in a
-    document and enforced by nothing. The lens list and the Scorecard row set
-    are already derived from PROMPT.md rather than hard-coded; the mandated
-    sections cannot be derived the same way — they are prose, not a table — so
-    this gate holds the two ends together instead. A trace added to the
-    checker fails the release until PROMPT.md mandates it.
+    These are the parsers the scripts used before issue #51, kept here and
+    nowhere else: the scripts read the block, and this reads the prose only so
+    the release can fail when the two disagree. Each list is read at the site
+    that defines it. A list whose site is not found reads as empty, and the
+    comparison then fails on it.
+    """
+    lines = prompt.split('\n')
+    live = check_review.outside_fences(lines)
+    prose = ' '.join(line.strip() for line, keep in zip(lines, live) if keep)
+    plain = check_review.plain
+    vocab = {}
+
+    listed = re.search(r'#### The 10 Lenses.*?#### W5H1', prompt, re.S)
+    vocab['lens_rows'] = ([(plain(n), q.strip()) for n, q in
+                           re.findall(r'^\d+\. (.+?) — (.+)$', listed.group(0), re.M)]
+                          if listed else [])
+
+    table = re.search(r'\*\*Verdict\*\* is one of .*?\n\n((?:\|.*\n)+)', prompt)
+    vocab['verdicts'] = ([check_review.unescape(cells[0])
+                          for cells in check_review.table_rows(table.group(1))
+                          if check_review.unescape(cells[0]) != 'Verdict']
+                         if table else [])
+
+    for key, term in (('severities', 'Severity'), ('confidences', 'Confidence')):
+        paragraph = re.search(r'^\*\*' + term + r'\*\* is .*?(?=\n\n)', prompt, re.S | re.M)
+        vocab[key] = (re.findall(r'\*\*(\w+)\*\* —', paragraph.group(0))
+                      if paragraph else [])
+
+    vocab['tags'] = sorted({re.sub(r'\s+', ' ', t)
+                            for t in re.findall(r'`(\[[^`\]]+\])`', prose)})
+
+    keys = re.search(r'defined keys — (.*?`)\.\s', prose)
+    vocab['config_keys'] = re.findall(r'`(\w+)`', keys.group(1)) if keys else []
+    values, defaults, ranges = {}, {}, {}
+    permitted = re.search(r'Permitted values: (.*?)\. An out-of-range', prose)
+    for clause in (permitted.group(1).split(';') if permitted else []):
+        named = re.match(r'\s*`(\w+)` is (.*)', clause)
+        if not named:
+            continue
+        key, rest = named.groups()
+        listed_values = rest.split(' — ')[0]
+        span = re.search(r'range (\d+)[–-](\d+)', listed_values)
+        if span:
+            ranges[key] = (int(span.group(1)), int(span.group(2)))
+            continue
+        values[key] = re.findall(r'`([^`]+)`', re.sub(r'\([^)]*\)', '', listed_values))
+        if 'the last is the PLAN default' in rest and values[key]:
+            defaults[key] = values[key][-1]
+    vocab['config_values'], vocab['config_defaults'] = values, defaults
+    vocab['config_ranges'] = ranges
+
+    named = re.search(r'The abbreviations are \*\*([A-Z0-9, ]+)\*\* for the ten '
+                      r'lenses in order, and \*\*([A-Z0-9]+)\*\* for W5H1', prose)
+    names = [n.split(None, 1)[-1] for n, _ in vocab['lens_rows']]
+    vocab['id_prefixes'] = {}
+    if named and len(named.group(1).split(', ')) == len(names):
+        vocab['id_prefixes'] = dict(zip(names, named.group(1).split(', ')))
+        vocab['id_prefixes']['W5H1'] = named.group(2)
+
+    # The literal text of the two lens-output templates: what lies outside
+    # their brackets. Text both carry is required of every lens section; text
+    # only Output B carries, of a lens that found nothing.
+    def literals(label):
+        block = re.search(label + r'.*?\n```markdown\n(.*?)```', prompt, re.S)
+        if not block:
+            return []
+        text = re.sub(r'\[[^\]]*\]', '\n', block.group(1))
+        return [part.strip() for part in text.split('\n')
+                if not part.lstrip().startswith(('#', '|')) and len(part.strip()) > 1]
+    found_some, found_none = literals('Output A'), literals('Output B')
+    vocab['literals_always'] = [x for x in found_none if x in found_some]
+    vocab['literals_nothing_found'] = [x for x in found_none if x not in found_some]
+
+    template = re.search(r'### Scorecard\n\| Metric \| Value \|\n.*?```', prompt, re.S)
+    rows = (re.findall(r'^\| ([^|]+?) \| ([^|]*?) \|$', template.group(0), re.M)
+            if template else [])
+    vocab['scorecard_rows'] = [plain(k) for k, _ in rows if plain(k) != 'Metric']
+    # The template's `Lenses run` value, up to its first non-count word:
+    # `X of 10 — [...]` reads as `X of 10`.
+    run = [v for k, v in rows if plain(k) == 'Lenses run']
+    form = re.match(r'(X\D*?\d+)', run[0]) if run else None
+    vocab['lenses_run_form'] = form.group(1).replace('X', '{run}', 1) if form else ''
+
+    # The traces: "carries the step's name: A, B, ..., and — where a
+    # Low-Confidence finding exists — C. A name mentioned in passing ..."
+    traces = re.search(r"carries the step's name: (.*?)\. A name mentioned", prose)
+    split = traces and re.match(r'(.*), and — where an? (\w+)-Confidence finding '
+                                r'exists — (.*)$', traces.group(1))
+    vocab['traces_mandated'] = split.group(1).split(', ') if split else []
+    vocab['traces_conditional'] = ([(n, split.group(2)) for n in split.group(3).split(', ')]
+                                   if split else [])
+    return vocab
+
+
+def check_spec_agreement(failures):
+    """PROMPT.md's prose and its machine-readable spec block say the same thing.
+
+    The scripts read every closed list from the block (issue #51); a reviewer
+    reads the prose, where the reasons are. Each is only as good as its
+    agreement with the other, so this reads every list out of the prose at
+    its defining site and fails the release on any difference — the block
+    cannot gain a value the prose does not define, nor the prose one the
+    scripts do not enforce. This replaces the gate that held one table of
+    trace names, kept in check_review.py, against PROMPT.md by phrase search.
+
+    It also holds the block to the scripts: every Scorecard row the scripts
+    derive from the index is a row the block lists, and every lens and W5H1
+    has its own ID abbreviation.
     """
     prompt = read('PROMPT.md', failures)
     if prompt is None:
         return
-    for phrase, purpose in (check_review.MANDATED_TRACES
-                            + check_review.CONDITIONAL_TRACES):
-        if phrase not in prompt:
+    found = []
+    vocab = check_review.normative_vocabulary('PROMPT.md', found)
+    lens_rows = check_review.normative_lens_rows('PROMPT.md', found)
+    rows = check_review.normative_scorecard_rows('PROMPT.md', found)
+    failures.extend(found)
+    if found:
+        return
+    block = dict(vocab, lens_rows=lens_rows, scorecard_rows=rows,
+                 config_ranges={k: tuple(v) for k, v in vocab['config_ranges'].items()},
+                 lenses_run_form=vocab['lenses_run_form'].replace(
+                     str(len(lens_rows)), '{total}', 1),
+                 traces_mandated=[n for n, _ in vocab['traces_mandated']],
+                 traces_conditional=[(n, w) for n, _, w in vocab['traces_conditional']])
+    prose = prose_vocabulary(prompt)
+    prose['lenses_run_form'] = prose['lenses_run_form'].replace(
+        str(len(prose['lens_rows'])), '{total}', 1)
+    for key, site in (
+            ('lens_rows', 'the 10 Lenses list'),
+            ('id_prefixes', 'the finding ID abbreviations'),
+            ('verdicts', 'the Verdict table'),
+            ('severities', 'the Severity paragraph'),
+            ('confidences', 'the Confidence paragraph'),
+            ('tags', 'the inline tag strings'),
+            ('config_keys', 'the diffract.yaml key list'),
+            ('config_values', 'the diffract.yaml permitted values'),
+            ('config_defaults', 'the diffract.yaml default'),
+            ('config_ranges', 'the diffract.yaml ranges'),
+            ('literals_always', 'the Output A and B templates'),
+            ('literals_nothing_found', 'the Output B template'),
+            ('scorecard_rows', 'the Scorecard template'),
+            ('lenses_run_form', "the Scorecard template's Lenses run value"),
+            ('traces_mandated', 'the CHECK trace list'),
+            ('traces_conditional', 'the CHECK trace list (conditional)')):
+        if prose[key] != block[key]:
             failures.append(
-                f'check_review.py requires a {phrase!r} section of every review '
-                f'({purpose}), but PROMPT.md never mandates it')
+                f'PROMPT.md: the spec block disagrees with {site}: '
+                f'block {block[key]!r}, prose {prose[key]!r}')
+
+    for key in sorted(set(check_review.derived_counts([])) - set(rows)):
+        failures.append(f'PROMPT.md: check_review.py derives a {key!r} Scorecard row '
+                        f'the spec block does not list')
+    prefixes = list(vocab['id_prefixes'].values())
+    if len(set(prefixes)) != len(prefixes):
+        failures.append(f'PROMPT.md: the spec block reuses an ID abbreviation: {prefixes}')
+    for key, default in vocab['config_defaults'].items():
+        if default not in vocab['config_values'].get(key, []):
+            failures.append(f'PROMPT.md: the spec block\'s {key} default {default!r} '
+                            f'is not one of its permitted values')
 
 
 # Files the vocabulary-drift check leaves alone. CHANGELOG.md quotes
@@ -395,7 +539,7 @@ def main():
     check_fences(failures)
     check_links(failures)
     check_lens_table(failures)
-    check_enforced_strings(failures)
+    check_spec_agreement(failures)
     check_vocabulary_drift(failures)
     check_manifest(failures)
     if failures:

@@ -294,8 +294,12 @@ class Fixtures(unittest.TestCase):
         prompt = read(os.path.join(ROOT, 'PROMPT.md'))
         row = '| `Discard:Integrity` | Fails the evidence bar — not established as real |\n'
         self.assertIn(row, prompt)
+        block = '"verdicts": ["Fix", "Skip:Compass", "Skip:Cobra", "Discard:Integrity"]'
+        self.assertIn(block, prompt)
+        # Added at both ends: the prose table and the spec block (issue #51).
         widened = self.write('PROMPT.md', prompt.replace(
-            row, row + '| `Skip:Budget` | Real, but over the review budget |\n', 1))
+            row, row + '| `Skip:Budget` | Real, but over the review budget |\n', 1).replace(
+            block, block[:-1] + ', "Skip:Budget"]', 1))
         review = self.write('budget.md', read(SEEDED).replace('| Minor | Fix |', '| Minor | Skip:Budget |', 1))
         code, out = self.check(review, SEEDED_ARTIFACT)
         self.assertEqual(code, 1, out)
@@ -347,6 +351,10 @@ class Fixtures(unittest.TestCase):
         code, out = self.check(review, SEEDED_ARTIFACT)
         self.assertEqual(code, 1, out)
         self.assertIn('no section for: Efficiency', out)
+        # And the value itself fails, rather than being skipped (call 6 of
+        # the #41 judgment calls, settled with #51's spec block).
+        self.assertIn("'Lenses run' value '9/10", out)
+        self.assertIn("does not open in PROMPT.md's form 'X of 10'", out)
 
     # -- issue #42: `scope: path` can name its path --------------------------
 
@@ -379,9 +387,17 @@ class Fixtures(unittest.TestCase):
         self.edit(root, 'examples/diffract.yaml', '# path: src/payments', 'path: src/payments')
         self.edit(root, 'PROMPT.md', '`scope`, `path` (the subtree a\n  `scope: path` run reviews), ',
                   '`scope`, ')
+        # Removed from the prose alone, the block and the prose disagree.
         code, lines = self.drift_failures(root)
         self.assertEqual(code, 1)
-        self.assertIn("'path' is not a PROMPT.md config key", ' '.join(lines))
+        self.assertIn('the spec block disagrees with the diffract.yaml key list', ' '.join(lines))
+        # Removed from both, the example config's key is no longer permitted.
+        self.edit(root, 'PROMPT.md', '"scope", "path", "max_cycles"', '"scope", "max_cycles"')
+        code, lines = self.drift_failures(root)
+        self.assertEqual(code, 1)
+        joined = ' '.join(lines)
+        self.assertIn("'path' is not a PROMPT.md config key", joined)
+        self.assertNotIn('the spec block disagrees', joined)
 
 
     # -- issue #40: the entry gate is keyed on what is missing ---------------
@@ -440,6 +456,143 @@ class Fixtures(unittest.TestCase):
         prose = ' '.join(read(os.path.join(ROOT, 'PROMPT.md')).split())
         self.assertIn('names each check not run and what was missing for it — '
                       '`no tool` or `target not supplied`', prose)
+
+    # -- issue #51: one machine-readable spec, held to the prose ------------
+
+    SPEC_TAGS_LINE = '    "[exit unestimated]",\n'
+
+    def test_51_the_spec_block_is_the_one_the_scripts_read(self):
+        sys.path.insert(0, SCRIPTS)
+        try:
+            import check_review
+        finally:
+            sys.path.remove(SCRIPTS)
+        failures = []
+        data = check_review.spec(os.path.join(ROOT, 'PROMPT.md'), failures)
+        self.assertEqual(failures, [])
+        self.assertEqual(sorted(data), sorted(check_review.SPEC_SHAPE))
+        vocab = self.vocabulary()
+        self.assertEqual(vocab['traces_mandated'][0][0], 'Cold-Start Calibration')
+        self.assertEqual(vocab['traces_conditional'],
+                         [('Competing Hypotheses',
+                           'the rival explanations weighed for a Low finding', 'Low')])
+        self.assertEqual(vocab['lenses_run_form'], '{run} of 10')
+        # The trace table and the phrase-search gate it needed are gone.
+        source = read(os.path.join(SCRIPTS, 'check_review.py'))
+        self.assertNotIn('MANDATED_TRACES', source)
+        self.assertNotIn('CONDITIONAL_TRACES', source)
+
+    def test_51_a_trace_added_to_the_block_is_required_of_a_review(self):
+        prompt = read(os.path.join(ROOT, 'PROMPT.md'))
+        last = '{"name": "Defect Prevention", "purpose": "the upstream cause of each Major"}'
+        self.assertIn(last, prompt)
+        added = self.write('PROMPT.md', prompt.replace(
+            last, last + ',\n      {"name": "Root Cause Ledger", "purpose": "a test trace"}', 1))
+        code, out = run('check_review.py', SEEDED, '--artifact', SEEDED_ARTIFACT,
+                        '--prompt', added)
+        self.assertEqual(code, 1, out)
+        self.assertIn("no 'Root Cause Ledger' section — a test trace", out)
+
+    def test_51_a_conditional_trace_follows_its_confidence(self):
+        # Moving the conditional trace to Medium makes it due on reviews with
+        # Medium findings; the seeded review has some and no block for them.
+        prompt = read(os.path.join(ROOT, 'PROMPT.md'))
+        moved = self.write('PROMPT.md', prompt.replace(
+            '"when_confidence": "Low"', '"when_confidence": "Medium"', 1))
+        text = read(SEEDED)
+        self.assertRegex(text, r'\| Medium \|\n')
+        code, out = run('check_review.py', SEEDED, '--artifact', SEEDED_ARTIFACT,
+                        '--prompt', moved)
+        self.assertEqual(code, 1, out)
+        self.assertRegex(out, r'Medium Confidence, named in no competing hypotheses block'
+                              r'|Medium-Confidence finding\(s\) but no "Competing Hypotheses"')
+
+    def test_51_a_missing_or_broken_block_fails_cleanly(self):
+        prompt = read(os.path.join(ROOT, 'PROMPT.md'))
+        for name, text, want in (
+                ('none.md', prompt.replace('```json diffract-spec', '```json', 1),
+                 'expected one ```json diffract-spec block, found 0'),
+                ('broken.md', prompt.replace(self.SPEC_TAGS_LINE, '    "[exit unestimated]"\n', 1),
+                 'the diffract-spec block is not valid JSON'),
+                ('shape.md', prompt.replace('"lenses_run_form"', '"lenses_run_shape"', 1),
+                 "'lenses_run_form' is missing or not a str")):
+            changed = self.write(name, text)
+            code, out = run('check_review.py', SEEDED, '--artifact', SEEDED_ARTIFACT,
+                            '--prompt', changed)
+            self.assertEqual(code, 1, out)
+            self.assertIn(want, out)
+            self.assertNotIn('Traceback', out)
+            code, out = run('render_scorecard.py', SEEDED, '--prompt', changed)
+            self.assertEqual(code, 2, out)
+            self.assertNotIn('Traceback', out)
+
+    def test_51_prose_and_block_that_disagree_fail_the_release(self):
+        # One edit at one end for each list the block carries; each must fail
+        # check.py by name. Every edit is made in a fresh copy.
+        cases = (
+            ('"Skip:Cobra", "Discard:Integrity"]', '"Skip:Cobra", "Discard:Integrity", "Skip:Budget"]',
+             'the Verdict table'),
+            ('"severities": ["Major", "Minor"]', '"severities": ["Major", "Minor", "Nit"]',
+             'the Severity paragraph'),
+            ('"confidences": ["High", "Medium", "Low"]', '"confidences": ["High", "Low"]',
+             'the Confidence paragraph'),
+            (self.SPEC_TAGS_LINE, self.SPEC_TAGS_LINE + '    "[exit guessed]",\n',
+             'the inline tag strings'),
+            ('"question": "Can I remove this entirely?"', '"question": "Can I delete it?"',
+             'the 10 Lenses list'),
+            ('"prefix": "SUB"', '"prefix": "SUBT"', 'the finding ID abbreviations'),
+            ('"prefix": "W5H"', '"prefix": "WH"', 'the finding ID abbreviations'),
+            ('"cobra": ["prototype", "production", "library-framework"]',
+             '"cobra": ["prototype", "production"]', 'the diffract.yaml permitted values'),
+            ('"ranges": {"max_cycles": [1, 3]}', '"ranges": {"max_cycles": [1, 5]}',
+             'the diffract.yaml ranges'),
+            ('"always": ["Checked:"]', '"always": ["Checked:", "Read:"]',
+             'the Output A and B templates'),
+            ('    "W5H1 run",\n', '', 'the Scorecard template'),
+            ('"lenses_run_form": "{run} of {total}"', '"lenses_run_form": "{run}/{total}"',
+             "the Scorecard template's Lenses run value"),
+            ('{"name": "Gap Analysis", "purpose": "what the review could not reach"},\n', '',
+             'the CHECK trace list'),
+            ('step\'s name: Cold-Start Calibration, ', 'step\'s name: ',
+             'the CHECK trace list'),
+            ('| Lenses run | X of 10 —', '| Lenses run | X/10 —',
+             "the Scorecard template's Lenses run value"),
+        )
+        for old, new, site in cases:
+            with self.subTest(site=site, old=old[:40]):
+                shutil.rmtree(os.path.join(self.tmp.name, 'repo'), ignore_errors=True)
+                root = self.copy_of_repo()
+                self.edit(root, 'PROMPT.md', old, new)
+                code, lines = self.drift_failures(root)
+                self.assertEqual(code, 1, lines)
+                self.assertIn(f'the spec block disagrees with {site}', ' '.join(lines))
+
+    def test_51_a_prose_only_template_change_fails_the_release(self):
+        # test_41's literal change edits both ends; one end alone is caught.
+        root = self.copy_of_repo()
+        self.edit(root, 'PROMPT.md', 'No findings matching this pattern.\n```',
+                  'Nothing matched this pattern.\n```')
+        code, lines = self.drift_failures(root)
+        self.assertEqual(code, 1)
+        self.assertIn('the spec block disagrees with the Output B template', ' '.join(lines))
+
+    def test_51_the_block_lists_every_row_the_scripts_derive(self):
+        root = self.copy_of_repo()
+        self.edit(root, 'PROMPT.md', '    "Cobra-skipped",\n', '')
+        self.edit(root, 'PROMPT.md', '| Cobra-skipped |', '| Cobra-skips |')
+        code, lines = self.drift_failures(root)
+        self.assertEqual(code, 1)
+        self.assertIn("check_review.py derives a 'Cobra-skipped' Scorecard row", ' '.join(lines))
+
+    def test_51_render_refuses_an_unreadable_lenses_run(self):
+        text = read(SEEDED).replace('| Lenses run | 10 of 10', '| Lenses run | 10/10', 1)
+        review = self.write('slash-full.md', text)
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 2, out)
+        self.assertIn("REFUSED: Lenses run value '10/10", out)
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn("'Lenses run' value '10/10", out)
 
 
 if __name__ == '__main__':

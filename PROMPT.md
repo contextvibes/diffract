@@ -69,8 +69,10 @@ and, in the same run, that repository's own release gates, which are not
 entry criteria: a lens-table diff between README and this file, and a
 version-string comparison across the repository, a vocabulary diff holding
 every other file's verdicts, tags, Severity and Confidence lists and
-`diffract.yaml` values to this file's, and a hash check of `scripts/`
-against `scripts/MANIFEST`. Read its failures before
+`diffract.yaml` values to this file's, an agreement check between this
+file's prose and its
+[machine-readable specification](#machine-readable-specification), and a
+hash check of `scripts/` against `scripts/MANIFEST`. Read its failures before
 acting on them. A failure against a file the artifact does not contain is a
 gap in what you were given, not a defect in what you were given, and the
 target-not-supplied row below governs. It takes the same rule as
@@ -512,7 +514,9 @@ file; other files reproduce it but never alter it, and where a copy
 disagrees, this file is right. The scripts in `scripts/` enforce this file;
 they are not a second specification. Every rule a script applies is stated
 here, and where a script and this file disagree, this file is right and the
-script has the bug.
+script has the bug. The scripts take their vocabulary from the
+[machine-readable specification](#machine-readable-specification) at the
+end of this file, which `scripts/check.py` holds to the prose.
 
 `Most productive lens` is counted over the ten lenses only. W5H1 is a
 question set, not a lens, and it routinely out-raises every lens — four
@@ -537,7 +541,12 @@ sections present. `Lenses run` is corrected in one direction only: a number
 lower than the sections present is a counting slip and is raised to match;
 a number higher is a coverage claim the review contradicts, and the script
 refuses it rather than lowering it — a skipped lens fails and is never
-corrected away. A narrowed `Lenses run` row names every omitted lens. It
+corrected away. A narrowed `Lenses run` row names every omitted lens.
+The row's value opens in the template's form, `X of 10`: the number of
+lenses run, the word `of`, and the number of lenses. A value that opens any
+other way — `9/10`, a bare number, a word — cannot be read as a count, so
+`check_review.py` fails it and `render_scorecard.py` refuses it rather than
+guess what it meant. It
 prints the corrected review to stdout; pass `--write` to rewrite the file in
 place, and read its stderr either way, because that is where it reports what
 it corrected and what it refused. It produces
@@ -860,3 +869,105 @@ When running as an autonomous agent (not interactive chat):
 - Circuit breakers apply as defined in LEARN's done-rule — the cycle
   bound, the diminishing-returns stop, and the stop tag. They bind agentic
   runs the same way as interactive ones.
+
+## Machine-Readable Specification
+
+The block below restates, in a form a script can read, the closed lists
+this file defines in prose: the lenses with their icons, questions and
+finding-ID abbreviations; W5H1's abbreviation; the verdicts, Severity and
+Confidence values; the tag strings; the `diffract.yaml` keys, permitted
+values, default and range; the literal lines of the two lens-output
+templates; the Scorecard rows in order; the form of the `Lenses run` value,
+with `{run}` the number of lenses run and `{total}` the number of lenses;
+and the mandated traces, with the one trace required only when a finding
+has the Confidence `when_confidence` names.
+
+It adds nothing. Every value in it is defined in the prose above, where the
+reasons are, and it is not a second specification: the prose and the block
+are one statement in two forms. The scripts in `scripts/` read their
+vocabulary from this block and from nowhere else in this file, and
+`scripts/check.py` fails the release when any list here differs from its
+prose definition, so a value cannot be added at one end only (issue #51).
+A copy of this file in which the two disagree is defective. Report it, and
+follow the prose.
+
+```json diffract-spec
+{
+  "lenses": [
+    {"name": "Subtract", "icon": "🗑️", "prefix": "SUB", "question": "Can I remove this entirely?"},
+    {"name": "Simplify", "icon": "✂️", "prefix": "SIM", "question": "Can this be simpler without losing capability?"},
+    {"name": "Name", "icon": "🏷️", "prefix": "NAM", "question": "Does the name match the thing?"},
+    {"name": "Truth", "icon": "📌", "prefix": "TRU", "question": "Is this knowledge in exactly one place?"},
+    {"name": "Boundary", "icon": "🧱", "prefix": "BOU", "question": "Can an isolated change stay in one boundary?"},
+    {"name": "Shield", "icon": "🛡️", "prefix": "SHI", "question": "Does it neutralize all inputs violating its invariants?"},
+    {"name": "Provenance", "icon": "🔗", "prefix": "PRO", "question": "Can I verify the origin and integrity of every dependency?"},
+    {"name": "Variety", "icon": "🎯", "prefix": "VAR", "question": "Does every possible input map to a defined output?"},
+    {"name": "Observability", "icon": "🔍", "prefix": "OBS", "question": "Can I determine system state from outputs?"},
+    {"name": "Efficiency", "icon": "⚡", "prefix": "EFF", "question": "Is resource use proportional to work required?"}
+  ],
+  "question_set": {"name": "W5H1", "prefix": "W5H"},
+  "verdicts": ["Fix", "Skip:Compass", "Skip:Cobra", "Discard:Integrity"],
+  "severities": ["Major", "Minor"],
+  "confidences": ["High", "Medium", "Low"],
+  "tags": [
+    "[async — no PLAN confirmation]",
+    "[entry partial: <checks not run>]",
+    "[entry waived: <reason>]",
+    "[entry waived: cannot run checks]",
+    "[entry waived: external checks failing]",
+    "[exit unestimated]",
+    "[fixes listed, not applied — convergence untested]",
+    "[governors: diffract.yaml]",
+    "[stopped: circuit breaker, not converged]",
+    "[stopped: entry criteria failed]"
+  ],
+  "config": {
+    "keys": ["version", "compass", "cobra", "integrity", "scope", "path", "max_cycles"],
+    "values": {
+      "cobra": ["prototype", "production", "library-framework"],
+      "scope": ["pr", "full", "path"],
+      "integrity": ["file-line", "file-line-with-anchoring", "file-line-with-anchoring-and-quotes"]
+    },
+    "defaults": {"integrity": "file-line-with-anchoring-and-quotes"},
+    "ranges": {"max_cycles": [1, 3]}
+  },
+  "lens_output": {
+    "always": ["Checked:"],
+    "nothing_found": ["A finding would look like:", "No findings matching this pattern."]
+  },
+  "scorecard_rows": [
+    "Reviewer",
+    "Artifact",
+    "Instrument",
+    "Governors",
+    "Entry checks",
+    "Findings raised",
+    "Major findings raised",
+    "Fix verdicts",
+    "Fixes applied",
+    "Cobra-skipped",
+    "Compass-skipped",
+    "Integrity-discarded",
+    "PDCA cycles run",
+    "Lenses run",
+    "W5H1 run",
+    "Most productive lens",
+    "Estimated remaining Majors",
+    "Calibration",
+    "Tags"
+  ],
+  "lenses_run_form": "{run} of {total}",
+  "traces": {
+    "mandated": [
+      {"name": "Cold-Start Calibration", "purpose": "the invariants written down before the lenses"},
+      {"name": "Scope and Nothing-Found Verification", "purpose": "the form and anchoring check"},
+      {"name": "Stockholm & Hammer", "purpose": "the audit of adopted explanations and reached-for tools"},
+      {"name": "Gap Analysis", "purpose": "what the review could not reach"},
+      {"name": "Defect Prevention", "purpose": "the upstream cause of each Major"}
+    ],
+    "conditional": [
+      {"name": "Competing Hypotheses", "purpose": "the rival explanations weighed for a Low finding", "when_confidence": "Low"}
+    ]
+  }
+}
+```
