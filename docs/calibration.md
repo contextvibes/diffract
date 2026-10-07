@@ -161,7 +161,10 @@ nothing.
   holds it: its Integrity process failed, not the other's coverage.
 
 Adjudication is judgment, so each ruling is recorded with its evidence —
-the artifact text, quoted, at its line — the same bar a finding meets. The
+the artifact text, quoted, at its line — the same bar a finding meets.
+The adjudicator is blind: a reviewer that sees the two reviewers' claims and
+the frozen artifact, and never the author's scores or rulings. A ledger
+adjudicated by someone who has seen them is author-graded, and says so. The
 ledger is the per-reviewer count of coverage misses and false positives, with
 those rulings attached.
 

@@ -43,6 +43,10 @@ as the same defects plus a reviewer-specific surplus, and condition 1's
 yes/no becomes an adjudicated ledger of misses and false positives
 (#23).
 
+The ledger's adjudicator must be blind to the author's scores (#23). Any
+re-score of the published runs waits on their raw outputs, which are not
+in the repository.
+
 **Docs.** Reviewers grade the instrument against its own definitions,
 where it defines them (#31). README, RQ1 and ROADMAP now match what the
 repo records, the ROADMAP tool table gives way to a link to
