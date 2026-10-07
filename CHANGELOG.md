@@ -69,6 +69,22 @@ because PROMPT.md names it, and fails it again if PROMPT.md stops. The
 config schema string stays `0.2`: the key is optional, and a config
 without it means what it meant before.
 
+**The entry gate asks what is missing.** Its six outcomes were
+descriptions that overlapped: when a check's *target* rather than its
+tool was absent, "cannot be run", "nothing to run against" and "checks
+fail" all fit, and the blind reviewer in cycle 6 had to pick a tag by
+argument (#40). Each check is now classified by one ordered test — is
+its target missing from the artifact, outside a declared subset, is its
+tool missing, or neither — and the run's outcome follows from a second
+table with one row per combination of results. The partial tag names,
+for each check not run, whether the tool or the target was missing,
+because those are different claims about the run. Two regression tests
+read both tables from PROMPT.md and fail if two of the cases collapse
+into one result or one tag. The two frozen semver reviews classified an
+offline link check as "nothing to run against" with no tag; under the
+new table that is a missing tool and `[entry partial: …]`. They are
+hash-pinned evidence and are not re-synced.
+
 PROMPT.md changed, so every measured reviewer tier is stale until
 re-measured against this text.
 

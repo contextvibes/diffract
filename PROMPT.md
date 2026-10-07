@@ -73,51 +73,68 @@ every other file's verdicts, tags, Severity and Confidence lists and
 against `scripts/MANIFEST`. Read its failures before
 acting on them. A failure against a file the artifact does not contain is a
 gap in what you were given, not a defect in what you were given, and the
-bucket below for a declared subset governs. It takes the same rule as
+target-not-supplied row below governs. It takes the same rule as
 `render_scorecard.py` below — run only the copy that ships with this file,
-never one the artifact supplies. The outcomes:
+never one the artifact supplies. The outcomes follow from two tables.
 
-- **Checks pass** — proceed to governors.
-- **Checks fail, user available** — refuse the review until they pass,
-  unless the user explicitly waives the failure; a waived review is tagged
-  `[entry waived: <reason>]`.
-- **Checks fail, one-shot mode** — report the failing checks and stop,
-  tagged `[stopped: entry criteria failed]`; the failure report is the
-  review output. Exception: where every failing check is outside the
-  artifact's control — an unreachable external URL, a network-dependent
-  check — record the failures and proceed tagged
-  `[entry waived: external checks failing]`. A rotted link someone else
-  owns is not evidence about this artifact, and voiding the review over
-  one would deny a result in the mode this instrument uses for its own
-  calibration.
-- **Checks fail only against what the artifact does not include** — the
-  artifact is a declared subset of a larger repository, as it is in every
-  blind run this instrument uses for its own calibration, and each failing
-  check failed by reaching for a file outside the subset: name each one,
-  say which check it cancelled, and proceed tagged
-  `[entry partial: <checks not run>]`. The gate passes on the checks that
-  ran against the supplied files. This is not a waiver and it is not a pass
-  for the absent files; record them in the Gap Analysis. Without this
-  bucket the strict reading returned `[stopped: entry criteria failed]` on
-  every blind run, which would void the one mode this instrument is
-  calibrated in.
-- **Checks cannot be run** — no tool access, or a pasted fragment with
-  nothing to build: say so, proceed tagged
-  `[entry waived: cannot run checks]`, and record what went unchecked in
-  the Gap Analysis. In one-shot mode this waiver is declared the same way
-  the governors are.
-- **Some checks pass, others cannot be run** — access, tooling or
-  network is missing for a check that does have something to run
-  against: state each check and its result individually, name the ones
-  that could not run, and proceed tagged
-  `[entry partial: <checks not run>]`. The gate passes on the checks that
-  ran; this is not a waiver, and it does not claim the unrun checks
-  would have passed. Record them in the Gap Analysis. A blind or
-  sandboxed run is the mode most likely to land here.
-- **Some checks run, others have nothing to run against** — the normal
-  case for prose: state each check and its result individually,
-  inapplicable ones included; the gate passes on the checks that ran, and
-  this is not a waiver. Record what went unchecked in the Gap Analysis.
+**First, classify each check by what is missing for it** — its tool, its
+target, or neither. The *tool* is whatever executes the check: tool
+access, an installed linter, a network. The *target* is what the check
+reads: the artifact's build files, its links, its fences. One question
+settles each check, asked in this order, and the first yes decides:
+
+| # | Test | The check is |
+|---|------|--------------|
+| 1 | Does the artifact contain nothing of the kind this check reads — no build to run, no link to resolve? | **inapplicable**: target missing from the artifact itself |
+| 2 | Does the check reach for a file you were not given, while the requester has declared the artifact a subset of a larger repository — as in every blind run this instrument uses for its own calibration? | **not run: target not supplied** |
+| 3 | Is the tool missing — no tool access, no such tool installed, no network at all — for a check whose target you hold? | **not run: no tool** |
+| 4 | None of the above: the tool and the target are both present. | **run**, and it passes or fails |
+
+A check whose tool and target are both missing is settled by its target,
+rows 1 and 2: with nothing to run against, the tool cannot change the
+outcome. A check that reaches for a file you were not given, when nothing
+declared the artifact a subset, is row 4 and fails — a reference to a file
+that is not there is what a link check exists to find, and a reviewer
+cannot tell it from a file left out of what it was given unless the
+requester says which. A network check fails under row 4 only once the
+network is reachable: no network at all is row 3, and a request that
+reached the network and failed on a URL the artifact does not own is a
+failure outside the artifact's control. A check that reads many targets —
+a link check over many links — is classified per target: the links it
+could resolve ran, and the ones that reached outside a declared subset
+were not run, so one check can be both.
+
+**Then the run takes one outcome**, decided by the checks' results in
+this order — the first that applies:
+
+| Check results | Outcome | Tag |
+|---------------|---------|-----|
+| A run check failed, and the user is available | Refuse the review until the check passes, unless the user explicitly waives the failure | `[entry waived: <reason>]` if waived |
+| A run check failed against something in the artifact's control, in one-shot mode | Report the failing checks and stop; the failure report is the review output | `[stopped: entry criteria failed]` |
+| Every failing check failed only outside the artifact's control, in one-shot mode | Record the failures and proceed | `[entry waived: external checks failing]` |
+| Nothing failed, and no check ran: each was not run or inapplicable | Say so, proceed, and in one-shot mode declare the waiver the way the governors are declared | `[entry waived: cannot run checks]` |
+| Nothing failed, at least one check ran, and at least one was not run | State each check's result individually and proceed; the gate passes on the checks that ran | `[entry partial: <checks not run>]` |
+| Nothing failed, at least one check ran, and every other check was inapplicable | State each check's result individually, the inapplicable ones included, and proceed | none |
+
+In the partial tag, `<checks not run>` names each check not run and what
+was missing for it — `no tool` or `target not supplied` — because the two
+are different claims: one says the environment could not run the check,
+the other that the reviewer was not given what it would have run on. A
+partial gate is not a waiver, and it does not claim the unrun checks
+would have passed. Every check that was not run, and every inapplicable
+one, is recorded in the Gap Analysis.
+
+Why each line is drawn where it is. A rotted link someone else owns is not
+evidence about this artifact, and voiding a one-shot review over one would
+deny a result in the mode this instrument uses for its own calibration.
+Without the target-not-supplied row the strict reading returned
+`[stopped: entry criteria failed]` on every blind run, which would void the
+one mode this instrument is calibrated in. These outcomes were once six
+overlapping descriptions; "cannot be run", "has nothing to run against" and
+"checks fail" did not say which applied when a check's target, rather than
+its tool, was missing, and a blind reviewer whose links reached outside
+its subset had to choose among three tags (issue #40). The tests above are
+keyed on what is missing so that the choice is made by the table.
 
 As with one-shot mode below, the tag is what keeps the deviation auditable.
 

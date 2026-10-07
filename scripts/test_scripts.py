@@ -384,5 +384,63 @@ class Fixtures(unittest.TestCase):
         self.assertIn("'path' is not a PROMPT.md config key", ' '.join(lines))
 
 
+    # -- issue #40: the entry gate is keyed on what is missing ---------------
+
+    def entry_tables(self):
+        """PROMPT.md's two entry-gate tables, as lists of unescaped rows."""
+        sys.path.insert(0, SCRIPTS)
+        try:
+            import check_review
+        finally:
+            sys.path.remove(SCRIPTS)
+        text = read(os.path.join(ROOT, 'PROMPT.md'))
+        start = text.index('**First, classify each check by what is missing for it**')
+        end = text.index('Then propose governors')
+        tables, current = [], None
+        for line in text[start:end].split('\n'):
+            cells = check_review.split_row(line)
+            if cells is None:
+                current = None
+                continue
+            if current is None:
+                current = []
+                tables.append(current)
+            if not all(re.match(r'^:?-*:?$', c) for c in cells):
+                current.append([check_review.unescape(c) for c in cells])
+        self.assertEqual(len(tables), 2, tables)
+        return [rows[1:] for rows in tables]
+
+    def test_40_what_is_missing_decides_one_result_each(self):
+        classify, _ = self.entry_tables()
+        results = [row[2] for row in classify]
+        self.assertEqual(len(results), 4, classify)
+        self.assertEqual(len(set(results)), 4, results)
+        tool, subset, none = (next(r for r in results if key in r) for key in
+                              ('no tool', 'target not supplied', 'inapplicable'))
+        self.assertEqual(len({tool, subset, none}), 3)
+        # Rows are ordered and the first yes decides; the target rows come
+        # first, so a check missing both is settled by its target.
+        order = [r for r in results if r in (tool, subset, none)]
+        self.assertEqual(order, [none, subset, tool])
+
+    def test_40_the_three_cases_carry_three_different_tags(self):
+        _, outcomes = self.entry_tables()
+        self.assertEqual(len(outcomes), 6, outcomes)
+        tag = {}
+        for condition, _, row_tag in outcomes:
+            if condition.startswith('Nothing failed'):
+                tag[condition] = row_tag
+        self.assertEqual(len(tag), 3, tag)
+        # No check ran / some ran, some not run / some ran, rest inapplicable.
+        self.assertEqual(sorted(tag.values()),
+                         sorted(['[entry waived: cannot run checks]',
+                                 '[entry partial: <checks not run>]', 'none']))
+        # The partial tag says which of the two was missing, so a run that
+        # lacked a tool and one that lacked a file stay apart in the record.
+        prose = ' '.join(read(os.path.join(ROOT, 'PROMPT.md')).split())
+        self.assertIn('names each check not run and what was missing for it — '
+                      '`no tool` or `target not supplied`', prose)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
