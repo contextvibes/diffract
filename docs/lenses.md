@@ -280,7 +280,7 @@ fallthrough in switch/match statements.
 Checked: all switch/match statements on values received from outside the process
 | # | File | Finding | Line |
 |---|------|---------|------|
-| V1 | payment_events.kt | `when` over the payment provider's event type has no `else` — an unknown type throws at runtime | 74 |
+| V1 | payment_events.kt | `when` statement over the payment provider's event type has no `else` — an unknown type matches no branch and is silently ignored | 74 |
 ```
 
 **Maps to:** Error Handling, Exhaustive Pattern Matching

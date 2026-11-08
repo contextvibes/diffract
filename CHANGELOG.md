@@ -80,11 +80,12 @@ shows a short text example of the output (#1). The example
 `diffract.yaml` matches PROMPT.md's integrity options, ROADMAP no longer
 says Diffract ships prompt-only, and the severity-trend idea from #29 is
 on the ROADMAP. The web-service example's file paths, identifiers and
-line numbers, and the sample rows in `docs/lenses.md` and
-`docs/w5h1.md`, are now invented ones that describe no real code; its
+line numbers, the README's excerpt of it, and the sample rows, prose
+examples and `Checked:` lines in `docs/lenses.md` and `docs/w5h1.md`, are now invented ones that describe no real code; its
 15 findings keep their ids, lenses, severities, verdicts and confidence.
 In `docs/lenses.md` the Truth and Observability descriptions, and the
-Shield, Variety and Observability example rules, are reworded so they
+Shield, Variety and Observability example rules and the Observability
+tool-table cell, are reworded so they
 no longer echo the example; the Shield and Variety rules require what
 they did before, and the Observability rule now asks that work spanning
 processes can be followed from its outputs rather than naming
