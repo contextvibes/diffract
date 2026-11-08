@@ -3,8 +3,8 @@ name: release
 # A pushed vX.Y.Z tag publishes its GitHub Release. The notes are that
 # version's CHANGELOG.md entry, without its heading, printed by
 # scripts/release_notes.py, which refuses a tag that disagrees with the README
-# badge, the PROMPT.md header or the newest CHANGELOG entry, and a version
-# marked never released. Nothing is published unless every check passes.
+# badge, the PROMPT.md header or the newest CHANGELOG entry. Nothing is
+# published unless every check passes.
 
 on:
   push:
