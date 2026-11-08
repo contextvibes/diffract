@@ -961,63 +961,98 @@ class Fixtures(unittest.TestCase):
 
     # -- issue #58: every published review is checked, none by name -------
 
-    def examples(self, root):
-        done = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'check_examples.py')],
+    def examples(self, root=ROOT):
+        done = subprocess.run([sys.executable, os.path.join(root, 'tools', 'check_examples.py')],
                               cwd=root, capture_output=True, text=True)
         return done.returncode, done.stdout + done.stderr
 
-    def test_58_every_published_review_passes(self):
-        code, out = run('check_examples.py')
+    def put(self, root, name, text):
+        with open(os.path.join(root, name), 'w') as handle:
+            handle.write(text)
+
+    def test_58_every_published_review_passes_both_scripts(self):
+        code, out = self.examples()
         self.assertEqual(code, 0, out)
         for review, given in (('examples/semver-2.0.0-review.md',
                                '--artifact examples/artifacts/semver-2.0.0.md'),
                               ('examples/web-service.md', '--no-artifact'),
                               ('calibration/semver-2.0.0-seeded-review.md',
                                '--artifact calibration/artifacts/semver-2.0.0-seeded.md')):
-            self.assertIn(f'{review}: {given}', out)
+            self.assertIn(f'{review}: {given}\n  check_review.py exit 0\n'
+                          '  render_scorecard.py exit 0\n', out)
         self.assertIn('3 reviews pass', out)
 
     def test_58_a_new_review_is_checked_without_naming_it(self):
         root = self.copy_of_repo()
-        self.assertEqual(self.examples(root)[0], 0)
-        # A defective review dropped into examples/ fails with no list edited.
         text = read(EXAMPLE)
-        row = '| SUB-1 |'
-        self.assertIn(row, text)
-        broken = text.replace(row, '| SUB-99 |', 1)
-        with open(os.path.join(root, 'examples', 'new-review.md'), 'w') as handle:
-            handle.write(broken)
+        self.assertIn('| SUB-1 |', text)
+        self.put(root, 'examples/new-review.md', text.replace('| SUB-1 |', '| SUB-99 |', 1))
         code, out = self.examples(root)
         self.assertEqual(code, 1, out)
-        self.assertIn('examples/new-review.md: check_review.py exited 1', out)
         self.assertIn('examples/new-review.md: --artifact examples/artifacts/semver-2.0.0.md', out)
+        self.assertIn('examples/new-review.md: check_review.py exited 1', out)
 
-    def test_58_the_artifact_comes_from_the_scorecard_row(self):
+    def test_58_each_script_failing_fails_the_run(self):
+        # Stub each script in a copy: dropping either run must fail a fixture.
+        for script in ('check_review.py', 'render_scorecard.py'):
+            shutil.rmtree(os.path.join(self.tmp.name, 'repo'), ignore_errors=True)
+            root = self.copy_of_repo()
+            # Importable, so the runner can still use its locators; exits 1 as a script.
+            stub = 'import sys\nif __name__ == "__main__":\n    sys.exit(1)\n'
+            self.put(root, os.path.join('scripts', script), stub + read(os.path.join(SCRIPTS, script)))
+            code, out = self.examples(root)
+            self.assertEqual(code, 1, f'{script}\n{out}')
+            self.assertIn(f'examples/web-service.md: {script} exited 1', out)
+
+    def test_58_the_artifacts_come_from_the_scorecard_row(self):
         root = self.copy_of_repo()
-        path = os.path.join(root, 'examples', 'semver-2.0.0-review.md')
-        text = read(path)
+        path = 'examples/semver-2.0.0-review.md'
+        text = read(EXAMPLE)
         named = '`examples/artifacts/semver-2.0.0.md`'
         self.assertIn(named, text)
-        # A moved artifact is a failure, not an anonymized review.
-        with open(path, 'w') as handle:
-            handle.write(text.replace(named, '`examples/artifacts/moved.md`', 1))
-        code, out = self.examples(root)
-        self.assertEqual(code, 1, out)
-        self.assertIn('names examples/artifacts/moved.md, which is not a file', out)
-        # No backticked path: run without the artifact, which this review's
+        for new, failure in (
+                ('`examples/artifacts/moved.md`', 'names examples/artifacts/moved.md, which is not a file'),
+                ('`/etc/hosts`', 'names /etc/hosts, which is outside the repository'),
+                ('`../diffract/README.md`', 'which is outside the repository')):
+            self.put(root, path, text.replace(named, new, 1))
+            code, out = self.examples(root)
+            self.assertEqual(code, 1, out)
+            self.assertIn(failure, out)
+        # No file span: run without the artifact, which this review's
         # Integrity governor refuses.
-        with open(path, 'w') as handle:
-            handle.write(text.replace(named, 'Semantic Versioning', 1))
+        self.put(root, path, text.replace(named, 'Semantic Versioning', 1))
         code, out = self.examples(root)
         self.assertEqual(code, 1, out)
-        self.assertIn('examples/semver-2.0.0-review.md: --no-artifact', out)
+        self.assertIn(f'{path}: --no-artifact', out)
         self.assertIn('Integrity governor requires a verbatim quote', out)
-        # No Artifact row at all.
-        with open(path, 'w') as handle:
-            handle.write(text.replace('| Artifact |', '| Subject |', 1))
+        # No Artifact row in the Scorecard.
+        self.put(root, path, text.replace('| Artifact |', '| Subject |', 1))
         code, out = self.examples(root)
         self.assertEqual(code, 1, out)
-        self.assertIn('no "| Artifact |" Scorecard row', out)
+        self.assertIn('no "| Artifact |" row in its ### Scorecard', out)
+
+    def test_58_every_file_on_the_row_is_an_artifact(self):
+        root = self.copy_of_repo()
+        named = '`examples/artifacts/semver-2.0.0.md`'
+        both = named + ' and `calibration/artifacts/semver-2.0.0-seeded.md`'
+        self.put(root, 'examples/semver-2.0.0-review.md', read(EXAMPLE).replace(named, both, 1))
+        code, out = self.examples(root)
+        self.assertEqual(code, 0, out)
+        self.assertIn('examples/semver-2.0.0-review.md: --artifact examples/artifacts/semver-2.0.0.md '
+                      '--artifact calibration/artifacts/semver-2.0.0-seeded.md', out)
+
+    def test_58_a_fenced_row_or_heading_is_not_read(self):
+        root = self.copy_of_repo()
+        text = read(EXAMPLE)
+        self.assertIn('\n## PLAN', text)
+        quoted = ('\n```markdown\n| Artifact | `calibration/artifacts/semver-2.0.0-seeded.md` |\n'
+                  '```\n\n```markdown\n### Scorecard\n\n| Artifact | `examples/artifacts/moved.md` |\n```\n')
+        self.put(root, 'examples/semver-2.0.0-review.md', text.replace('\n## PLAN', quoted + '\n## PLAN', 1))
+        self.put(root, 'examples/notes.md', '# Notes\n\n```markdown\n## FINDINGS INDEX\n```\n')
+        code, out = self.examples(root)
+        self.assertEqual(code, 0, out)
+        self.assertIn('examples/semver-2.0.0-review.md: --artifact examples/artifacts/semver-2.0.0.md\n', out)
+        self.assertNotIn('examples/notes.md', out)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

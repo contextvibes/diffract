@@ -34,7 +34,11 @@ If you've completed a full Diffract review and want to share it:
 1. Anonymize all project-specific details
 2. Include the PLAN (governors), DO (findings), CHECK (vetting), and LEARN (retro)
 3. Check it against the template-conformance checklist below
-4. Add it to `examples/` as a pull request
+4. Add it to `examples/` as a pull request. CI finds it there by its
+   `## FINDINGS INDEX` heading and checks it against the artifacts its
+   Scorecard `Artifact` row names in backticks, or with `--no-artifact`
+   if the row names none (`tools/check_examples.py`, which is repository
+   tooling and not part of the instrument)
 
 **Template-conformance checklist** — examples in `examples/` demonstrate
 the templates in [PROMPT.md](PROMPT.md), so they must match them. Before
