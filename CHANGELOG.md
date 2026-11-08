@@ -55,7 +55,13 @@ not in the repo, so `check_review.py` gains `--no-artifact`, which skips
 the artifact hash, citation existence and quote verification, says so in
 its pass output, and refuses any review that carries an Evidence quote or
 whose Integrity governor requires one, since no quote can be verified. CI runs it on that example
-(#54).
+(#54). No list names the reviews: `scripts/check_examples.py` finds
+every file under `examples/` and `calibration/` with a `## FINDINGS
+INDEX` heading, takes its artifact from the backticked path in its own
+Scorecard `Artifact` row (none means `--no-artifact`; a path that names
+no file fails), and runs it through `check_review.py` and
+`render_scorecard.py`, so a review added there is checked without a CI
+edit (#58).
 
 **One claim retired.** Mechanism 5, cognitive anchoring, no longer
 claims to detect that a reviewer read the artifact: a generic anchor can
