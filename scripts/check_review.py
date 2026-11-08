@@ -158,6 +158,17 @@ def repeated_header(where, cells):
             f'not the table\'s header: GitHub shows it as a data row')
 
 
+def misplaced_header(where, cells):
+    """The failure for a header-position row that is not the header.
+
+    The row above a rule row is what GitHub shows as the header, so a finding
+    there is a finding no reader may skip: skipped by position, it was dropped
+    and the seed score undercounted without a word (issue #43, D1).
+    """
+    return (f'{where} row {unescape(cells[0])[:40]!r} is above the rule row: '
+            f'GitHub shows it as the header, not as a row')
+
+
 def rule_rows(body):
     """Cells of each table's rule row: the rows table_rows drops.
 
@@ -638,7 +649,9 @@ def index_rows(review, vocab, failures):
     parts, _, _, heads = table_parts(body)
     for cells in parts:
         if is_header(cells, heads):
-            if len(cells) != 8:
+            if unescape(cells[0]) != 'ID':
+                failures.append(misplaced_header('index', cells))
+            elif len(cells) != 8:
                 failures.append(wrong_width('index', cells, 8))
             continue
         if unescape(cells[0]) == 'ID':

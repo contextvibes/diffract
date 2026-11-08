@@ -329,6 +329,36 @@ class Fixtures(unittest.TestCase):
         self.assertNotEqual(code, 0, out)
         self.assertIn(named, out)
 
+    def test_43_a_finding_in_the_header_place_is_named(self):
+        # Skipped by position, a finding above a rule row was dropped: a
+        # second table opened by one, or an index whose ID line was lost.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        header = '| ID | Lens | Cycle | Line(s) | Severity | Verdict | Claim (one sentence) | Confidence |'
+        sub9 = '| SUB-9 | Subtract | 1 | semver-2.0.0-seeded.md:10-11 | Major | Fix | hidden finding | High |'
+        text = read(SEEDED)
+        self.assertIn(header + '\n' + rule, text)
+        index = text.split('\n## FINDINGS INDEX\n', 1)[1]
+        rows = [l for l in index.split('\n') if l.startswith('| SUB-')]
+        first, last = rows[0], rows[-1]
+        # B: a second table under the index, opened by a finding.
+        second = text.replace(last, last + '\n\n' + sub9 + '\n' + rule, 1)
+        self.assertNotEqual(second, text)
+        # D: the ID line lost, so the first finding sits in the header's place.
+        lost = text.replace(header + '\n' + rule + '\n' + first,
+                            first + '\n' + rule, 1)
+        self.assertNotEqual(lost, text)
+        for review_text, fid in ((second, 'SUB-9'), (lost, 'SUB-1')):
+            named = (f"index row {fid!r} is above the rule row: GitHub shows it "
+                     f"as the header, not as a row")
+            review = self.write('header-place.md', review_text)
+            code, out = self.check(review, SEEDED_ARTIFACT)
+            self.assertEqual(code, 1, out)
+            self.assertEqual(out.count(named), 1, out)
+            code, out = run('score_seeds.py', review, '--seeds',
+                            os.path.join(ROOT, 'calibration', 'seeds.md'))
+            self.assertNotEqual(code, 0, out)
+            self.assertIn(named, out)
+
     def test_43_a_dash_row_in_the_scorecard_body_is_named(self):
         review = self.scorecard_mutant('|--------|-------|\n',
                                        '|--------|-------|\n| Spare | x |\n|---|---|\n')

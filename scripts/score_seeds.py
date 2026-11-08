@@ -43,7 +43,9 @@ def findings(path):
     for cells in parts:
         c = [check_review.unescape(x) for x in cells]
         if check_review.is_header(cells, heads):
-            if len(c) != 8:
+            if c[0] != 'ID':
+                wrong.append(check_review.misplaced_header('index', cells))
+            elif len(c) != 8:
                 wrong.append(check_review.wrong_width('index', cells, 8))
             continue
         if c and c[0] == 'ID':
