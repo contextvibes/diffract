@@ -115,28 +115,47 @@ def is_rule(cells):
 
 
 def table_parts(body):
-    """(rows, rules, strays) of the tables in a body.
+    """(rows, rules, strays, heads) of the tables in a body.
 
     The rule row is the line straight after a table's header: GFM reads only
     that one as the rule. `rules` holds those, `strays` every other row whose
     cells are all dashes, and `rows` everything else, header included. A stray
     used to be dropped as a rule row wherever it sat; GFM renders it as a data
     row, so a reader that dropped it read a table GitHub does not show (issue
-    #43, D1).
+    #43, D1). `heads` holds each table's header, the row above its rule row,
+    by position: a reader that skips its header by content skipped a data row
+    that merely repeated it.
     """
-    rows, rules, strays = [], [], []
-    at = 0
+    rows, rules, strays, heads = [], [], [], []
+    at, first = 0, None
     for line in body.split('\n'):
         cells = split_row(line)
         if cells is None:
             at = 0
             continue
+        if at == 0:
+            first = cells
         if is_rule(cells):
-            (rules if at == 1 else strays).append(cells)
+            if at == 1:
+                rules.append(cells)
+                heads.append(first)
+            else:
+                strays.append(cells)
         else:
             rows.append(cells)
         at += 1
-    return rows, rules, strays
+    return rows, rules, strays, heads
+
+
+def is_header(cells, heads):
+    """Whether these cells are, by identity, one of table_parts()'s heads."""
+    return any(cells is head for head in heads)
+
+
+def repeated_header(where, cells):
+    """The failure for a data row that repeats the header's first cell."""
+    return (f'{where} row {unescape(cells[0])[:40]!r} repeats the header but is '
+            f'not the table\'s header: GitHub shows it as a data row')
 
 
 def rule_rows(body):
@@ -616,10 +635,15 @@ def index_rows(review, vocab, failures):
                     for cells in rule_rows(body) if len(cells) != 8)
     failures.extend(stray_rules('index', body))
     rows = []
-    for cells in table_rows(body):
-        if unescape(cells[0]) == 'ID':
+    parts, _, _, heads = table_parts(body)
+    for cells in parts:
+        if is_header(cells, heads):
             if len(cells) != 8:
                 failures.append(wrong_width('index', cells, 8))
+            continue
+        if unescape(cells[0]) == 'ID':
+            # Skipped by content, this row was a finding no check read.
+            failures.append(repeated_header('index', cells))
             continue
         rows.append([unescape(c) for c in cells])
     for row in rows:

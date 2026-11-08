@@ -31,11 +31,12 @@ it through uncorrected, and `score_seeds.py`, which skipped it. That
 includes header and rule rows, which were dropped at any width, and a
 row of empty cells, which was taken for a rule row. Only the line after
 a table's header is its rule row; a later row of dashes, which GitHub
-shows as data, is named too. A row too wide says
+shows as data, is named too, and so is a
+row below it that repeats the index header's `ID`. A row too wide says
 a literal `|` is written `\|`. Three siblings are older and filed: a
 row GitHub renders that no reader reads, with no outer `|` or indented
 (#64); a mandated table with no rule row or split by a blank line (#65);
-and a Scorecard metric written twice (#66). The checks pass their
+and a Scorecard metric written twice or not in the template (#66). The checks pass their
 failure list explicitly (#47), and `scripts/MANIFEST` pins each
 script's hash, gated by `check.py` (#46). Each of these comes with a
 regression test in `scripts/test_scripts.py`, which CI runs.

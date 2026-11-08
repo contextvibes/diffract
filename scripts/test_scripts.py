@@ -305,10 +305,29 @@ class Fixtures(unittest.TestCase):
         finally:
             sys.path.pop(0)
         body = '| A | B |\n|---|---|\n| 1 | 2 |\n\ntext\n\n| C | D |\n|---|---|\n| 3 | 4 |\n'
-        rows, rules, strays = check_review.table_parts(body)
+        rows, rules, strays, heads = check_review.table_parts(body)
+        self.assertEqual([h[0] for h in heads], ['A', 'C'])
         self.assertEqual(len(rules), 2, (rules, strays))
         self.assertEqual(strays, [])
         self.assertEqual(len(rows), 4, rows)
+
+    def test_43_a_row_repeating_the_index_header_is_named(self):
+        # The header is the row above the rule row, by position. Skipped by
+        # content, a data row whose ID cell read 'ID' was never checked.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        extra = '| ID | Subtract | 1 | x | Major | Fix | hidden finding | High |'
+        named = ("index row 'ID' repeats the header but is not the table's "
+                 "header: GitHub shows it as a data row")
+        text = read(SEEDED)
+        self.assertIn(rule, text)
+        review = self.write('index-id.md', text.replace(rule, rule + '\n' + extra, 1))
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn(named, out)
 
     def test_43_a_dash_row_in_the_scorecard_body_is_named(self):
         review = self.scorecard_mutant('|--------|-------|\n',

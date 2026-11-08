@@ -39,9 +39,15 @@ def findings(path):
     wrong = [check_review.wrong_width('index', cells, 8)
              for cells in check_review.rule_rows(body) if len(cells) != 8]
     wrong += check_review.stray_rules('index', body)
-    for cells in check_review.table_rows(body):
+    parts, _, _, heads = check_review.table_parts(body)
+    for cells in parts:
         c = [check_review.unescape(x) for x in cells]
-        if c and c[0] == 'ID' and len(c) == 8:
+        if check_review.is_header(cells, heads):
+            if len(c) != 8:
+                wrong.append(check_review.wrong_width('index', cells, 8))
+            continue
+        if c and c[0] == 'ID':
+            wrong.append(check_review.repeated_header('index', cells))
             continue
         if len(c) != 8:
             # Named, not skipped: a skipped row is a finding the score never
