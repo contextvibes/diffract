@@ -203,6 +203,9 @@ def render(review, prompt_path=None):
         return line
 
     table = '\n'.join(fix_row(line) for line in table.split('\n'))
+    # A stray is two cells wide, so fix_row reads it as a row named '---';
+    # it is named here instead (issue #43, D1).
+    refused.extend(check_review.stray_rules('Scorecard', table))
     refused.extend(f'instrument rejected: {f}' for f in failures)
     return '\n'.join(prefix + table.split('\n') + suffix), changes, notes, refused
 

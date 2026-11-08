@@ -29,7 +29,9 @@ name in every reader: `check_review.py`'s Scorecard, which used to drop
 it and report a missing row instead, `render_scorecard.py`, which passed
 it through uncorrected, and `score_seeds.py`, which skipped it. That
 includes header and rule rows, which were dropped at any width, and a
-row of empty cells, which was taken for a rule row. A row too wide says
+row of empty cells, which was taken for a rule row. Only the line after
+a table's header is its rule row; a later row of dashes, which GitHub
+shows as data, is named too. A row too wide says
 a literal `|` is written `\|`. One sibling is left: a row with no
 closing `|`, which GitHub renders but no reader treats as a row; it is
 older than this and is filed as #64. The checks pass their

@@ -38,6 +38,7 @@ def findings(path):
     out = []
     wrong = [check_review.wrong_width('index', cells, 8)
              for cells in check_review.rule_rows(body) if len(cells) != 8]
+    wrong += check_review.stray_rules('index', body)
     for cells in check_review.table_rows(body):
         c = [check_review.unescape(x) for x in cells]
         if c and c[0] == 'ID' and len(c) == 8:

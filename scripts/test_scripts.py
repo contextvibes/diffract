@@ -278,6 +278,50 @@ class Fixtures(unittest.TestCase):
         self.assertNotEqual(code, 0, out)
         self.assertIn(named, out)
 
+    def test_43_a_dash_row_below_the_index_rule_is_named(self):
+        # Only the line after the header is a rule row; GitHub shows a later
+        # all-dash row as data, so dropping it read a table it does not show.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        text = read(SEEDED)
+        self.assertIn(rule, text)
+        for extra, first in (('|' + ' - |' * 8, '-'), (rule, '----')):
+            named = (f"index row {first!r} is all dashes below the rule row: "
+                     f"GitHub shows it as a data row")
+            review = self.write('index-dashes.md', text.replace(rule, rule + '\n' + extra, 1))
+            code, out = self.check(review, SEEDED_ARTIFACT)
+            self.assertEqual(code, 1, out)
+            self.assertEqual(out.count(named), 1, out)
+            code, out = run('score_seeds.py', review, '--seeds',
+                            os.path.join(ROOT, 'calibration', 'seeds.md'))
+            self.assertNotEqual(code, 0, out)
+            self.assertIn(named, out)
+
+    def test_43_each_table_has_its_own_rule_row(self):
+        # The rule row is counted from each table's header, not the body's
+        # first line: a second table's rule is not a stray.
+        sys.path.insert(0, SCRIPTS)
+        try:
+            import check_review
+        finally:
+            sys.path.pop(0)
+        body = '| A | B |\n|---|---|\n| 1 | 2 |\n\ntext\n\n| C | D |\n|---|---|\n| 3 | 4 |\n'
+        rows, rules, strays = check_review.table_parts(body)
+        self.assertEqual(len(rules), 2, (rules, strays))
+        self.assertEqual(strays, [])
+        self.assertEqual(len(rows), 4, rows)
+
+    def test_43_a_dash_row_in_the_scorecard_body_is_named(self):
+        review = self.scorecard_mutant('|--------|-------|\n',
+                                       '|--------|-------|\n| Spare | x |\n|---|---|\n')
+        named = ("Scorecard row '---' is all dashes below the rule row: "
+                 "GitHub shows it as a data row")
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 2, out)
+        self.assertIn(f'REFUSED: {named}', out)
+
     def test_43_a_narrow_row_gets_no_pipe_hint(self):
         review = self.scorecard_mutant('|--------|-------|\n',
                                        '|--------|-------|\n| Spare |\n')

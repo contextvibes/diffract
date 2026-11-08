@@ -113,25 +113,53 @@ def is_rule(cells):
     return all(RULE_CELL.match(c) for c in cells)
 
 
+def table_parts(body):
+    """(rows, rules, strays) of the tables in a body.
+
+    The rule row is the line straight after a table's header: GFM reads only
+    that one as the rule. `rules` holds those, `strays` every other row whose
+    cells are all dashes, and `rows` everything else, header included. A stray
+    used to be dropped as a rule row wherever it sat; GFM renders it as a data
+    row, so a reader that dropped it read a table GitHub does not show (issue
+    #43, D1).
+    """
+    rows, rules, strays = [], [], []
+    at = 0
+    for line in body.split('\n'):
+        cells = split_row(line)
+        if cells is None:
+            at = 0
+            continue
+        if is_rule(cells):
+            (rules if at == 1 else strays).append(cells)
+        else:
+            rows.append(cells)
+        at += 1
+    return rows, rules, strays
+
+
 def rule_rows(body):
-    """Cells of every rule row in a body: the rows table_rows drops.
+    """Cells of each table's rule row: the rows table_rows drops.
 
     GFM does not render a table whose rule row is not the header's width, so
     a reader that drops rule rows must still name one of the wrong width.
     """
-    return [cells for cells in map(split_row, body.split('\n'))
-            if cells is not None and is_rule(cells)]
+    return table_parts(body)[1]
+
+
+def stray_rules(where, body):
+    """The failure for each all-dash row that is not a table's rule row."""
+    return [f'{where} row {unescape(cells[0])[:40]!r} is all dashes below the '
+            f'rule row: GitHub shows it as a data row'
+            for cells in table_parts(body)[2]]
 
 
 def table_rows(body):
-    """Raw cells of every table row in a body, header and rule rows dropped."""
-    rows = []
-    for line in body.split('\n'):
-        cells = split_row(line)
-        if cells is None or is_rule(cells):
-            continue
-        rows.append(cells)
-    return rows
+    """Raw cells of every table row in a body; rule rows and strays dropped.
+
+    A caller that reads a mandated table names the strays with stray_rules().
+    """
+    return table_parts(body)[0]
 
 
 def outside_fences(lines):
@@ -503,6 +531,7 @@ def scorecard_cells(table, failures=None):
     if failures is not None:
         failures.extend(wrong_width('Scorecard', cells, 2)
                         for cells in rule_rows(table) if len(cells) != 2)
+        failures.extend(stray_rules('Scorecard', table))
     return card
 
 
@@ -584,6 +613,7 @@ def index_rows(review, vocab, failures):
     # width: either one of the wrong width was dropped unnamed (issue #43, D1).
     failures.extend(wrong_width('index', cells, 8)
                     for cells in rule_rows(body) if len(cells) != 8)
+    failures.extend(stray_rules('index', body))
     rows = []
     for cells in table_rows(body):
         if unescape(cells[0]) == 'ID':
