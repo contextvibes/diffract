@@ -83,6 +83,12 @@ on the ROADMAP. The web-service example's file paths, identifiers and
 line numbers, and the sample rows in `docs/lenses.md` and
 `docs/w5h1.md`, are now invented ones that describe no real code; its
 15 findings keep their ids, lenses, severities, verdicts and confidence.
+In `docs/lenses.md` the Truth and Observability descriptions, and the
+Shield, Variety and Observability example rules, are reworded so they
+no longer echo the example; the Shield and Variety rules require what
+they did before, and the Observability rule now asks that work spanning
+processes can be followed from its outputs rather than naming
+correlation IDs.
 
 **`scope: path` can say which path.** The config's closed key list
 permitted `scope: path` but had no key to carry the path, so a config

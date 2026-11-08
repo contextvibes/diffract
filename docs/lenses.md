@@ -195,7 +195,7 @@ missing authentication.
 **Example rules:**
 - Every external input (network, file, environment, user) crosses a
   validation before its first use.
-- No secret or personal data reaches log output, error text, or a URL.
+- No secret or PII appears in logs, error messages, or URLs.
 - No security-relevant default that fails open (permissive CORS, no expiry,
   debug enabled).
 - Every authentication or authorization check runs on the trusted side of
@@ -266,8 +266,8 @@ fallthrough in switch/match statements.
 "does it handle ALL input — including valid but unexpected states?"
 
 **Example rules:**
-- Every state an external value can take is named where it is matched;
-  none is left to an implicit fallthrough.
+- Every switch/match on an external value has an explicit default
+  branch, and that branch handles the state rather than ignoring it.
 - No error return or rejected promise that a caller silently ignores.
 - No partial function: every input state the interface admits maps to a
   defined output state.
@@ -277,10 +277,10 @@ fallthrough in switch/match statements.
 **Evidence format:**
 ```
 ### 🎯 Variety
-Checked: all switch/match statements on external status codes
+Checked: all switch/match statements on values received from outside the process
 | # | File | Finding | Line |
 |---|------|---------|------|
-| V1 | order_state.kt | `when` over order status has no `REFUNDED` branch — it falls to `else` and reports the order shipped | 74 |
+| V1 | payment_events.kt | `when` over the payment provider's event type has no `else` — an unknown type throws at runtime | 74 |
 ```
 
 **Maps to:** Error Handling, Exhaustive Pattern Matching
