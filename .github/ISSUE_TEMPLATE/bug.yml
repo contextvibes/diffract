@@ -1,0 +1,44 @@
+name: Bug
+description: Something in Diffract is wrong — the prompt, a script, a check, or a published review.
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A bug is something Diffract states or does that is wrong: a rule PROMPT.md
+        contradicts, a script that passes what it should refuse, a count that does
+        not add up. A gap the lenses did not catch is a Feature.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version in PROMPT.md's header, or the commit you used.
+      placeholder: "0.x.y, or a commit sha"
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: The file, and the section or line.
+      placeholder: "scripts/check_review.py, check_index_completeness"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong
+      description: What it says or does, and what it should say or do instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The command you ran and its output, or the quote that is wrong.
+      render: text
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Why you believe the expected behaviour is the right one — a PROMPT.md rule, a measurement, a source.
