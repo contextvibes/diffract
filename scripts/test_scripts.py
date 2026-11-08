@@ -840,5 +840,119 @@ class Fixtures(unittest.TestCase):
         self.assertIn('W5H-2: in the Findings Index, raised in no lens table', out)
 
 
+    # -- releases: a version tag publishes its CHANGELOG entry ------------
+    #
+    # The refusals run against a small synthetic repository, so no release
+    # cut can invalidate them; the fold of 0.4.0 into 0.5.0 runs against the
+    # real CHANGELOG, cut in a copy only if it has not been cut yet.
+
+    SYNTHETIC = (
+        '# Changelog\n\n## [Unreleased]\n\nNext.\n\n'
+        '## [1.1.0] — 2026-02-01\n\nThe newest release.\n\n'
+        '## [1.0.1] — 2026-01-15\n\n> **Never released.** This work ships in 1.1.0; '
+        'there is no v1.0.1 tag.\n\nFolded work.\n\n'
+        '## [1.0.0] — 2026-01-01\n\nThe first release.\n')
+
+    def synthetic(self, changelog=SYNTHETIC, badge='1.1.0', header='1.1.0'):
+        root = os.path.join(self.tmp.name, 'synthetic')
+        shutil.rmtree(root, ignore_errors=True)
+        os.makedirs(os.path.join(root, 'scripts'))
+        shutil.copy(os.path.join(SCRIPTS, 'release_notes.py'), os.path.join(root, 'scripts'))
+        for name, text in (('CHANGELOG.md', changelog),
+                           ('README.md', f'![v](https://img.shields.io/badge/version-{badge}-green)\n'),
+                           ('PROMPT.md', f'**Version: {header}**\n')):
+            with open(os.path.join(root, name), 'w') as handle:
+                handle.write(text)
+        return root
+
+    def notes(self, root, tag):
+        done = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'release_notes.py'), tag],
+                              cwd=root, capture_output=True, text=True)
+        return done.returncode, done.stdout, done.stderr
+
+    def check_in(self, root):
+        done = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'check.py')],
+                              cwd=root, capture_output=True, text=True)
+        return done.returncode, done.stdout
+
+    def test_release_notes_are_the_entry_with_its_folds(self):
+        code, out, err = self.notes(self.synthetic(), 'v1.1.0')
+        self.assertEqual(code, 0, err)
+        self.assertEqual(out, 'The newest release.\n\n'
+                              '## Folded in: 1.0.1 (2026-01-15, never released)\n\n'
+                              'Folded work.\n')
+
+    def test_release_a_tag_that_cannot_publish_is_refused(self):
+        root = self.synthetic()
+        for tag, failure in (('1.1.0', 'is not vX.Y.Z'),
+                             ('v9.9.9', 'no "## [9.9.9] — <date>" entry'),
+                             ('v1.0.1', 'marks 1.0.1 never released; it ships in 1.1.0'),
+                             ('v1.0.0', 'v1.0.0 is not the newest CHANGELOG entry')):
+            code, out, err = self.notes(root, tag)
+            self.assertEqual((code, out), (1, ''), f'{tag}\n{err}')
+            self.assertIn(failure, err, tag)
+        empty = self.SYNTHETIC.replace('The newest release.\n', '')
+        code, _, err = self.notes(self.synthetic(empty), 'v1.1.0')
+        self.assertEqual(code, 1, err)
+        self.assertIn('entry 1.1.0 is empty', err)
+
+    def test_release_a_version_string_that_disagrees_with_the_tag_is_refused(self):
+        for badge, header, failure in (('1.0.0', '1.1.0', 'README badge reads 1.0.0, tag is v1.1.0'),
+                                       ('1.1.0', '1.0.0', 'PROMPT.md header reads 1.0.0, tag is v1.1.0')):
+            code, _, err = self.notes(self.synthetic(badge=badge, header=header), 'v1.1.0')
+            self.assertEqual(code, 1, err)
+            self.assertIn(failure, err)
+
+    def test_release_0_5_0_carries_the_folded_0_4_0(self):
+        root = self.copy_of_repo()
+        changelog = read(os.path.join(root, 'CHANGELOG.md'))
+        newest = re.search(r'^## \[(\d+\.\d+\.\d+)\]', changelog, re.M).group(1)
+        if newest == '0.4.0':
+            # Not cut yet: cut [Unreleased] as 0.5.0, the way the release will.
+            def edit(name, old, new):
+                path = os.path.join(root, name)
+                text = read(path)
+                self.assertIn(old, text)
+                with open(path, 'w') as handle:
+                    handle.write(text.replace(old, new, 1))
+            edit('PROMPT.md', '**Version: 0.4.0**', '**Version: 0.5.0**')
+            edit('README.md', 'version-0.4.0-green', 'version-0.5.0-green')
+            head = re.search(r'^## \[Unreleased\]\n\n[^\n]*\n', changelog, re.M).group(0)
+            edit('CHANGELOG.md', head, '## [0.5.0] — 2026-11-09\n')
+        elif newest != '0.5.0':
+            self.skipTest(f'{newest} has been released since; 0.5.0 is history')
+        code, out = self.check_in(root)
+        self.assertEqual(code, 0, out)
+        code, out, err = self.notes(root, 'v0.5.0')
+        self.assertEqual(code, 0, err)
+        self.assertFalse(out.startswith('## ['), out[:80])
+        self.assertIn('## Folded in: 0.4.0 (2026-08-30, never released)', out)
+        self.assertNotIn('Never released.', out)
+        self.assertNotIn('there is no v0.4.0 tag', out)
+        self.assertNotIn('## [0.3.0]', out)
+        # The 0.5.0 body comes first, the fold after it.
+        self.assertGreater(out.index('## Folded in: 0.4.0'), 0)
+        self.assertTrue(out[:out.index('## Folded in: 0.4.0')].strip(), out[:200])
+
+    def test_release_check_fails_entries_out_of_order_or_folded_backwards(self):
+        root = self.copy_of_repo()
+        path = os.path.join(root, 'CHANGELOG.md')
+        text = read(path)
+        for old, new, failure in (
+                ('This work ships in 0.5.0', 'This work ships in 0.3.0',
+                 '0.4.0 is folded into 0.3.0, which is not later'),
+                ('## [0.2.3] — 2026-08-29', '## [0.2.5] — 2026-08-29',
+                 '0.2.4 is listed above 0.2.5, not newest first'),
+                ('## [0.2.3] — 2026-08-29', '## [0.2.3] 2026-08-29',
+                 'an entry heading is not'),
+                ('## [0.2.3] — 2026-08-29', '## [0.2.3] — 2026-08-29\n\n## Notes',
+                 '"## Notes" below the first entry')):
+            self.assertIn(old, text)
+            with open(path, 'w') as handle:
+                handle.write(text.replace(old, new, 1))
+            code, out = self.check_in(root)
+            self.assertEqual(code, 1, out)
+            self.assertIn(failure, out)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

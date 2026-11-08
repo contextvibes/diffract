@@ -5,9 +5,10 @@ This is the reference implementation of the deterministic entry checks
 PROMPT.md mandates for non-code artifacts — a reviewer running Diffract
 against this repo runs it at PLAN — plus the repo's own release gates that
 can be checked without judgment: link and anchor resolution, code-fence
-balance, version-string agreement, a README-vs-PROMPT lens-table diff, every
-other file's verdicts, tags, Severity and Confidence lists and config values
-against PROMPT.md's, PROMPT.md's prose against its own machine-readable
+balance, version-string agreement, CHANGELOG entries in releasable order, a
+README-vs-PROMPT lens-table diff, every other file's verdicts, tags,
+Severity and Confidence lists and config values against PROMPT.md's,
+PROMPT.md's prose against its own machine-readable
 specification block, and the scripts against scripts/MANIFEST. Standard
 library only.
 
@@ -32,6 +33,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import check_review
+import release_notes
 
 SKIP_DIRS = ('.claude', 'node_modules', '.git')
 
@@ -123,6 +125,46 @@ def check_versions(failures):
             values[label] = found.group(1)
     if len(set(values.values())) > 1:
         failures.append(f'version strings disagree: {values}')
+
+
+def check_changelog_entries(failures):
+    """CHANGELOG entries are releasable in order, and folds point forward.
+
+    The release workflow publishes a tag's notes from its CHANGELOG entry
+    (scripts/release_notes.py), so the entries must parse as it parses them:
+    each `## [X.Y.Z] — YYYY-MM-DD`, newest first, no version twice. An entry
+    marked `> **Never released.** ... ships in X.Y.Z` must name a later
+    version, so the work it records is carried forward, never back. 0.4.0
+    is the one so marked: it was folded into 0.5.0 untagged, and until 0.5.0
+    is cut the badge and header still read 0.4.0, the state before release,
+    which check_versions compares against that entry.
+
+    No `## ` heading other than an entry's may follow the first entry:
+    release_notes.py ends an entry at one, so a subheading would cut that
+    release's notes short.
+    """
+    text = read('CHANGELOG.md', failures)
+    if text is None:
+        return
+    headings = re.findall(r'^## \[(.+?)\].*$', text, re.M)
+    parsed = release_notes.entries(text)
+    if len(parsed) != len([h for h in headings if h != 'Unreleased']):
+        failures.append('CHANGELOG.md: an entry heading is not "## [X.Y.Z] — YYYY-MM-DD"')
+    first = re.search(r'^## \[', text, re.M)
+    if first:
+        for heading in re.findall(r'^## (?!\[).*$', text[first.start():], re.M):
+            failures.append(f'CHANGELOG.md: "{heading}" below the first entry '
+                            'would end that entry\'s release notes; use ### or bold')
+    def key(v):
+        return tuple(int(n) for n in v.split('.'))
+    versions = [v for v, _, _ in parsed]
+    for newer, older in zip(versions, versions[1:]):
+        if key(newer) <= key(older):
+            failures.append(f'CHANGELOG.md: {newer} is listed above {older}, not newest first')
+    for version, _, body in parsed:
+        target = release_notes.folded_into(body)
+        if target is not None and key(target) <= key(version):
+            failures.append(f'CHANGELOG.md: {version} is folded into {target}, which is not later')
 
 
 def check_fences(failures):
@@ -536,6 +578,7 @@ def main():
     # Passed to every check rather than held at module level (issue #47).
     failures = []
     check_versions(failures)
+    check_changelog_entries(failures)
     check_fences(failures)
     check_links(failures)
     check_lens_table(failures)

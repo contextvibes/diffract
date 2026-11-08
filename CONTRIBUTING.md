@@ -111,8 +111,12 @@ caught it:
       `diffract.yaml` keys and values to PROMPT.md's; the done-rule and
       any paraphrase of a definition are still checked by eye.
       (README shipped a superseded exit rule after 0.2.4 changed it.)
-- [ ] **Version strings agree** — the README badge and the PROMPT.md
-      header. (0.2.3 shipped with the header still reading 0.2.2.)
+- [ ] **Version strings agree** — the README badge, the PROMPT.md
+      header and the newest CHANGELOG entry. (0.2.3 shipped with the
+      header still reading 0.2.2.) The release is cut by pushing a
+      `vX.Y.Z` tag on `main`: `.github/workflows/release.yml` re-runs
+      `check.py` and the regression fixtures, publishes the Release
+      from that entry, and refuses a tag any of the three disagrees with.
 - [ ] **Template changes re-sync `examples/`** — the checklist above,
       in the same PR. **Exception: a review that is hash-pinned and
       quote-checkable is frozen at the instrument version that produced
