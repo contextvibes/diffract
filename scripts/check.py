@@ -128,16 +128,11 @@ def check_versions(failures):
 
 
 def check_changelog_entries(failures):
-    """CHANGELOG entries are releasable in order, and folds point forward.
+    """CHANGELOG entries are releasable, in order.
 
     The release workflow publishes a tag's notes from its CHANGELOG entry
     (scripts/release_notes.py), so the entries must parse as it parses them:
-    each `## [X.Y.Z] — YYYY-MM-DD`, newest first, no version twice. An entry
-    marked `> **Never released.** ... ships in X.Y.Z` must name a later
-    version, so the work it records is carried forward, never back. 0.4.0
-    is the one so marked: it was folded into 0.5.0 untagged, and until 0.5.0
-    is cut the badge and header still read 0.4.0, the state before release,
-    which check_versions compares against that entry.
+    each `## [X.Y.Z] — YYYY-MM-DD`, newest first, no version twice.
 
     No `## ` heading other than an entry's may follow the first entry:
     release_notes.py ends an entry at one, so a subheading would cut that
@@ -161,10 +156,6 @@ def check_changelog_entries(failures):
     for newer, older in zip(versions, versions[1:]):
         if key(newer) <= key(older):
             failures.append(f'CHANGELOG.md: {newer} is listed above {older}, not newest first')
-    for version, _, body in parsed:
-        target = release_notes.folded_into(body)
-        if target is not None and key(target) <= key(version):
-            failures.append(f'CHANGELOG.md: {version} is folded into {target}, which is not later')
 
 
 def check_fences(failures):

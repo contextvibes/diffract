@@ -9,13 +9,10 @@ All notable changes to Diffract will be documented in this file.
   independent reviewers with consistent results (calibration validated)
 
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
-never cut as a release; v0.2.0 is the first tagged version. 0.4.0 was never
-tagged either: its work ships in 0.5.0, and its entry says so on its first
-line.
+never cut as a release; v0.2.0 is the first tagged version.
 
 A pushed `vX.Y.Z` tag publishes the GitHub Release from that version's entry
-here, by `scripts/release_notes.py` in `.github/workflows/release.yml`. An
-entry folded into a later version is appended to that version's notes.
+here, by `scripts/release_notes.py` in `.github/workflows/release.yml`.
 
 ## [Unreleased]
 
@@ -161,14 +158,10 @@ creates the GitHub Release, with that version's entry here as its notes,
 by `scripts/release_notes.py` in `.github/workflows/release.yml`. The
 notes are this hand-written narrative, not a list generated from commits.
 The script refuses a tag that disagrees with the README badge, the
-PROMPT.md header or the newest entry, and a version marked never
-released; `check.py` holds the entries to the order and form the script
-reads. 0.4.0 was never tagged: it is marked so, and its entry is carried
-into the 0.5.0 notes.
+PROMPT.md header or the newest entry; `check.py` holds the entries to the
+order and form the script reads.
 
 ## [0.4.0] — 2026-08-30
-
-> **Never released.** This work ships in 0.5.0; there is no v0.4.0 tag.
 
 A review's form becomes partly checkable, and the checker says what it
 does not check. Every previous release asked the reviewer to verify its

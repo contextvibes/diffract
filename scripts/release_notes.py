@@ -12,14 +12,7 @@ It refuses, with exit code 1 and one `FAIL:` line each, a tag that:
 - has no CHANGELOG entry, or one that is empty;
 - is not the newest entry (a tag on an old version would publish stale
   notes as Latest);
-- names an entry marked never released (see below);
 - disagrees with the README badge or the PROMPT.md header.
-
-An entry whose first line is a `> **Never released.**` note naming a later
-version, `... ships in X.Y.Z ...`, is a version that was folded into that
-later one and never tagged (0.4.0, folded into 0.5.0). Its body is appended
-to that later version's notes under its own heading, so the work it records
-ships in the release that carries it.
 
 Run from the repository root: python3 scripts/release_notes.py v0.5.0
 Standard library only.
@@ -29,7 +22,6 @@ import re
 import sys
 
 ENTRY = re.compile(r'^## \[(\d+\.\d+\.\d+)\] — (\d{4}-\d{2}-\d{2})[^\n]*$', re.M)
-NEVER = re.compile(r'\A\s*> \*\*Never released\.\*\*[^\n]*?\bships in (\d+\.\d+\.\d+)\b')
 SOURCES = {
     'README badge': ('README.md', r'version-([\d.]+)-green'),
     'PROMPT.md header': ('PROMPT.md', r'\*\*Version: ([\d.]+)\*\*'),
@@ -37,7 +29,7 @@ SOURCES = {
 
 
 def entries(text):
-    """[(version, date, body)] for each released-or-folded entry, newest first."""
+    """[(version, date, body)] for each entry, newest first."""
     found = list(ENTRY.finditer(text))
     out = []
     for i, m in enumerate(found):
@@ -49,19 +41,6 @@ def entries(text):
         body = rest[:stop.start()] if stop else rest
         out.append((m.group(1), m.group(2), body.strip('\n')))
     return out
-
-
-def folded_into(body):
-    m = NEVER.match(body)
-    return m.group(1) if m else None
-
-
-def without_note(body):
-    """The body without its leading `> **Never released.**` blockquote."""
-    lines = body.strip('\n').split('\n')
-    while lines and lines[0].startswith('>'):
-        lines.pop(0)
-    return '\n'.join(lines).strip('\n')
 
 
 def notes(tag, changelog, files):
@@ -85,22 +64,12 @@ def notes(tag, changelog, files):
         return None, failures
     if versions[0] != version:
         failures.append(f'{tag} is not the newest CHANGELOG entry ({versions[0]} is)')
-    index = versions.index(version)
-    _, _, body = all_entries[index]
-    target = folded_into(body)
-    if target is not None:
-        failures.append(f'CHANGELOG.md marks {version} never released; it ships in {target}')
+    _, _, body = all_entries[versions.index(version)]
     if not body.strip():
         failures.append(f'CHANGELOG.md entry {version} is empty')
-    parts = [body.strip('\n')]
-    for older, date, older_body in all_entries[index + 1:]:
-        if folded_into(older_body) != version:
-            break
-        parts.append(f'## Folded in: {older} ({date}, never released)\n\n'
-                     + without_note(older_body))
     if failures:
         return None, failures
-    return '\n\n'.join(parts) + '\n', []
+    return body.strip('\n') + '\n', []
 
 
 def read(path):
