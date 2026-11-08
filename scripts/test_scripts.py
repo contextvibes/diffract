@@ -941,7 +941,7 @@ class Fixtures(unittest.TestCase):
         self.assertTrue(out.strip(), out)
         self.assertNotIn(f'## [{newest}]', out)
 
-    def test_release_check_fails_entries_out_of_order_or_folded_backwards(self):
+    def test_release_check_fails_entries_out_of_order_or_misheaded(self):
         root = self.copy_of_repo()
         path = os.path.join(root, 'CHANGELOG.md')
         text = read(path)
