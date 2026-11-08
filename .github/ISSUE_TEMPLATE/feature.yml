@@ -1,0 +1,44 @@
+name: Feature
+description: Propose something Diffract should do — a gap the lenses missed, a lens change, a new check.
+type: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See [CONTRIBUTING.md](https://github.com/contextvibes/diffract/blob/main/CONTRIBUTING.md)
+        for what a lens proposal needs. Something Diffract already does wrongly is a Bug.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - A gap the lenses did not catch
+        - A lens change (add, remove, modify)
+        - A mechanism or check
+        - Calibration or research
+        - Documentation
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: What Diffract should do that it does not, in a sentence or two.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: |
+        The case that shows the need. For a gap: what you were reviewing, what was
+        missed, and which lens should have caught it. For a lens change: its root
+        principle and what it catches that no other lens does.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: A review, a finding, a measurement, or a source.

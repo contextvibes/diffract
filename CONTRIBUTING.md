@@ -7,7 +7,7 @@ Thank you for your interest in improving Diffract!
 ### Report a Gap
 
 If you applied Diffract and found something the lenses didn't catch, open
-an issue describing:
+an issue with the **Feature** form, describing:
 
 1. **What you were reviewing** (language, architecture style)
 2. **What the lenses missed** (the specific finding)
