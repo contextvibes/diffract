@@ -17,32 +17,11 @@ jobs:
       - name: Repository checks
         run: python3 scripts/check.py
 
-      # Every review this repo publishes must pass the checker this repo ships.
-      - name: Published example review
-        run: |
-          python3 scripts/check_review.py examples/semver-2.0.0-review.md \
-            --artifact examples/artifacts/semver-2.0.0.md
-
-      - name: Calibration fixture review
-        run: |
-          python3 scripts/check_review.py calibration/semver-2.0.0-seeded-review.md \
-            --artifact calibration/artifacts/semver-2.0.0-seeded.md
-
-      # Anonymized: its paths are fictional and no artifact is in the repo, so
-      # only the checks that need no artifact run. --no-artifact says which it
-      # skipped, and refuses a review whose Integrity governor requires quotes.
-      - name: Anonymized example review
-        run: python3 scripts/check_review.py examples/web-service.md --no-artifact
-
-      # The Scorecard must already agree with the index it restates:
-      # render_scorecard.py exits non-zero if it had to correct anything.
-      - name: Scorecard arithmetic
-        run: |
-          for review in examples/web-service.md \
-                        examples/semver-2.0.0-review.md \
-                        calibration/semver-2.0.0-seeded-review.md; do
-            python3 scripts/render_scorecard.py "$review" > /dev/null
-          done
+      # Every review this repo publishes must pass the scripts this repo
+      # ships. check_examples.py finds them and reads each one's artifacts
+      # from its own Scorecard (#58).
+      - name: Published reviews
+        run: python3 tools/check_examples.py
 
       # Regression fixtures: each mutates a published review to reproduce a
       # defect an issue found, and fails if a script lets it through again.
