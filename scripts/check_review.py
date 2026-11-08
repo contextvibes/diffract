@@ -96,8 +96,31 @@ def wrong_width(where, cells, want):
     'Governors' row", or as nothing at all (issue #43, D1).
     """
     first = unescape(cells[0]) if cells else ''
+    # The hint only where it is the likely cause: a row too narrow has lost a
+    # cell, and no pipe escape restores one.
+    hint = ': a literal | inside a cell is written \\|' if len(cells) > want else ''
     return (f'{where} row {first[:40]!r} is {len(cells)} columns, expected '
-            f'{want}: a literal | inside a cell is written \\|')
+            f'{want}{hint}')
+
+
+# A rule row (`|---|:--:|`) is one whose every cell is dashes with optional
+# colons. At least one dash: `^:?-*:?$` also matched an empty cell, so a row
+# of empty cells was dropped as a rule row and never read (issue #43, D1).
+RULE_CELL = re.compile(r'^:?-+:?$')
+
+
+def is_rule(cells):
+    return all(RULE_CELL.match(c) for c in cells)
+
+
+def rule_rows(body):
+    """Cells of every rule row in a body: the rows table_rows drops.
+
+    GFM does not render a table whose rule row is not the header's width, so
+    a reader that drops rule rows must still name one of the wrong width.
+    """
+    return [cells for cells in map(split_row, body.split('\n'))
+            if cells is not None and is_rule(cells)]
 
 
 def table_rows(body):
@@ -105,7 +128,7 @@ def table_rows(body):
     rows = []
     for line in body.split('\n'):
         cells = split_row(line)
-        if cells is None or all(re.match(r'^:?-*:?$', c) for c in cells):
+        if cells is None or is_rule(cells):
             continue
         rows.append(cells)
     return rows
@@ -477,6 +500,9 @@ def scorecard_cells(table, failures=None):
             card[unescape(cells[0])] = unescape(cells[1])
         elif failures is not None:
             failures.append(wrong_width('Scorecard', cells, 2))
+    if failures is not None:
+        failures.extend(wrong_width('Scorecard', cells, 2)
+                        for cells in rule_rows(table) if len(cells) != 2)
     return card
 
 
@@ -554,8 +580,17 @@ def index_rows(review, vocab, failures):
     if body is None:
         failures.append('no "## FINDINGS INDEX" section')
         return []
-    rows = [[unescape(c) for c in cells] for cells in table_rows(body)
-            if unescape(cells[0]) != 'ID']
+    # The header and rule rows are dropped, but only once they are the right
+    # width: either one of the wrong width was dropped unnamed (issue #43, D1).
+    failures.extend(wrong_width('index', cells, 8)
+                    for cells in rule_rows(body) if len(cells) != 8)
+    rows = []
+    for cells in table_rows(body):
+        if unescape(cells[0]) == 'ID':
+            if len(cells) != 8:
+                failures.append(wrong_width('index', cells, 8))
+            continue
+        rows.append([unescape(c) for c in cells])
     for row in rows:
         if len(row) != 8:
             failures.append(wrong_width('index', row, 8))

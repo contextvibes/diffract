@@ -236,6 +236,71 @@ class Fixtures(unittest.TestCase):
         self.assertEqual(code, 2, out)
         self.assertIn("REFUSED: Scorecard row 'Governors' is 3 columns, expected 2", out)
 
+    def scorecard_mutant(self, old, new):
+        text = read(EXAMPLE)
+        self.assertIn(old, text)
+        return self.write('scorecard-mutant.md', text.replace(old, new, 1))
+
+    def test_43_a_rule_row_of_the_wrong_width_is_named(self):
+        review = self.scorecard_mutant('| Metric | Value |\n|--------|-------|',
+                                       '| Metric | Value |\n|--------|-------|-------|')
+        named = "Scorecard row '--------' is 3 columns, expected 2"
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 2, out)
+        self.assertIn(f'REFUSED: {named}', out)
+
+    def test_43_a_row_of_empty_cells_is_not_a_rule_row(self):
+        # Eight empty cells is the index's width, so only the rule-row
+        # pattern decides whether it is read: `^:?-*:?$` dropped it unread.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|\n'
+        text = read(EXAMPLE)
+        self.assertIn(rule, text)
+        review = self.write('empty-row.md', text.replace(rule, rule + '|' + '  |' * 8 + '\n', 1))
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn('index rows 18 |', out)
+        self.assertIn("FAIL: : Lens '' is not a lens or W5H1", out)
+
+    def test_43_an_index_rule_row_of_the_wrong_width_is_named(self):
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        named = "index row '----' is 9 columns, expected 8"
+        text = read(SEEDED)
+        self.assertIn(rule, text)
+        review = self.write('index-rule.md', text.replace(rule, rule + '---|', 1))
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn(named, out)
+
+    def test_43_a_narrow_row_gets_no_pipe_hint(self):
+        review = self.scorecard_mutant('|--------|-------|\n',
+                                       '|--------|-------|\n| Spare |\n')
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        line = [l for l in out.splitlines() if "Scorecard row 'Spare'" in l]
+        self.assertEqual(len(line), 1, out)
+        self.assertTrue(line[0].rstrip().endswith('is 1 columns, expected 2'), out)
+
+    def test_43_an_index_header_of_the_wrong_width_is_named(self):
+        header = '| ID | Lens | Cycle | Line(s) | Severity | Verdict | Claim (one sentence) | Confidence |'
+        for review_path, artifact in ((EXAMPLE, EXAMPLE_ARTIFACT), (SEEDED, SEEDED_ARTIFACT)):
+            text = read(review_path)
+            self.assertIn(header, text)
+            review = self.write('header.md', text.replace(header, header + ' Extra |', 1))
+            code, out = self.check(review, artifact)
+            self.assertEqual(code, 1, out)
+            self.assertIn("index row 'ID' is 9 columns, expected 8", out)
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn("index row 'ID' is 9 columns, expected 8", out)
+
     def test_43_score_seeds_names_a_wrong_width_row(self):
         claim = '| SUB-2 | Subtract | 1 | semver-2.0.0-seeded.md:84-85 | Minor | Skip:Cobra | Clause 7'
         text = read(SEEDED)
@@ -454,7 +519,7 @@ class Fixtures(unittest.TestCase):
             if current is None:
                 current = []
                 tables.append(current)
-            if not all(re.match(r'^:?-*:?$', c) for c in cells):
+            if not check_review.is_rule(cells):
                 current.append([check_review.unescape(c) for c in cells])
         self.assertEqual(len(tables), 2, tables)
         return [rows[1:] for rows in tables]

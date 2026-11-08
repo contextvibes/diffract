@@ -131,9 +131,9 @@ def render(review, prompt_path=None):
             return line
         if len(cells) != 2:
             # Named, not passed through: a row this script cannot read is a
-            # row it silently left uncorrected (issue #43, D1).
-            if not all(re.match(r'^:?-*:?$', c) for c in cells):
-                refused.append(check_review.wrong_width('Scorecard', cells, 2))
+            # row it silently left uncorrected, and a rule row of the wrong
+            # width means GFM renders no table at all (issue #43, D1).
+            refused.append(check_review.wrong_width('Scorecard', cells, 2))
             return line
         raw_key, value = cells
         key = check_review.unescape(raw_key)

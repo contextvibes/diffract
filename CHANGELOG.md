@@ -27,8 +27,12 @@ a supplied path, not just share its basename (#49). Table rows split only
 on unescaped pipes (#43), and a row of the wrong width now fails by
 name in every reader: `check_review.py`'s Scorecard, which used to drop
 it and report a missing row instead, `render_scorecard.py`, which passed
-it through uncorrected, and `score_seeds.py`, which skipped it; each
-failure says a literal `|` is written `\|`. The checks pass their
+it through uncorrected, and `score_seeds.py`, which skipped it. That
+includes header and rule rows, which were dropped at any width, and a
+row of empty cells, which was taken for a rule row. A row too wide says
+a literal `|` is written `\|`. One sibling is left: a row with no
+closing `|`, which GitHub renders but no reader treats as a row; it is
+older than this and is filed as #64. The checks pass their
 failure list explicitly (#47), and `scripts/MANIFEST` pins each script's hash, gated by
 `check.py` (#46). Each of these comes with a regression test in
 `scripts/test_scripts.py`, which CI runs.
