@@ -13,7 +13,7 @@ body:
     attributes:
       label: Version
       description: The version in PROMPT.md's header, or the commit you used.
-      placeholder: "0.4.0"
+      placeholder: "0.x.y, or a commit sha"
     validations:
       required: true
   - type: input
@@ -21,7 +21,7 @@ body:
     attributes:
       label: Where
       description: The file, and the section or line.
-      placeholder: "scripts/check_review.py, check_findings_index"
+      placeholder: "scripts/check_review.py, check_index_completeness"
     validations:
       required: true
   - type: textarea
