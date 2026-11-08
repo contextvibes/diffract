@@ -24,8 +24,12 @@ file to it (#39). Two holes the checker had are closed: a `Lenses run`
 claim higher than the lens sections present now fails instead of being
 corrected away (#50), and an Evidence citation must be a trailing part of
 a supplied path, not just share its basename (#49). Table rows split only
-on unescaped pipes (#43). The checks pass their failure list explicitly
-(#47), and `scripts/MANIFEST` pins each script's hash, gated by
+on unescaped pipes (#43), and a row of the wrong width now fails by
+name in every reader: `check_review.py`'s Scorecard, which used to drop
+it and report a missing row instead, `render_scorecard.py`, which passed
+it through uncorrected, and `score_seeds.py`, which skipped it; each
+failure says a literal `|` is written `\|`. The checks pass their
+failure list explicitly (#47), and `scripts/MANIFEST` pins each script's hash, gated by
 `check.py` (#46). Each of these comes with a regression test in
 `scripts/test_scripts.py`, which CI runs.
 

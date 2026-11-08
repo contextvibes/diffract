@@ -87,6 +87,19 @@ def unescape(cell):
     return plain(cell.replace('\\|', '|'))
 
 
+def wrong_width(where, cells, want):
+    """The failure for a table row that is not `want` cells wide.
+
+    Every reader of a mandated table names a row of the wrong width rather
+    than dropping it: an unescaped `|` inside a cell ends it (PROMPT.md, the
+    literal-pipe rule), and a dropped row surfaced later as "Scorecard has no
+    'Governors' row", or as nothing at all (issue #43, D1).
+    """
+    first = unescape(cells[0]) if cells else ''
+    return (f'{where} row {first[:40]!r} is {len(cells)} columns, expected '
+            f'{want}: a literal | inside a cell is written \\|')
+
+
 def table_rows(body):
     """Raw cells of every table row in a body, header and rule rows dropped."""
     rows = []
@@ -451,10 +464,20 @@ def lenses_run_row(review, vocab):
     return (int(m.group(1)), value) if m else None
 
 
-def scorecard_cells(table):
-    """{metric: value} for every two-cell row of a Scorecard table body."""
-    return {unescape(cells[0]): unescape(cells[1])
-            for cells in table_rows(table) if len(cells) == 2}
+def scorecard_cells(table, failures=None):
+    """{metric: value} for every two-cell row of a Scorecard table body.
+
+    A row of any other width is named in `failures`, when given. Only
+    check_scorecard passes it; lenses_run_row reads the same table and does
+    not, so each such row is reported once per review.
+    """
+    card = {}
+    for cells in table_rows(table):
+        if len(cells) == 2:
+            card[unescape(cells[0])] = unescape(cells[1])
+        elif failures is not None:
+            failures.append(wrong_width('Scorecard', cells, 2))
+    return card
 
 
 def check_lenses(review, lenses, scope, vocab, failures):
@@ -535,7 +558,7 @@ def index_rows(review, vocab, failures):
             if unescape(cells[0]) != 'ID']
     for row in rows:
         if len(row) != 8:
-            failures.append(f'index row is {len(row)} columns, expected 8: {row[:1]}')
+            failures.append(wrong_width('index', row, 8))
             continue
         prefix = vocab['id_prefixes'].get(lens_name(row[1]))
         if not re.fullmatch(r'[A-Z0-9]+-\d+', row[0]) or (
@@ -571,7 +594,7 @@ def check_scorecard(review, rows, prompt_path, vocab, failures):
     if table is None:
         failures.append('no "### Scorecard" section')
         return
-    card = scorecard_cells(table)
+    card = scorecard_cells(table, failures)
 
     version = instrument_version(review)
     if version is None:

@@ -127,7 +127,13 @@ def render(review, prompt_path=None):
         # Escape-aware, as check_review.py parses it: a value carrying a
         # literal `\|` is one cell, not two (cycle-6 VAR-3, issue #43).
         cells = check_review.split_row(line)
-        if cells is None or len(cells) != 2:
+        if cells is None:
+            return line
+        if len(cells) != 2:
+            # Named, not passed through: a row this script cannot read is a
+            # row it silently left uncorrected (issue #43, D1).
+            if not all(re.match(r'^:?-*:?$', c) for c in cells):
+                refused.append(check_review.wrong_width('Scorecard', cells, 2))
             return line
         raw_key, value = cells
         key = check_review.unescape(raw_key)

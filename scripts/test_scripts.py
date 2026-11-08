@@ -212,7 +212,40 @@ class Fixtures(unittest.TestCase):
         review = self.write('bare-pipes.md', text)
         code, out = self.check(review, EXAMPLE_ARTIFACT)
         self.assertEqual(code, 1, out)
-        self.assertIn('index row is 10 columns, expected 8', out)
+        self.assertIn("index row 'SUB-1' is 10 columns, expected 8: "
+                      "a literal | inside a cell is written \\|", out)
+
+    # -- issue #43 D1: every reader names a row of the wrong width ---------
+
+    def with_bare_scorecard_pipe(self):
+        text = read(EXAMPLE)
+        governors = '· 🐍 Library/Framework ·'
+        self.assertIn(governors, text)
+        return text.replace(governors, '· 🐍 Library | Framework ·', 1)
+
+    def test_43_a_bare_pipe_in_the_scorecard_is_named_once(self):
+        review = self.write('scorecard-pipe.md', self.with_bare_scorecard_pipe())
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        named = "Scorecard row 'Governors' is 3 columns, expected 2"
+        self.assertEqual(out.count(named), 1, out)
+
+    def test_43_render_scorecard_refuses_a_wrong_width_row(self):
+        review = self.write('scorecard-pipe.md', self.with_bare_scorecard_pipe())
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 2, out)
+        self.assertIn("REFUSED: Scorecard row 'Governors' is 3 columns, expected 2", out)
+
+    def test_43_score_seeds_names_a_wrong_width_row(self):
+        claim = '| SUB-2 | Subtract | 1 | semver-2.0.0-seeded.md:84-85 | Minor | Skip:Cobra | Clause 7'
+        text = read(SEEDED)
+        self.assertIn(claim, text)
+        review = self.write('seeded-pipe.md', text.replace(
+            claim, claim.replace('Clause 7', 'Clause | 7'), 1))
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn("index row 'SUB-2' is 9 columns, expected 8", out)
 
     # -- issue #47: no failure state survives between calls ----------------
 
