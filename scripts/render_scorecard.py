@@ -127,7 +127,13 @@ def render(review, prompt_path=None):
         # Escape-aware, as check_review.py parses it: a value carrying a
         # literal `\|` is one cell, not two (cycle-6 VAR-3, issue #43).
         cells = check_review.split_row(line)
-        if cells is None or len(cells) != 2:
+        if cells is None:
+            return line
+        if len(cells) != 2:
+            # Named, not passed through: a row this script cannot read is a
+            # row it silently left uncorrected, and a rule row of the wrong
+            # width means GFM renders no table at all (issue #43, D1).
+            refused.append(check_review.wrong_width('Scorecard', cells, 2))
             return line
         raw_key, value = cells
         key = check_review.unescape(raw_key)
@@ -197,6 +203,9 @@ def render(review, prompt_path=None):
         return line
 
     table = '\n'.join(fix_row(line) for line in table.split('\n'))
+    # A stray is two cells wide, so fix_row reads it as a row named '---';
+    # it is named here instead (issue #43, D1).
+    refused.extend(check_review.stray_rules('Scorecard', table))
     refused.extend(f'instrument rejected: {f}' for f in failures)
     return '\n'.join(prefix + table.split('\n') + suffix), changes, notes, refused
 

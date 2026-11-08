@@ -212,7 +212,198 @@ class Fixtures(unittest.TestCase):
         review = self.write('bare-pipes.md', text)
         code, out = self.check(review, EXAMPLE_ARTIFACT)
         self.assertEqual(code, 1, out)
-        self.assertIn('index row is 10 columns, expected 8', out)
+        self.assertIn("index row 'SUB-1' is 10 columns, expected 8: "
+                      "a literal | inside a cell is written \\|", out)
+
+    # -- issue #43 D1: every reader names a row of the wrong width ---------
+
+    def with_bare_scorecard_pipe(self):
+        text = read(EXAMPLE)
+        governors = '· 🐍 Library/Framework ·'
+        self.assertIn(governors, text)
+        return text.replace(governors, '· 🐍 Library | Framework ·', 1)
+
+    def test_43_a_bare_pipe_in_the_scorecard_is_named_once(self):
+        review = self.write('scorecard-pipe.md', self.with_bare_scorecard_pipe())
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        named = "Scorecard row 'Governors' is 3 columns, expected 2"
+        self.assertEqual(out.count(named), 1, out)
+
+    def test_43_render_scorecard_refuses_a_wrong_width_row(self):
+        review = self.write('scorecard-pipe.md', self.with_bare_scorecard_pipe())
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 2, out)
+        self.assertIn("REFUSED: Scorecard row 'Governors' is 3 columns, expected 2", out)
+
+    def scorecard_mutant(self, old, new):
+        text = read(EXAMPLE)
+        self.assertIn(old, text)
+        return self.write('scorecard-mutant.md', text.replace(old, new, 1))
+
+    def test_43_a_rule_row_of_the_wrong_width_is_named(self):
+        review = self.scorecard_mutant('| Metric | Value |\n|--------|-------|',
+                                       '| Metric | Value |\n|--------|-------|-------|')
+        named = "Scorecard row '--------' is 3 columns, expected 2"
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 2, out)
+        self.assertIn(f'REFUSED: {named}', out)
+
+    def test_43_a_row_of_empty_cells_is_not_a_rule_row(self):
+        # Eight empty cells is the index's width, so only the rule-row
+        # pattern decides whether it is read: `^:?-*:?$` dropped it unread.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|\n'
+        text = read(EXAMPLE)
+        self.assertIn(rule, text)
+        review = self.write('empty-row.md', text.replace(rule, rule + '|' + '  |' * 8 + '\n', 1))
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertIn('index rows 18 |', out)
+        self.assertIn("FAIL: : Lens '' is not a lens or W5H1", out)
+
+    def test_43_an_index_rule_row_of_the_wrong_width_is_named(self):
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        named = "index row '----' is 9 columns, expected 8"
+        text = read(SEEDED)
+        self.assertIn(rule, text)
+        review = self.write('index-rule.md', text.replace(rule, rule + '---|', 1))
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn(named, out)
+
+    def test_43_a_dash_row_below_the_index_rule_is_named(self):
+        # Only the line after the header is a rule row; GitHub shows a later
+        # all-dash row as data, so dropping it read a table it does not show.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        text = read(SEEDED)
+        self.assertIn(rule, text)
+        for extra, first in (('|' + ' - |' * 8, '-'), (rule, '----')):
+            named = (f"index row {first!r} is all dashes below the rule row: "
+                     f"GitHub shows it as a data row")
+            review = self.write('index-dashes.md', text.replace(rule, rule + '\n' + extra, 1))
+            code, out = self.check(review, SEEDED_ARTIFACT)
+            self.assertEqual(code, 1, out)
+            self.assertEqual(out.count(named), 1, out)
+            code, out = run('score_seeds.py', review, '--seeds',
+                            os.path.join(ROOT, 'calibration', 'seeds.md'))
+            self.assertNotEqual(code, 0, out)
+            self.assertIn(named, out)
+
+    def test_43_each_table_has_its_own_rule_row(self):
+        # The rule row is counted from each table's header, not the body's
+        # first line: a second table's rule is not a stray.
+        sys.path.insert(0, SCRIPTS)
+        try:
+            import check_review
+        finally:
+            sys.path.pop(0)
+        body = '| A | B |\n|---|---|\n| 1 | 2 |\n\ntext\n\n| C | D |\n|---|---|\n| 3 | 4 |\n'
+        rows, rules, strays, heads = check_review.table_parts(body)
+        self.assertEqual([h[0] for h in heads], ['A', 'C'])
+        self.assertEqual(len(rules), 2, (rules, strays))
+        self.assertEqual(strays, [])
+        self.assertEqual(len(rows), 4, rows)
+
+    def test_43_a_row_repeating_the_index_header_is_named(self):
+        # The header is the row above the rule row, by position. Skipped by
+        # content, a data row whose ID cell read 'ID' was never checked.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        extra = '| ID | Subtract | 1 | x | Major | Fix | hidden finding | High |'
+        named = ("index row 'ID' repeats the header but is not the table's "
+                 "header: GitHub shows it as a data row")
+        text = read(SEEDED)
+        self.assertIn(rule, text)
+        review = self.write('index-id.md', text.replace(rule, rule + '\n' + extra, 1))
+        code, out = self.check(review, SEEDED_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn(named, out)
+
+    def test_43_a_finding_in_the_header_place_is_named(self):
+        # Skipped by position, a finding above a rule row was dropped: a
+        # second table opened by one, or an index whose ID line was lost.
+        rule = '|----|------|-------|---------|----------|---------|----------------------|------------|'
+        header = '| ID | Lens | Cycle | Line(s) | Severity | Verdict | Claim (one sentence) | Confidence |'
+        sub9 = '| SUB-9 | Subtract | 1 | semver-2.0.0-seeded.md:10-11 | Major | Fix | hidden finding | High |'
+        text = read(SEEDED)
+        self.assertIn(header + '\n' + rule, text)
+        index = text.split('\n## FINDINGS INDEX\n', 1)[1]
+        rows = [l for l in index.split('\n') if l.startswith('| SUB-')]
+        first, last = rows[0], rows[-1]
+        # B: a second table under the index, opened by a finding.
+        second = text.replace(last, last + '\n\n' + sub9 + '\n' + rule, 1)
+        self.assertNotEqual(second, text)
+        # D: the ID line lost, so the first finding sits in the header's place.
+        lost = text.replace(header + '\n' + rule + '\n' + first,
+                            first + '\n' + rule, 1)
+        self.assertNotEqual(lost, text)
+        for review_text, fid in ((second, 'SUB-9'), (lost, 'SUB-1')):
+            named = (f"index row {fid!r} is above the rule row: GitHub shows it "
+                     f"as the header, not as a row")
+            review = self.write('header-place.md', review_text)
+            code, out = self.check(review, SEEDED_ARTIFACT)
+            self.assertEqual(code, 1, out)
+            self.assertEqual(out.count(named), 1, out)
+            code, out = run('score_seeds.py', review, '--seeds',
+                            os.path.join(ROOT, 'calibration', 'seeds.md'))
+            self.assertNotEqual(code, 0, out)
+            self.assertIn(named, out)
+
+    def test_43_a_dash_row_in_the_scorecard_body_is_named(self):
+        review = self.scorecard_mutant('|--------|-------|\n',
+                                       '|--------|-------|\n| Spare | x |\n|---|---|\n')
+        named = ("Scorecard row '---' is all dashes below the rule row: "
+                 "GitHub shows it as a data row")
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(out.count(named), 1, out)
+        code, out = run('render_scorecard.py', review)
+        self.assertEqual(code, 2, out)
+        self.assertIn(f'REFUSED: {named}', out)
+
+    def test_43_a_narrow_row_gets_no_pipe_hint(self):
+        review = self.scorecard_mutant('|--------|-------|\n',
+                                       '|--------|-------|\n| Spare |\n')
+        code, out = self.check(review, EXAMPLE_ARTIFACT)
+        self.assertEqual(code, 1, out)
+        line = [l for l in out.splitlines() if "Scorecard row 'Spare'" in l]
+        self.assertEqual(len(line), 1, out)
+        self.assertTrue(line[0].rstrip().endswith('is 1 column, expected 2'), out)
+
+    def test_43_an_index_header_of_the_wrong_width_is_named(self):
+        header = '| ID | Lens | Cycle | Line(s) | Severity | Verdict | Claim (one sentence) | Confidence |'
+        for review_path, artifact in ((EXAMPLE, EXAMPLE_ARTIFACT), (SEEDED, SEEDED_ARTIFACT)):
+            text = read(review_path)
+            self.assertIn(header, text)
+            review = self.write('header.md', text.replace(header, header + ' Extra |', 1))
+            code, out = self.check(review, artifact)
+            self.assertEqual(code, 1, out)
+            self.assertIn("index row 'ID' is 9 columns, expected 8", out)
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn("index row 'ID' is 9 columns, expected 8", out)
+
+    def test_43_score_seeds_names_a_wrong_width_row(self):
+        claim = '| SUB-2 | Subtract | 1 | semver-2.0.0-seeded.md:84-85 | Minor | Skip:Cobra | Clause 7'
+        text = read(SEEDED)
+        self.assertIn(claim, text)
+        review = self.write('seeded-pipe.md', text.replace(
+            claim, claim.replace('Clause 7', 'Clause | 7'), 1))
+        code, out = run('score_seeds.py', review, '--seeds',
+                        os.path.join(ROOT, 'calibration', 'seeds.md'))
+        self.assertNotEqual(code, 0, out)
+        self.assertIn("index row 'SUB-2' is 9 columns, expected 8", out)
 
     # -- issue #47: no failure state survives between calls ----------------
 
@@ -421,7 +612,7 @@ class Fixtures(unittest.TestCase):
             if current is None:
                 current = []
                 tables.append(current)
-            if not all(re.match(r'^:?-*:?$', c) for c in cells):
+            if not check_review.is_rule(cells):
                 current.append([check_review.unescape(c) for c in cells])
         self.assertEqual(len(tables), 2, tables)
         return [rows[1:] for rows in tables]

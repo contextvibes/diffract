@@ -24,10 +24,23 @@ file to it (#39). Two holes the checker had are closed: a `Lenses run`
 claim higher than the lens sections present now fails instead of being
 corrected away (#50), and an Evidence citation must be a trailing part of
 a supplied path, not just share its basename (#49). Table rows split only
-on unescaped pipes (#43). The checks pass their failure list explicitly
-(#47), and `scripts/MANIFEST` pins each script's hash, gated by
-`check.py` (#46). Each of these comes with a regression test in
-`scripts/test_scripts.py`, which CI runs.
+on unescaped pipes (#43), and a row of the wrong width now fails by
+name in every reader: `check_review.py`'s Scorecard, which used to drop
+it and report a missing row instead, `render_scorecard.py`, which passed
+it through uncorrected, and `score_seeds.py`, which skipped it. That
+includes header and rule rows, which were dropped at any width, and a
+row of empty cells, which was taken for a rule row. Only the line after
+a table's header is its rule row; a later row of dashes, which GitHub
+shows as data, is named too. So is a row below the index header that
+repeats its `ID`, and a finding in a header's place, which GitHub shows
+as a header. A row too wide says a literal `|` is written `\|`. Three
+siblings are older and filed: a row GitHub renders that no reader
+reads, with no outer `|` or indented (#64); a mandated table with no
+rule row or split by a blank line (#65); and a Scorecard metric written
+twice or not in the template (#66). The checks pass their failure list
+explicitly (#47), and `scripts/MANIFEST` pins each script's hash, gated
+by `check.py` (#46). Each of these comes with a
+regression test in `scripts/test_scripts.py`, which CI runs.
 
 **Every published review now passes the checker in CI.**
 `examples/web-service.md` had only its Scorecard arithmetic checked, and

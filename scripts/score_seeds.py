@@ -36,14 +36,32 @@ def findings(path):
     if body is None:
         sys.exit('no FINDINGS INDEX in review')
     out = []
-    for cells in check_review.table_rows(body):
+    wrong = [check_review.wrong_width('index', cells, 8)
+             for cells in check_review.rule_rows(body) if len(cells) != 8]
+    wrong += check_review.stray_rules('index', body)
+    parts, _, _, heads = check_review.table_parts(body)
+    for cells in parts:
         c = [check_review.unescape(x) for x in cells]
-        if len(c) != 8 or c[0] == 'ID':
+        if check_review.is_header(cells, heads):
+            if c[0] != 'ID':
+                wrong.append(check_review.misplaced_header('index', cells))
+            elif len(c) != 8:
+                wrong.append(check_review.wrong_width('index', cells, 8))
+            continue
+        if c and c[0] == 'ID':
+            wrong.append(check_review.repeated_header('index', cells))
+            continue
+        if len(c) != 8:
+            # Named, not skipped: a skipped row is a finding the score never
+            # saw, so the seed count could undercount silently (issue #43, D1).
+            wrong.append(check_review.wrong_width('index', cells, 8))
             continue
         m = re.search(r':(\d+)(?:[-–](\d+))?', c[3])
         if m:
             out.append((c[0], c[1], int(m.group(1)), int(m.group(2) or m.group(1)),
                         c[4], c[5], c[6]))
+    if wrong:
+        sys.exit('\n'.join(wrong))
     return out
 
 

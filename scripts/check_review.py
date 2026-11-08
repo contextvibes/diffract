@@ -87,15 +87,110 @@ def unescape(cell):
     return plain(cell.replace('\\|', '|'))
 
 
-def table_rows(body):
-    """Raw cells of every table row in a body, header and rule rows dropped."""
-    rows = []
+def wrong_width(where, cells, want):
+    """The failure for a table row that is not `want` cells wide.
+
+    Every reader of a mandated table names a row of the wrong width rather
+    than dropping it: an unescaped `|` inside a cell ends it (PROMPT.md, the
+    literal-pipe rule), and a dropped row surfaced later as "Scorecard has no
+    'Governors' row", or as nothing at all (issue #43, D1).
+    """
+    first = unescape(cells[0]) if cells else ''
+    # The hint only where it is the likely cause: a row too narrow has lost a
+    # cell, and no pipe escape restores one.
+    hint = ': a literal | inside a cell is written \\|' if len(cells) > want else ''
+    columns = 'column' if len(cells) == 1 else 'columns'
+    return (f'{where} row {first[:40]!r} is {len(cells)} {columns}, expected '
+            f'{want}{hint}')
+
+
+# A rule row (`|---|:--:|`) is one whose every cell is dashes with optional
+# colons. At least one dash: `^:?-*:?$` also matched an empty cell, so a row
+# of empty cells was dropped as a rule row and never read (issue #43, D1).
+RULE_CELL = re.compile(r'^:?-+:?$')
+
+
+def is_rule(cells):
+    return all(RULE_CELL.match(c) for c in cells)
+
+
+def table_parts(body):
+    """(rows, rules, strays, heads) of the tables in a body.
+
+    The rule row is the line straight after a table's header: GFM reads only
+    that one as the rule. `rules` holds those, `strays` every other row whose
+    cells are all dashes, and `rows` everything else, header included. A stray
+    used to be dropped as a rule row wherever it sat; GFM renders it as a data
+    row, so a reader that dropped it read a table GitHub does not show (issue
+    #43, D1). `heads` holds each table's header, the row above its rule row,
+    by position: a reader that skips its header by content skipped a data row
+    that merely repeated it.
+    """
+    rows, rules, strays, heads = [], [], [], []
+    at, first = 0, None
     for line in body.split('\n'):
         cells = split_row(line)
-        if cells is None or all(re.match(r'^:?-*:?$', c) for c in cells):
+        if cells is None:
+            at = 0
             continue
-        rows.append(cells)
-    return rows
+        if at == 0:
+            first = cells
+        if is_rule(cells):
+            if at == 1:
+                rules.append(cells)
+                heads.append(first)
+            else:
+                strays.append(cells)
+        else:
+            rows.append(cells)
+        at += 1
+    return rows, rules, strays, heads
+
+
+def is_header(cells, heads):
+    """Whether these cells are, by identity, one of table_parts()'s heads."""
+    return any(cells is head for head in heads)
+
+
+def repeated_header(where, cells):
+    """The failure for a data row that repeats the header's first cell."""
+    return (f'{where} row {unescape(cells[0])[:40]!r} repeats the header but is '
+            f'not the table\'s header: GitHub shows it as a data row')
+
+
+def misplaced_header(where, cells):
+    """The failure for a header-position row that is not the header.
+
+    The row above a rule row is what GitHub shows as the header, so a finding
+    there is a finding no reader may skip: skipped by position, it was dropped
+    and the seed score undercounted without a word (issue #43, D1).
+    """
+    return (f'{where} row {unescape(cells[0])[:40]!r} is above the rule row: '
+            f'GitHub shows it as the header, not as a row')
+
+
+def rule_rows(body):
+    """Cells of each table's rule row: the rows table_rows drops.
+
+    GFM does not render a table whose rule row is not the header's width, so
+    a reader that drops rule rows must still name one of the wrong width.
+    """
+    return table_parts(body)[1]
+
+
+def stray_rules(where, body):
+    """The failure for each all-dash row that is not a table's rule row."""
+    return [f'{where} row {unescape(cells[0])[:40]!r} is all dashes below the '
+            f'rule row: GitHub shows it as a data row'
+            for cells in table_parts(body)[2]]
+
+
+def table_rows(body):
+    """Raw cells of every table row in a body; rule rows and strays dropped.
+
+    A caller that reads a mandated table names the strays with stray_rules().
+    """
+    return table_parts(body)[0]
 
 
 def outside_fences(lines):
@@ -451,10 +546,24 @@ def lenses_run_row(review, vocab):
     return (int(m.group(1)), value) if m else None
 
 
-def scorecard_cells(table):
-    """{metric: value} for every two-cell row of a Scorecard table body."""
-    return {unescape(cells[0]): unescape(cells[1])
-            for cells in table_rows(table) if len(cells) == 2}
+def scorecard_cells(table, failures=None):
+    """{metric: value} for every two-cell row of a Scorecard table body.
+
+    A row of any other width is named in `failures`, when given. Only
+    check_scorecard passes it; lenses_run_row reads the same table and does
+    not, so each such row is reported once per review.
+    """
+    card = {}
+    for cells in table_rows(table):
+        if len(cells) == 2:
+            card[unescape(cells[0])] = unescape(cells[1])
+        elif failures is not None:
+            failures.append(wrong_width('Scorecard', cells, 2))
+    if failures is not None:
+        failures.extend(wrong_width('Scorecard', cells, 2)
+                        for cells in rule_rows(table) if len(cells) != 2)
+        failures.extend(stray_rules('Scorecard', table))
+    return card
 
 
 def check_lenses(review, lenses, scope, vocab, failures):
@@ -531,11 +640,28 @@ def index_rows(review, vocab, failures):
     if body is None:
         failures.append('no "## FINDINGS INDEX" section')
         return []
-    rows = [[unescape(c) for c in cells] for cells in table_rows(body)
-            if unescape(cells[0]) != 'ID']
+    # The header and rule rows are dropped, but only once they are the right
+    # width: either one of the wrong width was dropped unnamed (issue #43, D1).
+    failures.extend(wrong_width('index', cells, 8)
+                    for cells in rule_rows(body) if len(cells) != 8)
+    failures.extend(stray_rules('index', body))
+    rows = []
+    parts, _, _, heads = table_parts(body)
+    for cells in parts:
+        if is_header(cells, heads):
+            if unescape(cells[0]) != 'ID':
+                failures.append(misplaced_header('index', cells))
+            elif len(cells) != 8:
+                failures.append(wrong_width('index', cells, 8))
+            continue
+        if unescape(cells[0]) == 'ID':
+            # Skipped by content, this row was a finding no check read.
+            failures.append(repeated_header('index', cells))
+            continue
+        rows.append([unescape(c) for c in cells])
     for row in rows:
         if len(row) != 8:
-            failures.append(f'index row is {len(row)} columns, expected 8: {row[:1]}')
+            failures.append(wrong_width('index', row, 8))
             continue
         prefix = vocab['id_prefixes'].get(lens_name(row[1]))
         if not re.fullmatch(r'[A-Z0-9]+-\d+', row[0]) or (
@@ -571,7 +697,7 @@ def check_scorecard(review, rows, prompt_path, vocab, failures):
     if table is None:
         failures.append('no "### Scorecard" section')
         return
-    card = scorecard_cells(table)
+    card = scorecard_cells(table, failures)
 
     version = instrument_version(review)
     if version is None:
