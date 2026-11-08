@@ -810,7 +810,7 @@ class Fixtures(unittest.TestCase):
         self.assertNotIn('\n  > ', text)
         heading = '\n## FINDINGS INDEX'
         self.assertIn(heading, text)
-        block = ('\n## Evidence\n\n- W5H-1 — cmd/server/main.go:35\n'
+        block = ('\n## Evidence\n\n- W5H-1 — cmd/api/main.go:42\n'
                  '  > a quote no one can check\n')
         review = self.write('quoted.md', text.replace(heading, block + heading, 1))
         code, out = run('check_review.py', review, '--no-artifact')
@@ -832,9 +832,9 @@ class Fixtures(unittest.TestCase):
         code, out = run('check_review.py', review, '--no-artifact')
         self.assertEqual(code, 1, out)
         self.assertIn("W5H1: no 'Checked:' line", out)
-        row = '| W5H-2 | internal/vendors/parse.go |'
+        row = '| W5H-2 | internal/upstream/decode.go |'
         self.assertIn(row, text)
-        review = self.write('no-row.md', text.replace(row, '| Why | W5H-2 | internal/vendors/parse.go |', 1))
+        review = self.write('no-row.md', text.replace(row, '| Why | W5H-2 | internal/upstream/decode.go |', 1))
         code, out = run('check_review.py', review, '--no-artifact')
         self.assertEqual(code, 1, out)
         self.assertIn('W5H-2: in the Findings Index, raised in no lens table', out)

@@ -79,7 +79,10 @@ repo records, the ROADMAP tool table gives way to a link to
 shows a short text example of the output (#1). The example
 `diffract.yaml` matches PROMPT.md's integrity options, ROADMAP no longer
 says Diffract ships prompt-only, and the severity-trend idea from #29 is
-on the ROADMAP.
+on the ROADMAP. The web-service example's file paths, identifiers and
+line numbers, and the sample rows in `docs/lenses.md` and
+`docs/w5h1.md`, are now invented ones that describe no real code; its
+15 findings keep their ids, lenses, severities, verdicts and confidence.
 
 **`scope: path` can say which path.** The config's closed key list
 permitted `scope: path` but had no key to carry the path, so a config

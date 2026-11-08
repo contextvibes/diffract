@@ -120,14 +120,14 @@ executing PROMPT.md runs all 10 unless the user narrows the set; no
 A review comment is only as useful as it is checkable. Compare a typical
 comment:
 
-> "The session handling looks a bit risky — maybe worth another look?"
+> "The login handling looks a bit risky — maybe worth another look?"
 
 with a finding row from the [web-service example](examples/web-service.md),
 raised by the 🛡️ Shield lens:
 
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| SHI-2 | internal/session/session.go | Session cookie has no expiry — lives until browser closes | 54 | Major | High |
+| SHI-2 | internal/auth/cookie.go | Login cookie has no Max-Age — lives until browser closes | 31 | Major | High |
 
 and, from the same review, a lens that found nothing:
 

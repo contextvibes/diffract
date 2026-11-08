@@ -55,7 +55,7 @@ Subtraction improves the system by reducing the surface area for bugs.
 Checked: all modules, all exported types, all configuration fields
 | # | File | Finding | Line |
 |---|------|---------|------|
-| S1 | user_service.py | `OtherDetails` field is never read or written | 34 |
+| S1 | report_builder.py | `legacy_footer` parameter is accepted and never used | 52 |
 ```
 
 **Maps to:** YAGNI (Kent Beck, Extreme Programming)
@@ -115,7 +115,7 @@ terminology across the codebase.
 Checked: all exported names, comments, error messages
 | # | File | Finding | Line |
 |---|------|---------|------|
-| N1 | geocoder.rs | Comment says "Maps client" but package is "geocoder" | 37 |
+| N1 | inventory.rs | `count_items` returns the total weight, not a count | 37 |
 ```
 
 **Maps to:** Ubiquitous Language (DDD)
@@ -128,8 +128,8 @@ Checked: all exported names, comments, error messages
 **The question:** *Is this knowledge in exactly one place?*
 
 When the same fact exists in two places, they will diverge. This lens catches
-duplicated configuration, copy-pasted logic, and identifiers that duplicate
-their container's key.
+duplicated configuration, copy-pasted logic, and derived values stored
+beside the value they derive from.
 
 **Example rules:**
 - No literal value whose meaning is defined in more than one place.
@@ -144,7 +144,7 @@ their container's key.
 Checked: configuration files, constants, entity definitions
 | # | File | Finding | Line |
 |---|------|---------|------|
-| T1 | config.yaml + constants.ts | Default timeout defined in both places | 12, 45 |
+| T1 | schema.sql + models.ts | Maximum username length defined in both places | 8, 21 |
 ```
 
 **Maps to:** DRY — Don't Repeat Yourself (Andy Hunt & Dave Thomas, *The Pragmatic Programmer*)
@@ -174,7 +174,7 @@ tight coupling, misplaced responsibilities, and import cycles.
 Checked: import/dependency graph across all modules
 | # | File | Finding | Line |
 |---|------|---------|------|
-| B1 | email_sender.py | Imports user_config for tenant resolution — should accept resolved data | 14 |
+| B1 | invoice_pdf.py | PDF renderer queries the orders table itself — should accept the order it renders | 14 |
 ```
 
 **Maps to:** Clean Architecture, Dependency Inversion (Robert C. Martin)
@@ -195,7 +195,7 @@ missing authentication.
 **Example rules:**
 - Every external input (network, file, environment, user) crosses a
   validation before its first use.
-- No secret or PII written to logs, error messages, or URLs.
+- No secret or personal data reaches log output, error text, or a URL.
 - No security-relevant default that fails open (permissive CORS, no expiry,
   debug enabled).
 - Every authentication or authorization check runs on the trusted side of
@@ -207,7 +207,7 @@ missing authentication.
 Checked: all external inputs (HTTP, file I/O, env vars), all auth boundaries
 | # | File | Finding | Line |
 |---|------|---------|------|
-| H1 | middleware.ts | Session cookie has no expiry — lives until browser closes | 20 |
+| H1 | upload.ts | Uploaded file name joined into the storage path unnormalised — `../` escapes the upload directory | 20 |
 ```
 
 **Maps to:** Input Validation, Zero Trust
@@ -241,10 +241,10 @@ typosquat packages.
 **Evidence format:**
 ```
 ### 🔗 Provenance
-Checked: go.mod, go.sum, lockfile diff since last release, AI-pasted blocks
+Checked: package.json, package-lock.json, lockfile diff since last release, AI-pasted blocks
 | # | File | Finding | Line |
 |---|------|---------|------|
-| P1 | go.mod | `github.com/unknown/jwt` v0.0.1 — 0 stars, created 2 days ago, name near-collides with `dgrijalva/jwt-go`; possible typosquat | 12 |
+| P1 | package.json | `acme-tokens` 0.0.1 — published 2 days ago by an account with no other packages, name near-collides with the established `acme-token`; possible typosquat | 12 |
 ```
 
 **Maps to:** Supply Chain Security, SBOM, SLSA
@@ -266,8 +266,8 @@ fallthrough in switch/match statements.
 "does it handle ALL input — including valid but unexpected states?"
 
 **Example rules:**
-- No switch/match on an external value without an explicit, handled
-  default branch.
+- Every state an external value can take is named where it is matched;
+  none is left to an implicit fallthrough.
 - No error return or rejected promise that a caller silently ignores.
 - No partial function: every input state the interface admits maps to a
   defined output state.
@@ -280,7 +280,7 @@ fallthrough in switch/match statements.
 Checked: all switch/match statements on external status codes
 | # | File | Finding | Line |
 |---|------|---------|------|
-| V1 | http_client.rb | No case for 503 Service Unavailable (retryable) | 74 |
+| V1 | order_state.kt | `when` over order status has no `REFUNDED` branch — it falls to `else` and reports the order shipped | 74 |
 ```
 
 **Maps to:** Error Handling, Exhaustive Pattern Matching
@@ -294,8 +294,8 @@ Checked: all switch/match statements on external status codes
 external outputs?*
 
 A system that fails silently is worse than one that crashes loudly. This lens
-catches swallowed errors, missing log statements, and the absence of
-correlation IDs for distributed tracing.
+catches swallowed errors, missing log statements, and work whose path
+through several processes cannot be followed from what they emit.
 
 **Example rules:**
 - No caught exception that is neither handled nor logged.
@@ -303,7 +303,8 @@ correlation IDs for distributed tracing.
   and failure distinguishably.
 - No user-facing failure whose server-side cause cannot be located from
   emitted outputs alone.
-- Every request crossing a service boundary carries a correlation ID.
+- Every operation that spans processes can be followed end to end from
+  their emitted outputs.
 
 **Evidence format:**
 ```
@@ -311,7 +312,7 @@ correlation IDs for distributed tracing.
 Checked: all error handling paths, all log statements, recovery/exception handlers
 | # | File | Finding | Line |
 |---|------|---------|------|
-| O1 | error_handler.java | Exception caught and ignored — no logging | 67 |
+| O1 | nightly_export.go | Export job exits 0 after writing zero rows — a failed run reads as an empty day | 67 |
 ```
 
 **Maps to:** Logging, Metrics, Distributed Tracing
@@ -387,7 +388,7 @@ reliable than an AI finding — and more reproducible.
 | 🛡️ Shield | SAST scanners (semgrep, language-specific security linters) | Missing validation logic, insecure defaults |
 | 🔗 Provenance | `npm audit`, `gh advisory`, lockfile diff, SBOM generators | Typosquats, unvetted AI-pasted code |
 | 🎯 Variety | Exhaustiveness checkers, compiler warnings | Unhandled business states, partial functions |
-| 🔍 Observability | Error-handling linters, `grep` for swallowed errors | Missing context, missing correlation IDs |
+| 🔍 Observability | Error-handling linters, `grep` for swallowed errors | Missing context, untraceable cross-process work |
 | ⚡ Efficiency | Benchmarks, profilers, query analyzers | Algorithmic inefficiency, unbounded reads |
 
 **If a tool can check it, run the tool.** Reserve AI for the judgment calls
