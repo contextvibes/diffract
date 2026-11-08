@@ -1054,5 +1054,29 @@ class Fixtures(unittest.TestCase):
         self.assertIn('examples/semver-2.0.0-review.md: --artifact examples/artifacts/semver-2.0.0.md\n', out)
         self.assertNotIn('examples/notes.md', out)
 
+    def test_58_a_fenced_row_inside_the_scorecard_is_not_read(self):
+        # The row's own fence filter, apart from section scope.
+        root = self.copy_of_repo()
+        text = read(EXAMPLE)
+        heading = re.search(r'^### Scorecard[^\n]*\n', text, re.M)
+        self.assertIsNotNone(heading)
+        quoted = '\n```markdown\n| Artifact | `examples/artifacts/moved.md` |\n```\n\n'
+        self.put(root, 'examples/semver-2.0.0-review.md',
+                 text[:heading.end()] + quoted + text[heading.end():])
+        code, out = self.examples(root)
+        self.assertEqual(code, 0, out)
+        self.assertIn('examples/semver-2.0.0-review.md: --artifact examples/artifacts/semver-2.0.0.md\n', out)
+
+    def test_58_a_live_row_outside_the_scorecard_is_not_read(self):
+        # Section scope, apart from the fence filter.
+        root = self.copy_of_repo()
+        text = read(EXAMPLE)
+        self.assertIn('\n## PLAN', text)
+        table = '\n| Field | Value |\n|---|---|\n| Artifact | `examples/artifacts/moved.md` |\n'
+        self.put(root, 'examples/semver-2.0.0-review.md', text.replace('\n## PLAN', table + '\n## PLAN', 1))
+        code, out = self.examples(root)
+        self.assertEqual(code, 0, out)
+        self.assertIn('examples/semver-2.0.0-review.md: --artifact examples/artifacts/semver-2.0.0.md\n', out)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
