@@ -3,8 +3,8 @@
 > Written against [Diffract v0.4.0](../PROMPT.md).
 
 This is an anonymized example of a full Diffract cycle applied to a
-production web service (Go) with vendor API integrations, email
-notifications, and a server-rendered frontend. Prose is condensed, file
+web service (Go) that calls third-party APIs, sends outbound mail,
+and renders its pages on the server. Prose is condensed, file
 paths are fictionalized, and per-lens "Checked" lines are shortened — but
 the findings are complete, so every count reconciles with the
 [FINDINGS INDEX](#findings-index) at the end.
@@ -29,7 +29,7 @@ Diffract: 0.4.0
 **Cold-Start Calibration** — invariants this system must satisfy,
 independent of the code as written:
 
-1. PII never leaves the system except to its owner (not to logs, not to vendors).
+1. PII never leaves the system except to its owner (not to logs, not to third parties).
 2. Every outbound call has a bounded timeout and a defined failure path.
 3. A session must expire; nothing authenticated lives forever.
 
@@ -37,8 +37,8 @@ independent of the code as written:
 Checked: all registered middleware, exported symbols, struct fields.
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| SUB-1 | internal/httpserver/middleware.go | Dead logging middleware — defined but never mounted | 41 | Minor | High |
-| SUB-2 | internal/store/entity.go | Unused `OtherDetails` struct field — never read or written | 27 | Minor | High |
+| SUB-1 | internal/web/accesslog.go | Dead access-log middleware — defined but never mounted | 17 | Minor | High |
+| SUB-2 | internal/catalog/item.go | Unused `ArchivedTags` struct field — never read or written | 31 | Minor | High |
 
 ### ✂️ Simplify
 Checked: all function signatures, interface definitions, configuration layers.
@@ -51,28 +51,28 @@ No findings matching this pattern.
 Checked: package names, exported identifiers, comments against behavior.
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| NAM-1 | internal/geocoder/client.go | Comment says "Maps client" but package was renamed to "geocoder" | 12 | Minor | High |
+| NAM-1 | internal/forecast/client.go | Comment says "Weather client" but package was renamed to "forecast" | 9 | Minor | High |
 
 ### 📌 Truth
-Checked: constants, IDs, and configuration for duplicated knowledge.
+Checked: constants, stored fields, and configuration for duplicated knowledge.
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| TRU-1 | internal/store/entity.go | Entity ID field duplicates the map key — single source of truth violated | 19 | Major | High |
-| TRU-2 | cmd/server/main.go | Timeout constants duplicated across two binaries (also cmd/worker/main.go:29) | 33 | Minor | High |
+| TRU-1 | internal/catalog/item.go | Price stored both in cents and as a formatted string — single source of truth violated | 15 | Major | High |
+| TRU-2 | cmd/api/main.go | Timeout constants duplicated across two binaries (also cmd/jobs/main.go:26) | 38 | Minor | High |
 
 ### 🧱 Boundary
 Checked: import graph between delivery, domain, and template packages.
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| BOU-1 | internal/email/client.go | Email delivery client imports domain and template packages — should accept raw HTML | 8 | Major | High |
+| BOU-1 | internal/mailer/send.go | Mail sender imports domain and template packages — should accept a rendered message | 11 | Major | High |
 
 ### 🛡️ Shield
 Checked: session handling, logging of request data, public endpoint protections.
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| SHI-1 | internal/httpserver/handlers.go | PII (name, email) logged in structured output | 88 | Major | High |
-| SHI-2 | internal/session/session.go | Session cookie has no expiry — lives until browser closes | 54 | Major | High |
-| SHI-3 | cmd/server/main.go | No rate limiting on public endpoints | 61 | Major | High |
+| SHI-1 | internal/web/signup.go | Phone number logged in full when form validation fails | 72 | Major | High |
+| SHI-2 | internal/auth/cookie.go | Login cookie has no Max-Age — lives until browser closes | 31 | Major | High |
+| SHI-3 | cmd/api/main.go | No rate limiting on public endpoints | 64 | Major | High |
 
 ### 🔗 Provenance
 Checked: go.mod, go.sum, lockfile integrity, and dependency publication dates.
@@ -81,18 +81,18 @@ whose path closely resembles a more popular one (typosquat).
 No findings matching this pattern.
 
 ### 🎯 Variety
-Checked: status-code handling in all vendor clients.
+Checked: status-code handling in all upstream clients.
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| VAR-1 | internal/vendors/client.go | No 503 handling in any vendor client — all fall to default branch | 102 | Major | High |
+| VAR-1 | internal/upstream/http.go | No 503 handling in any upstream client — all fall to default branch | 96 | Major | High |
 
 ### 🔍 Observability
-Checked: error paths, recovery handlers, request tracing.
+Checked: error paths, panic handlers, background-job logging.
 | ID | File | Finding | Line | Severity | Confidence |
 |---|------|---------|------|----------|------------|
-| OBS-1 | internal/license/lookup.go | Error silently swallowed after refactor — no logging on license lookup failure | 47 | Major | High |
-| OBS-2 | internal/httpserver/recover.go | Recovery handler catches panics without logging any context | 22 | Major | High |
-| OBS-3 | internal/httpserver/server.go | No correlation IDs for request tracing | 30 | Minor | High |
+| OBS-1 | internal/quota/check.go | Error silently swallowed after refactor — no logging when the quota check fails | 44 | Major | High |
+| OBS-2 | internal/web/panic.go | Panic handler catches panics without logging any context | 19 | Major | High |
+| OBS-3 | internal/jobs/runner.go | Job log lines carry no run ID — one run's lines cannot be grouped | 52 | Minor | High |
 
 ### ⚡ Efficiency
 Checked: all HTTP clients, template rendering, JSON encoding.
@@ -104,10 +104,10 @@ No findings matching this pattern.
 Checked: Why — rationale for non-obvious constants and fallbacks; When — expiry and timeouts.
 | ID | File | Finding | Line | Severity | Confidence |
 |----|------|---------|------|----------|------------|
-| W5H-1 | cmd/server/main.go | Why: no comment explaining 35s write timeout | 35 | Minor | Medium |
-| W5H-2 | internal/vendors/parse.go | Why: no comment explaining backward-compat field name fallback | 74 | Minor | Medium |
+| W5H-1 | cmd/api/main.go | Why: no comment explaining 25s idle timeout | 42 | Minor | Medium |
+| W5H-2 | internal/upstream/decode.go | Why: no comment explaining why two date layouts are accepted | 58 | Minor | Medium |
 
-When: session cookie expiry — already raised as SHI-2, not counted again.
+When: login cookie expiry — already raised as SHI-2, not counted again.
 
 ## CHECK
 
@@ -115,19 +115,19 @@ When: session cookie expiry — already raised as SHI-2, not counted again.
 |---------|-----------|-------------|-----------|---------|---------|
 | SUB-1: Dead middleware | High | grep confirms zero references | Dead code blocks clean extraction | Removal is safe | Fix |
 | SUB-2: Unused field | High | grep confirms never read/written | Same | Removal is safe | Fix |
-| NAM-1: Stale comment | High | Read line 12; package name differs | Wrong docs mislead library users | None | Fix |
-| TRU-1: Duplicated ID | High | Read both sites; values can diverge | Data-integrity risk for consumers | None | Fix |
+| NAM-1: Stale comment | High | Read line 9; package name differs | Wrong docs mislead library users | None | Fix |
+| TRU-1: Duplicated price | High | Read both fields; values can diverge | Data-integrity risk for consumers | None | Fix |
 | TRU-2: Duplicated timeouts | High | Read both binaries; values identical today | In scope | Binaries serve different workloads; values may legitimately diverge — unifying couples them | Skip:Cobra |
-| BOU-1: Email client boundary | High | Import graph verified | Central to extraction goal | Composition layer contains the change | Fix |
-| SHI-1: PII in logs | High | Read log call; fields named | Violates invariant 1 | None | Fix |
-| SHI-2: Cookie no expiry | High | Read cookie construction; no MaxAge | Violates invariant 3 | 4-hour MaxAge is uncontroversial | Fix |
+| BOU-1: Mail sender boundary | High | Import graph verified | Central to extraction goal | Composition layer contains the change | Fix |
+| SHI-1: Phone number in logs | High | Read log call; field named | Violates invariant 1 | None | Fix |
+| SHI-2: Cookie no expiry | High | Read cookie construction; no Max-Age | Violates invariant 3 | 12-hour Max-Age is uncontroversial | Fix |
 | SHI-3: No rate limiting | High | Confirmed no limiter in serve path | Deployment/edge concern — outside "extractable library" goal | — | Skip:Compass |
 | VAR-1: No 503 handling | High | Read switch; 503 hits default | Library consumers need retryable errors | Additive sentinel error | Fix |
 | OBS-1: Swallowed error | High | Read call site; err discarded | Violates invariant 2 | None | Fix |
-| OBS-2: No context in recovery | High | Read handler; logs message only | Debuggability for consumers | Additive | Fix |
-| OBS-3: No correlation ID | High | Confirmed no request ID anywhere | Tracing expected of a service library | Additive middleware | Fix |
+| OBS-2: No context in panic log | High | Read handler; logs message only | Debuggability for consumers | Additive | Fix |
+| OBS-3: No job run ID | High | Confirmed no run identifier in the job logger | Traceable jobs expected of a service library | Additive log field | Fix |
 | W5H-1: Timeout comment | Medium | Read line; constant uncommented | Rationale must travel with the library | None | Fix |
-| W5H-2: Fallback comment | Medium | Read line; fallback uncommented | Same | None | Fix |
+| W5H-2: Date-layout comment | Medium | Read line; second layout uncommented | Same | None | Fix |
 
 ### Scope and Nothing-Found Verification
 
@@ -147,16 +147,16 @@ Per lens in scope — would the process have caught a deliberate bug?
 - 🏷️ **Name:** a `MustLoad` function that returns an error instead of
   panicking — the comments-against-behavior pass reads each exported
   function under its name, so yes.
-- 📌 **Truth:** the vendor base URL hard-coded in both the client and its
+- 📌 **Truth:** the upstream base URL hard-coded in both the client and its
   test fixtures — the constants sweep covers every literal, so yes.
 - 🧱 **Boundary:** a template helper importing the store package for
   display data — the import-graph walk covers every package edge, so yes.
-- 🛡️ **Shield:** a query parameter passed unvalidated into the geocoder
-  request — the endpoint sweep traces each input to its sinks, so yes.
+- 🛡️ **Shield:** a query parameter passed unvalidated into an outbound
+  search request — the endpoint sweep traces each input to its sinks, so yes.
 - 🔗 **Provenance:** a `replace` directive in go.mod silently redirecting
   a module to a local path — the go.mod read covers every directive,
   so yes.
-- 🎯 **Variety:** a vendor error body whose JSON shape differs by endpoint
+- 🎯 **Variety:** an upstream error body whose JSON shape differs by endpoint
   but is decoded by one struct — the client sweep reads every decode
   site, so yes.
 - 🔍 **Observability:** a background job that retries and then gives up
@@ -177,12 +177,12 @@ No framework or dependency was accepted on familiarity alone.
 ### Fixes Applied
 
 All 13 Fix verdicts applied in one pass — dead code removed (SUB-1, SUB-2),
-comment corrected (NAM-1), ID derived from map key (TRU-1), composition layer
-created so the delivery client accepts raw HTML (BOU-1), PII fields dropped
-from logs (SHI-1), 4-hour MaxAge added (SHI-2), retryable sentinel error added
-to all 3 vendor clients (VAR-1), error logged (OBS-1), method/path/request ID
-added to recovery logging (OBS-2), request ID middleware added (OBS-3),
-rationale comments added (W5H-1, W5H-2).
+comment corrected (NAM-1), formatted price derived from cents (TRU-1),
+composition layer created so the mail sender accepts a rendered message
+(BOU-1), phone number masked in logs (SHI-1), 12-hour Max-Age added (SHI-2),
+retryable sentinel error added to all 3 upstream clients (VAR-1), error
+logged (OBS-1), method and path added to panic logging (OBS-2), run ID added
+to job log lines (OBS-3), rationale comments added (W5H-1, W5H-2).
 
 **Verification:** `go build ./...`, `go test ./...`, `go vet ./...` — all
 pass after fixes.
@@ -231,8 +231,8 @@ Counts below are derived from the [FINDINGS INDEX](#findings-index).
 
 | Gap | Reason | Recommendation |
 |-----|--------|---------------|
-| Vendor API behavior under real 503s | No sandbox access — VAR-1 verified against recorded fixtures only | Add contract tests before extraction |
-| Frontend templates | Declared sample: 3 of 11 templates reviewed | Review the remaining 8 before extraction |
+| Upstream API behavior under real 503s | No sandbox access — VAR-1 verified against recorded fixtures only | Add contract tests before extraction |
+| Page templates | Declared sample: 4 of 14 templates reviewed | Review the remaining 10 before extraction |
 | Load characteristics | No profiling data available to the reviewer | Profile under production-shaped load; re-run ⚡ Efficiency with the data |
 
 ### Defect Prevention
@@ -247,18 +247,18 @@ Counts below are derived from the [FINDINGS INDEX](#findings-index).
 
 | ID | Lens | Cycle | Line(s) | Severity | Verdict | Claim (one sentence) | Confidence |
 |----|------|-------|---------|----------|---------|----------------------|------------|
-| SUB-1 | 🗑️ Subtract | 1 | middleware.go:41 | Minor | Fix | Logging middleware is defined but never mounted. | High |
-| SUB-2 | 🗑️ Subtract | 1 | entity.go:27 | Minor | Fix | `OtherDetails` is never read or written. | High |
-| NAM-1 | 🏷️ Name | 1 | client.go:12 | Minor | Fix | Comment names the old "Maps client" package. | High |
-| TRU-1 | 📌 Truth | 1 | entity.go:19 | Major | Fix | Entity ID duplicates the map key. | High |
-| TRU-2 | 📌 Truth | 1 | main.go:33 | Minor | Skip:Cobra | Timeout constants are duplicated across two binaries. | High |
-| BOU-1 | 🧱 Boundary | 1 | client.go:8 | Major | Fix | Delivery client imports domain and template packages. | High |
-| SHI-1 | 🛡️ Shield | 1 | handlers.go:88 | Major | Fix | Name and email are written to structured logs. | High |
-| SHI-2 | 🛡️ Shield | 1 | session.go:54 | Major | Fix | Session cookie is set without expiry. | High |
-| SHI-3 | 🛡️ Shield | 1 | main.go:61 | Major | Skip:Compass | Public endpoints have no rate limiting. | High |
-| VAR-1 | 🎯 Variety | 1 | client.go:102 | Major | Fix | 503 responses fall to the default branch in every vendor client. | High |
-| OBS-1 | 🔍 Observability | 1 | lookup.go:47 | Major | Fix | License lookup failure is discarded without logging. | High |
-| OBS-2 | 🔍 Observability | 1 | recover.go:22 | Major | Fix | Recovery handler logs no request context. | High |
-| OBS-3 | 🔍 Observability | 1 | server.go:30 | Minor | Fix | Requests carry no correlation ID. | High |
-| W5H-1 | W5H1 | 1 | main.go:35 | Minor | Fix | The 35s write timeout has no stated rationale. | Medium |
-| W5H-2 | W5H1 | 1 | parse.go:74 | Minor | Fix | The field-name fallback has no stated rationale. | Medium |
+| SUB-1 | 🗑️ Subtract | 1 | accesslog.go:17 | Minor | Fix | Access-log middleware is defined but never mounted. | High |
+| SUB-2 | 🗑️ Subtract | 1 | item.go:31 | Minor | Fix | `ArchivedTags` is never read or written. | High |
+| NAM-1 | 🏷️ Name | 1 | client.go:9 | Minor | Fix | Comment names the old "Weather client" package. | High |
+| TRU-1 | 📌 Truth | 1 | item.go:15 | Major | Fix | Price is stored twice, as cents and as a formatted string. | High |
+| TRU-2 | 📌 Truth | 1 | main.go:38 | Minor | Skip:Cobra | Timeout constants are duplicated across two binaries. | High |
+| BOU-1 | 🧱 Boundary | 1 | send.go:11 | Major | Fix | Mail sender imports domain and template packages. | High |
+| SHI-1 | 🛡️ Shield | 1 | signup.go:72 | Major | Fix | A failed signup logs the phone number in full. | High |
+| SHI-2 | 🛡️ Shield | 1 | cookie.go:31 | Major | Fix | Login cookie is set without expiry. | High |
+| SHI-3 | 🛡️ Shield | 1 | main.go:64 | Major | Skip:Compass | Public endpoints have no rate limiting. | High |
+| VAR-1 | 🎯 Variety | 1 | http.go:96 | Major | Fix | 503 responses fall to the default branch in every upstream client. | High |
+| OBS-1 | 🔍 Observability | 1 | check.go:44 | Major | Fix | A quota-check failure is discarded without logging. | High |
+| OBS-2 | 🔍 Observability | 1 | panic.go:19 | Major | Fix | Panic handler logs no request context. | High |
+| OBS-3 | 🔍 Observability | 1 | runner.go:52 | Minor | Fix | Job log lines carry no run ID. | High |
+| W5H-1 | W5H1 | 1 | main.go:42 | Minor | Fix | The 25s idle timeout has no stated rationale. | Medium |
+| W5H-2 | W5H1 | 1 | decode.go:58 | Minor | Fix | Accepting a second date layout has no stated rationale. | Medium |
