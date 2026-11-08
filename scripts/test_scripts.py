@@ -329,7 +329,7 @@ class Fixtures(unittest.TestCase):
         self.assertEqual(code, 1, out)
         line = [l for l in out.splitlines() if "Scorecard row 'Spare'" in l]
         self.assertEqual(len(line), 1, out)
-        self.assertTrue(line[0].rstrip().endswith('is 1 columns, expected 2'), out)
+        self.assertTrue(line[0].rstrip().endswith('is 1 column, expected 2'), out)
 
     def test_43_an_index_header_of_the_wrong_width_is_named(self):
         header = '| ID | Lens | Cycle | Line(s) | Severity | Verdict | Claim (one sentence) | Confidence |'

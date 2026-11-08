@@ -32,12 +32,13 @@ includes header and rule rows, which were dropped at any width, and a
 row of empty cells, which was taken for a rule row. Only the line after
 a table's header is its rule row; a later row of dashes, which GitHub
 shows as data, is named too. A row too wide says
-a literal `|` is written `\|`. One sibling is left: a row with no
-closing `|`, which GitHub renders but no reader treats as a row; it is
-older than this and is filed as #64. The checks pass their
-failure list explicitly (#47), and `scripts/MANIFEST` pins each script's hash, gated by
-`check.py` (#46). Each of these comes with a regression test in
-`scripts/test_scripts.py`, which CI runs.
+a literal `|` is written `\|`. Three siblings are older and filed: a
+row GitHub renders that no reader reads, with no outer `|` or indented
+(#64); a mandated table with no rule row or split by a blank line (#65);
+and a Scorecard metric written twice (#66). The checks pass their
+failure list explicitly (#47), and `scripts/MANIFEST` pins each
+script's hash, gated by `check.py` (#46). Each of these comes with a
+regression test in `scripts/test_scripts.py`, which CI runs.
 
 **Every published review now passes the checker in CI.**
 `examples/web-service.md` had only its Scorecard arithmetic checked, and

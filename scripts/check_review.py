@@ -99,7 +99,8 @@ def wrong_width(where, cells, want):
     # The hint only where it is the likely cause: a row too narrow has lost a
     # cell, and no pipe escape restores one.
     hint = ': a literal | inside a cell is written \\|' if len(cells) > want else ''
-    return (f'{where} row {first[:40]!r} is {len(cells)} columns, expected '
+    columns = 'column' if len(cells) == 1 else 'columns'
+    return (f'{where} row {first[:40]!r} is {len(cells)} {columns}, expected '
             f'{want}{hint}')
 
 
