@@ -11,6 +11,9 @@ All notable changes to Diffract will be documented in this file.
 Entries describe each release as it shipped. 0.1.0 predates tagging and was
 never cut as a release; v0.2.0 is the first tagged version.
 
+A pushed `vX.Y.Z` tag publishes the GitHub Release from that version's entry
+here, by `scripts/release_notes.py` in `.github/workflows/release.yml`.
+
 ## [Unreleased]
 
 Work toward 0.5.0, not yet a release. The version string is unchanged.
@@ -149,6 +152,14 @@ closed.
 
 PROMPT.md changed, so every measured reviewer tier is stale until
 re-measured against this text.
+
+**A tag publishes its Release.** Pushing a `vX.Y.Z` tag on `main` now
+creates the GitHub Release, with that version's entry here as its notes,
+by `scripts/release_notes.py` in `.github/workflows/release.yml`. The
+notes are this hand-written narrative, not a list generated from commits.
+The script refuses a tag that disagrees with the README badge, the
+PROMPT.md header or the newest entry; `check.py` holds the entries to the
+order and form the script reads.
 
 ## [0.4.0] — 2026-08-30
 
